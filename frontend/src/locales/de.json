@@ -1,0 +1,11 @@
+{
+  "app": {
+    "title": "Listful Thinking",
+    "tagline": "Wunschlisten, Aufgaben und Eventlisten für Self-Hoster.",
+    "intro": "Eine leichte Single-Container-App mit SQLite und öffentlichem Teilen für Gäste."
+  },
+  "health": {
+    "check": "Backend prüfen",
+    "status": "Backend-Status"
+  }
+}

@@ -1,0 +1,24 @@
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Java/Maven
+backend/target/
+.mvn/wrapper/maven-wrapper.jar
+
+# Node/Vite
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Runtime data
+/data/
+backend/data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Logs
+*.log

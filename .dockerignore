@@ -1,0 +1,11 @@
+.git
+.gitignore
+**/node_modules
+**/dist
+**/target
+/data
+backend/data
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.log

@@ -1,0 +1,11 @@
+{
+  "app": {
+    "title": "Listful Thinking",
+    "tagline": "Wishlists, chores, and event lists for self-hosters.",
+    "intro": "A lightweight single-container app with SQLite persistence and public guest sharing."
+  },
+  "health": {
+    "check": "Check backend",
+    "status": "Backend status"
+  }
+}

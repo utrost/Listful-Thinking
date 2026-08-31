@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: listful-thinking
+  datasource:
+    url: jdbc:sqlite:${LISTFUL_DB_PATH:/app/data/listful-thinking.sqlite}
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:25}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASS:}
+
+server:
+  port: 8080
+
+listful:
+  system-lang: ${SYSTEM_LANG:en}
+  registration-enabled: ${REGISTRATION_ENABLED:false}

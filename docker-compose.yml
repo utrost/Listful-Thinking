@@ -1,0 +1,18 @@
+services:
+  listful-thinking:
+    build: .
+    image: listful-thinking:dev
+    ports:
+      - "8080:8080"
+    environment:
+      SYSTEM_LANG: ${SYSTEM_LANG:-en}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+    volumes:
+      - listful-data:/app/data
+
+volumes:
+  listful-data:
