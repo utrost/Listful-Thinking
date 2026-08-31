@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, getPublicShare, login, logout, register, revokeListShare, revokePublicShare, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, getPublicShare, login, logout, register, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -164,6 +164,21 @@ describe('auth API client', () => {
       method: 'POST',
       credentials: 'include',
       body: JSON.stringify({ guestName: 'Annette' })
+    }));
+  });
+
+  it('calls scraper endpoint with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ title: 'Pen', description: null, imageUrl: null, price: 24.95 })
+    } as Response);
+
+    await scrapeUrl({ url: 'https://example.test/pen' });
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/utils/scrape', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ url: 'https://example.test/pen' })
     }));
   });
 });

@@ -216,6 +216,8 @@ Tests:
 
 ## Slice 11: Scraping utility
 
+Status: complete.
+
 User outcome:
 
 - User can preview metadata for a URL.

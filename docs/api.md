@@ -176,7 +176,30 @@ Revokes read access for the named registered user. Returns `204 No Content`.
 
 ## Scraper
 
-- `POST /api/v1/utils/scrape`
+### `POST /api/v1/utils/scrape`
+
+Requires authentication. Fetches best-effort metadata for an HTTP(S) URL using Jsoup with browser-like request headers.
+
+Request:
+
+```json
+{"url":"https://example.test/product"}
+```
+
+Response:
+
+```json
+{"title":"Product title","description":"Short description","imageUrl":"https://example.test/image.jpg","price":24.95}
+```
+
+Extraction priority:
+
+- Title: OpenGraph, Twitter card, then HTML `<title>`.
+- Description: OpenGraph, then standard description meta.
+- Image: OpenGraph, then Twitter card, resolved to an absolute URL where possible.
+- Price: `product:price:amount`, JSON-LD `offers.price`, then microdata `itemprop=price`.
+
+Non-HTTP(S) URLs return `400 validation_failed`.
 
 ## Public access
 

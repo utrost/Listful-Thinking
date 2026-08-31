@@ -28,6 +28,7 @@
     "imageUrl": "Bild-URL",
     "price": "Preis",
     "dueDate": "Fällig am",
+    "previewUrl": "URL-Vorschau",
     "create": "Eintrag hinzufügen",
     "delete": "Löschen"
   },

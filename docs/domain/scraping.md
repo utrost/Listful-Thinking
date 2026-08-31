@@ -8,9 +8,12 @@ A user can paste a product URL into a wishlist item form and get a useful title,
 
 ## API
 
+Implemented:
+
 - `POST /api/v1/utils/scrape`
 - Body: `{ "url": "https://example.com/product" }`
-- Reject non-HTTP(S) URLs.
+- Reject non-HTTP(S) URLs with `400 validation_failed`.
+- Requires authenticated session.
 
 ## Async item enrichment
 

@@ -114,6 +114,17 @@ export interface GuestClaimRequest {
   guestName: string;
 }
 
+export interface ScrapeRequest {
+  url: string;
+}
+
+export interface ScrapeResponse {
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  price: number | null;
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -294,6 +305,13 @@ export async function getPublicShare(token: string): Promise<PublicListEntry> {
 
 export async function claimPublicItem(token: string, itemId: string, request: GuestClaimRequest): Promise<PublicItemEntry> {
   return requestJson<PublicItemEntry>(`/api/v1/share/${encodeURIComponent(token)}/items/${itemId}/claim`, {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function scrapeUrl(request: ScrapeRequest): Promise<ScrapeResponse> {
+  return requestJson<ScrapeResponse>('/api/v1/utils/scrape', {
     method: 'POST',
     body: JSON.stringify(request)
   });

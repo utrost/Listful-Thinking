@@ -108,6 +108,7 @@
             <form class="inline-form" @submit.prevent="handleCreateItem">
               <input v-model="itemForm.name" :placeholder="t('items.newName')" required />
               <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" />
+              <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
               <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :placeholder="t('items.imageUrl')" />
               <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
               <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
@@ -151,6 +152,7 @@ import {
   register,
   revokeListShare,
   revokePublicShare,
+  scrapeUrl,
   shareListWithUser,
   type AuthUser,
   type ItemEntry,
@@ -311,6 +313,22 @@ async function handleClaimPublicItem(itemId: string) {
 
 function publicShareUrl(token: string) {
   return `${window.location.origin}/s/${token}`;
+}
+
+async function handleScrapeItemUrl() {
+  if (!itemForm.url) return;
+  await run(async () => {
+    const scraped = await scrapeUrl({ url: itemForm.url });
+    if (!itemForm.name && scraped.title) {
+      itemForm.name = scraped.title;
+    }
+    if (scraped.imageUrl) {
+      itemForm.imageUrl = scraped.imageUrl;
+    }
+    if (scraped.price !== null) {
+      itemForm.price = scraped.price;
+    }
+  });
 }
 
 async function handleCreateItem() {

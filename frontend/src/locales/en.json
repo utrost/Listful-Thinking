@@ -28,6 +28,7 @@
     "imageUrl": "Image URL",
     "price": "Price",
     "dueDate": "Due date",
+    "previewUrl": "Preview URL",
     "create": "Add item",
     "delete": "Delete"
   },

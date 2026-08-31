@@ -1,0 +1,152 @@
+package app.listful.scraping;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import app.listful.domain.repository.ItemRepository;
+import app.listful.domain.repository.ListRepository;
+import app.listful.domain.repository.ListShareRepository;
+import app.listful.domain.repository.NotificationRepository;
+import app.listful.domain.repository.SettingRepository;
+import app.listful.domain.repository.UserRepository;
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@TestPropertySource(properties = {
+    "spring.datasource.url=jdbc:sqlite:file:scraper-test?mode=memory&cache=shared",
+    "spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect",
+    "spring.flyway.enabled=true",
+    "app.registration-enabled=true"
+})
+class ScraperControllerTests {
+    @Autowired MockMvc mvc;
+    @Autowired ItemRepository itemRepository;
+    @Autowired ListRepository listRepository;
+    @Autowired ListShareRepository listShareRepository;
+    @Autowired NotificationRepository notificationRepository;
+    @Autowired SettingRepository settingRepository;
+    @Autowired UserRepository userRepository;
+
+    private HttpServer server;
+    private volatile String lastUserAgent;
+    private MockHttpSession session;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        notificationRepository.deleteAll();
+        itemRepository.deleteAll();
+        listShareRepository.deleteAll();
+        listRepository.deleteAll();
+        settingRepository.deleteAll();
+        userRepository.deleteAll();
+        session = register("owner");
+        startFixtureServer();
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (server != null) {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    void extractsOpenGraphMetadataWithBrowserLikeUserAgent() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape")
+                .session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/og\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Lamy Safari Fountain Pen"))
+            .andExpect(jsonPath("$.description").value("A reliable everyday fountain pen."))
+            .andExpect(jsonPath("$.imageUrl").value(baseUrl() + "/images/lamy.jpg"))
+            .andExpect(jsonPath("$.price").value(24.95));
+
+        org.assertj.core.api.Assertions.assertThat(lastUserAgent)
+            .contains("Mozilla")
+            .contains("Chrome");
+    }
+
+    @Test
+    void extractsJsonLdOfferPriceWhenNoOpenGraphPriceExists() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape")
+                .session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/jsonld\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Plotter Paper"))
+            .andExpect(jsonPath("$.price").value(12.50));
+    }
+
+    @Test
+    void rejectsNonHttpUrls() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape")
+                .session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"file:///etc/passwd\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"))
+            .andExpect(jsonPath("$.message", containsString("HTTP")));
+    }
+
+    private void startFixtureServer() throws IOException {
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/og", exchange -> {
+            lastUserAgent = exchange.getRequestHeaders().getFirst("User-Agent");
+            respond(exchange, """
+                <!doctype html><html><head>
+                  <meta property=\"og:title\" content=\"Lamy Safari Fountain Pen\">
+                  <meta property=\"og:description\" content=\"A reliable everyday fountain pen.\">
+                  <meta property=\"og:image\" content=\"/images/lamy.jpg\">
+                  <meta property=\"product:price:amount\" content=\"24.95\">
+                  <title>Fallback title</title>
+                </head><body></body></html>
+                """);
+        });
+        server.createContext("/jsonld", exchange -> respond(exchange, """
+            <!doctype html><html><head>
+              <title>Plotter Paper</title>
+              <script type=\"application/ld+json\">{"@type":"Product","name":"Plotter Paper","offers":{"@type":"Offer","price":"12.50"}}</script>
+            </head><body><span itemprop=\"price\">99.99</span></body></html>
+            """));
+        server.start();
+    }
+
+    private String baseUrl() {
+        return "http://127.0.0.1:" + server.getAddress().getPort();
+    }
+
+    private void respond(com.sun.net.httpserver.HttpExchange exchange, String body) throws IOException {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
+        exchange.sendResponseHeaders(200, bytes.length);
+        try (OutputStream output = exchange.getResponseBody()) {
+            output.write(bytes);
+        }
+    }
+
+    private MockHttpSession register(String username) throws Exception {
+        return (MockHttpSession) mvc.perform(post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"" + username + "\",\"email\":\"" + username + "@example.test\",\"password\":\"correct horse staple\"}"))
+            .andExpect(status().isCreated())
+            .andReturn().getRequest().getSession(false);
+    }
+}
