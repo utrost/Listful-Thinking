@@ -4,8 +4,27 @@
     "tagline": "Wishlists, chores, and event lists for self-hosters.",
     "intro": "A lightweight single-container app with SQLite persistence and public guest sharing."
   },
+  "auth": {
+    "register": "Register",
+    "login": "Log in",
+    "logout": "Log out",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password"
+  },
   "health": {
     "check": "Check backend",
     "status": "Backend status"
+  },
+  "lists": {
+    "title": "Your lists",
+    "newTitle": "New list title",
+    "create": "Create list",
+    "delete": "Delete list"
+  },
+  "items": {
+    "newName": "New item name",
+    "create": "Add item",
+    "delete": "Delete"
   }
 }

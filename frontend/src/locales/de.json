@@ -4,8 +4,27 @@
     "tagline": "Wunschlisten, Aufgaben und Eventlisten für Self-Hoster.",
     "intro": "Eine leichte Single-Container-App mit SQLite und öffentlichem Teilen für Gäste."
   },
+  "auth": {
+    "register": "Registrieren",
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "username": "Benutzername",
+    "email": "E-Mail",
+    "password": "Passwort"
+  },
   "health": {
     "check": "Backend prüfen",
     "status": "Backend-Status"
+  },
+  "lists": {
+    "title": "Deine Listen",
+    "newTitle": "Neuer Listentitel",
+    "create": "Liste erstellen",
+    "delete": "Liste löschen"
+  },
+  "items": {
+    "newName": "Neuer Eintrag",
+    "create": "Eintrag hinzufügen",
+    "delete": "Löschen"
   }
 }
