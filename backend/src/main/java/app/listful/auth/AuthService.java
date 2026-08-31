@@ -5,10 +5,9 @@ import app.listful.auth.dto.LoginRequest;
 import app.listful.auth.dto.RegisterRequest;
 import app.listful.domain.User;
 import app.listful.domain.enums.UserRole;
-import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
+import app.listful.settings.SettingService;
 import java.time.Instant;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,23 +15,18 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
-    static final String REGISTRATION_ENABLED_KEY = "registration_enabled";
-
     private final UserRepository userRepository;
-    private final SettingRepository settingRepository;
+    private final SettingService settingService;
     private final PasswordEncoder passwordEncoder;
-    private final boolean defaultRegistrationEnabled;
 
     public AuthService(
         UserRepository userRepository,
-        SettingRepository settingRepository,
-        PasswordEncoder passwordEncoder,
-        @Value("${listful.registration-enabled:false}") boolean defaultRegistrationEnabled
+        SettingService settingService,
+        PasswordEncoder passwordEncoder
     ) {
         this.userRepository = userRepository;
-        this.settingRepository = settingRepository;
+        this.settingService = settingService;
         this.passwordEncoder = passwordEncoder;
-        this.defaultRegistrationEnabled = defaultRegistrationEnabled;
     }
 
     @Transactional
@@ -40,7 +34,7 @@ public class AuthService {
         String username = normalizeUsername(request.username());
         boolean firstUser = userRepository.count() == 0;
 
-        if (!firstUser && !registrationEnabled()) {
+        if (!firstUser && !settingService.registrationEnabled()) {
             throw new RegistrationDisabledException();
         }
 
@@ -73,12 +67,6 @@ public class AuthService {
 
     public AuthUserResponse toResponse(User user) {
         return new AuthUserResponse(user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
-    }
-
-    private boolean registrationEnabled() {
-        return settingRepository.findById(REGISTRATION_ENABLED_KEY)
-            .map(setting -> Boolean.parseBoolean(setting.getValue()))
-            .orElse(defaultRegistrationEnabled);
     }
 
     private String normalizeUsername(String username) {

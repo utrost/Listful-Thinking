@@ -20,6 +20,14 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface AdminSettings {
+  registrationEnabled: boolean;
+}
+
+export interface UpdateAdminSettingsRequest {
+  registrationEnabled: boolean;
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -80,4 +88,15 @@ export async function logout(): Promise<void> {
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
+}
+
+export async function getAdminSettings(): Promise<AdminSettings> {
+  return requestJson<AdminSettings>('/api/v1/admin/settings');
+}
+
+export async function updateAdminSettings(request: UpdateAdminSettingsRequest): Promise<AdminSettings> {
+  return requestJson<AdminSettings>('/api/v1/admin/settings', {
+    method: 'PUT',
+    body: JSON.stringify(request)
+  });
 }

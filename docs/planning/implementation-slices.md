@@ -65,6 +65,8 @@ Tests:
 
 ## Slice 04: Settings and backend i18n
 
+Status: complete.
+
 User outcome:
 
 - Admin can toggle registration and errors can be German/English.

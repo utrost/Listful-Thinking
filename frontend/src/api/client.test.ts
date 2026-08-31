@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getCurrentUser, login, logout, register } from './client';
+import { getAdminSettings, getCurrentUser, login, logout, register, updateAdminSettings } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -40,6 +40,25 @@ describe('auth API client', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/auth/logout', expect.objectContaining({
       method: 'POST',
       credentials: 'include'
+    }));
+  });
+
+  it('reads and updates admin settings with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ registrationEnabled: true })
+    } as Response);
+
+    await getAdminSettings();
+    await updateAdminSettings({ registrationEnabled: true });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/admin/settings', expect.objectContaining({
+      credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/admin/settings', expect.objectContaining({
+      method: 'PUT',
+      credentials: 'include',
+      body: JSON.stringify({ registrationEnabled: true })
     }));
   });
 });

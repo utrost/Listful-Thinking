@@ -20,7 +20,7 @@ Status: complete for MVP foundation.
 
 ## Phase 2: Auth and settings
 
-Status: auth foundation complete; settings/i18n still pending.
+Status: complete for auth, settings, and initial backend i18n.
 
 - Session auth
 - First-user admin bootstrap

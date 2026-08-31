@@ -90,5 +90,32 @@ Authenticated user response:
 
 ## Admin
 
-- `GET /api/v1/admin/users`
-- `PUT /api/v1/admin/settings`
+### `GET /api/v1/admin/settings`
+
+Requires `ADMIN` role.
+
+Response:
+
+```json
+{"registrationEnabled":false}
+```
+
+### `PUT /api/v1/admin/settings`
+
+Requires `ADMIN` role.
+
+Request:
+
+```json
+{"registrationEnabled":true}
+```
+
+Response:
+
+```json
+{"registrationEnabled":true}
+```
+
+### `GET /api/v1/admin/users`
+
+Planned; not implemented yet.

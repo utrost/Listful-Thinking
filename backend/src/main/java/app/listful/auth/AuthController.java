@@ -8,6 +8,8 @@ import app.listful.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -24,9 +26,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
     private final AuthService authService;
+    private final MessageSource messageSource;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, MessageSource messageSource) {
         this.authService = authService;
+        this.messageSource = messageSource;
     }
 
     @PostMapping("/register")
@@ -65,18 +69,22 @@ public class AuthController {
     @ExceptionHandler(RegistrationDisabledException.class)
     ResponseEntity<ApiError> registrationDisabled(RegistrationDisabledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            .body(new ApiError("registration_disabled", ex.getMessage()));
+            .body(new ApiError("registration_disabled", message("auth.registration_disabled")));
     }
 
     @ExceptionHandler(UsernameAlreadyExistsException.class)
     ResponseEntity<ApiError> usernameAlreadyExists(UsernameAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-            .body(new ApiError("username_taken", ex.getMessage()));
+            .body(new ApiError("username_taken", message("auth.username_taken")));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     ResponseEntity<ApiError> badCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(new ApiError("bad_credentials", "Invalid username or password"));
+            .body(new ApiError("bad_credentials", message("auth.bad_credentials")));
+    }
+
+    private String message(String code) {
+        return messageSource.getMessage(code, null, LocaleContextHolder.getLocale());
     }
 }
