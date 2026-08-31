@@ -60,12 +60,15 @@ Status: complete for item due-date scanning, SMTP-or-in-app delivery, unread not
 
 ## Phase 7: Frontend MVP
 
+Status: complete for MVP auth/list/detail/type/share/admin workflows.
+
 - Auth screens
 - Dashboard
 - List detail
 - Type-specific forms
 - Share page
 - Admin/settings
+- Admin user listing
 
 ## Phase 8: Release verification
 

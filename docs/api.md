@@ -299,4 +299,10 @@ Response:
 
 ### `GET /api/v1/admin/users`
 
-Planned; not implemented yet.
+Requires `ADMIN` role. Returns safe user metadata sorted by creation time; password hashes are never serialized.
+
+Response:
+
+```json
+[{"id":"uuid","username":"uwe","email":"uwe@example.test","role":"ADMIN","createdAt":"2026-08-31T17:00:00Z"}]
+```

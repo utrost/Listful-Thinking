@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -59,6 +59,19 @@ describe('auth API client', () => {
       method: 'PUT',
       credentials: 'include',
       body: JSON.stringify({ registrationEnabled: true })
+    }));
+  });
+
+  it('reads admin users with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ([{ id: 'u1', username: 'admin', email: 'admin@example.test', role: 'ADMIN', createdAt: '2027-01-01T00:00:00Z' }])
+    } as Response);
+
+    await getAdminUsers();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/admin/users', expect.objectContaining({
+      credentials: 'include'
     }));
   });
 

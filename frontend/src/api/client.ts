@@ -28,6 +28,14 @@ export interface UpdateAdminSettingsRequest {
   registrationEnabled: boolean;
 }
 
+export interface AdminUserEntry {
+  id: string;
+  username: string;
+  email: string | null;
+  role: 'ADMIN' | 'USER';
+  createdAt: string;
+}
+
 export type ListType = 'WISH' | 'CHORE' | 'EVENT';
 
 export interface ListEntry {
@@ -197,6 +205,10 @@ export async function logout(): Promise<void> {
 
 export async function getAdminSettings(): Promise<AdminSettings> {
   return requestJson<AdminSettings>('/api/v1/admin/settings');
+}
+
+export async function getAdminUsers(): Promise<AdminUserEntry[]> {
+  return requestJson<AdminUserEntry[]>('/api/v1/admin/users');
 }
 
 export async function updateAdminSettings(request: UpdateAdminSettingsRequest): Promise<AdminSettings> {

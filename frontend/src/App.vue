@@ -62,6 +62,27 @@
           </ul>
         </section>
 
+        <section v-if="currentUser.role === 'ADMIN'" class="panel admin-panel">
+          <div class="section-header">
+            <h3>{{ t('admin.title') }}</h3>
+            <button type="button" class="secondary subtle" @click="handleLoadAdminPanel">{{ t('admin.refresh') }}</button>
+          </div>
+          <label class="toggle-row">
+            <input
+              type="checkbox"
+              :checked="adminSettings?.registrationEnabled ?? false"
+              @change="handleToggleRegistration(($event.target as HTMLInputElement).checked)"
+            />
+            <span>{{ t('admin.registrationEnabled') }}</span>
+          </label>
+          <ul class="admin-user-list">
+            <li v-for="user in adminUsers" :key="user.id">
+              <span><strong>{{ user.username }}</strong> · {{ user.role }}</span>
+              <small>{{ user.email ?? t('admin.noEmail') }}</small>
+            </li>
+          </ul>
+        </section>
+
         <form class="inline-form" @submit.prevent="handleCreateList">
           <input v-model="listForm.title" :placeholder="t('lists.newTitle')" required />
           <select v-model="listForm.type">
@@ -152,6 +173,8 @@ import {
   claimPublicItem,
   deleteItem,
   deleteList,
+  getAdminSettings,
+  getAdminUsers,
   getCurrentUser,
   getItems,
   getListShares,
@@ -166,7 +189,10 @@ import {
   revokePublicShare,
   scrapeUrl,
   shareListWithUser,
+  updateAdminSettings,
   type AuthUser,
+  type AdminSettings,
+  type AdminUserEntry,
   type ItemEntry,
   type ListEntry,
   type ListShareEntry,
@@ -183,6 +209,8 @@ const selectedList = ref<ListEntry | null>(null);
 const items = ref<ItemEntry[]>([]);
 const shares = ref<ListShareEntry[]>([]);
 const notifications = ref<NotificationEntry[]>([]);
+const adminSettings = ref<AdminSettings | null>(null);
+const adminUsers = ref<AdminUserEntry[]>([]);
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
 const publicList = ref<PublicListEntry | null>(null);
 const guestName = ref('');
@@ -208,6 +236,7 @@ onMounted(async () => {
     currentUser.value = await getCurrentUser();
     await loadLists();
     await loadNotifications();
+    await maybeLoadAdminPanel();
   } catch {
     currentUser.value = null;
   }
@@ -219,6 +248,7 @@ async function handleRegister() {
     registerForm.password = '';
     await loadLists();
     await loadNotifications();
+    await maybeLoadAdminPanel();
   });
 }
 
@@ -228,6 +258,7 @@ async function handleLogin() {
     loginForm.password = '';
     await loadLists();
     await loadNotifications();
+    await maybeLoadAdminPanel();
   });
 }
 
@@ -239,6 +270,8 @@ async function handleLogout() {
   items.value = [];
   shares.value = [];
   notifications.value = [];
+  adminSettings.value = null;
+  adminUsers.value = [];
 }
 
 async function loadLists() {
@@ -287,6 +320,30 @@ async function loadShares() {
 
 async function loadNotifications() {
   notifications.value = await getNotifications();
+}
+
+async function maybeLoadAdminPanel() {
+  if (currentUser.value?.role === 'ADMIN') {
+    await handleLoadAdminPanel();
+  } else {
+    adminSettings.value = null;
+    adminUsers.value = [];
+  }
+}
+
+async function handleLoadAdminPanel() {
+  await run(async () => {
+    const [settings, users] = await Promise.all([getAdminSettings(), getAdminUsers()]);
+    adminSettings.value = settings;
+    adminUsers.value = users;
+  });
+}
+
+async function handleToggleRegistration(registrationEnabled: boolean) {
+  await run(async () => {
+    adminSettings.value = await updateAdminSettings({ registrationEnabled });
+    adminUsers.value = await getAdminUsers();
+  });
 }
 
 async function handleMarkNotificationRead(notificationId: string) {

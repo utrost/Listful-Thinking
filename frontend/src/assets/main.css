@@ -123,7 +123,8 @@ h3 {
 .list-cards,
 .item-list,
 .chip-list,
-.notification-list {
+.notification-list,
+.admin-user-list {
   display: grid;
   gap: 0.7rem;
   padding: 0;
@@ -154,7 +155,8 @@ small,
 
 .item-list li,
 .chip-list li,
-.notification-list li {
+.notification-list li,
+.admin-user-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -188,6 +190,21 @@ small,
 button.subtle {
   padding: 0.45rem 0.75rem;
   font-size: 0.85rem;
+}
+
+.admin-panel {
+  border-color: #d9b56f;
+  background: #fff8e8;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.toggle-row input {
+  min-width: auto;
 }
 
 @media (max-width: 640px) {

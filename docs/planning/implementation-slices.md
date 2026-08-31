@@ -281,6 +281,8 @@ Tests:
 
 ## Slice 14: Admin and frontend completion
 
+Status: complete.
+
 User outcome:
 
 - Admin can manage registration and users from UI.

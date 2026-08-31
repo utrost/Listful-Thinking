@@ -46,5 +46,11 @@
   "notifications": {
     "title": "Notifications",
     "markRead": "Mark read"
+  },
+  "admin": {
+    "title": "Admin",
+    "refresh": "Refresh admin panel",
+    "registrationEnabled": "Registration enabled",
+    "noEmail": "No email"
   }
 }

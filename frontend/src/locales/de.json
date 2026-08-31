@@ -46,5 +46,11 @@
   "notifications": {
     "title": "Benachrichtigungen",
     "markRead": "Als gelesen markieren"
+  },
+  "admin": {
+    "title": "Administration",
+    "refresh": "Adminbereich aktualisieren",
+    "registrationEnabled": "Registrierung aktiviert",
+    "noEmail": "Keine E-Mail"
   }
 }

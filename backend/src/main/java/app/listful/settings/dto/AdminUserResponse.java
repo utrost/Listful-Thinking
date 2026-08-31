@@ -1,0 +1,12 @@
+package app.listful.settings.dto;
+
+import java.time.Instant;
+
+public record AdminUserResponse(
+    String id,
+    String username,
+    String email,
+    String role,
+    Instant createdAt
+) {
+}
