@@ -1,0 +1,104 @@
+# Permissions and Sharing
+
+Authorization must be centralized in a backend `ListAccessService`. Controllers should not duplicate ownership/share logic.
+
+## Actor permissions matrix
+
+### Owner
+
+Can:
+
+- View owned list and items.
+- Create, edit, and delete owned lists.
+- Add, edit, and delete items in owned lists.
+- Generate and revoke public share tokens.
+- Add and revoke internal shares.
+- Mark items purchased.
+
+Cannot:
+
+- Access another private list without share/admin-specific future tooling.
+
+### Internal shared user
+
+MVP can:
+
+- View explicitly shared list and items.
+
+MVP cannot:
+
+- Edit list metadata.
+- Delete list.
+- Add items.
+- Edit items.
+- Delete items.
+- Manage shares.
+- Generate/revoke public token.
+
+Future extension point:
+
+- `list_shares` can later gain a `permission` column such as `READ`, `CONTRIBUTE`, `MANAGE_ITEMS`.
+
+### Guest via public token
+
+Can:
+
+- View safe public representation of one public list.
+- Claim an open item on that list with a guest name.
+
+Cannot:
+
+- Login implicitly.
+- Browse all public lists.
+- View owner email or internal IDs.
+- View internal shares.
+- Edit list metadata.
+- Add/delete items.
+- Mark purchased in MVP.
+- Claim items from another list.
+
+### Admin
+
+Can:
+
+- View users.
+- Read/update global settings.
+- Enable/disable registration.
+
+MVP cannot by default:
+
+- Browse or mutate private list content owned by other users.
+
+Future extension point:
+
+- If moderation/support access is added, it should be explicit, audited, and documented separately.
+
+## Required authorization checks
+
+All list and item operations should resolve:
+
+- Current actor.
+- Target list.
+- Access mode: owner, shared read, public guest, none.
+- Requested operation.
+
+Every item operation must validate that the item belongs to the list/token context used for authorization.
+
+## Public DTO rules
+
+Public share responses must exclude:
+
+- Owner email.
+- User IDs.
+- Internal share records.
+- Settings.
+- Notification data.
+- Admin flags.
+- Password hashes.
+
+## Error behavior
+
+- Use 404 for missing resources and private resources that should not be discoverable.
+- Use 403 only when the user is authenticated and allowed to know the resource exists.
+- Use 409 for duplicate guest claims or invalid status transitions.
+- Localize error messages through backend `MessageSource`.

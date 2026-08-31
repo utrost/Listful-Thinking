@@ -1,6 +1,10 @@
 # MVP Roadmap
 
+The detailed requirements spine now lives under `docs/product/`, `docs/domain/`, `docs/architecture/`, and `docs/planning/`.
+
 ## Phase 0: Scaffold
+
+Status: complete in the initial repository scaffold.
 
 - Repository skeleton
 - Spring Boot backend shell
@@ -8,6 +12,8 @@
 - Single-container Docker build
 
 ## Phase 1: Persistence
+
+Next implementation phase.
 
 - Flyway SQLite schema
 - JPA entities and repositories
@@ -55,3 +61,7 @@
 - Docker smoke script
 - README quickstart
 - Security test matrix
+
+## Implementation slices
+
+Use [planning/implementation-slices.md](planning/implementation-slices.md) as the active development queue. It converts this roadmap into vertical testable slices.

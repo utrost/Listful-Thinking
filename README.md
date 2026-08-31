@@ -42,6 +42,26 @@ The first registered user will become `ADMIN`. Public registration is disabled b
 
 ## Documentation
 
+Start here:
+
+- [Product vision](docs/product/vision.md)
+- [Personas and actors](docs/product/personas.md)
+- [Terminology](docs/product/terminology.md)
+- [User stories](docs/product/user-stories.md)
+- [MVP acceptance criteria](docs/product/acceptance-criteria.md)
+
+Domain and architecture:
+
 - [Architecture](docs/architecture.md)
 - [API](docs/api.md)
+- [Domain model](docs/domain/domain-model.md)
+- [Permissions and sharing](docs/domain/permissions-and-sharing.md)
+- [List types](docs/domain/list-types.md)
+- [Security architecture](docs/architecture/security.md)
+- [Architecture decisions](docs/architecture/architecture-decision-records.md)
+
+Planning:
+
 - [MVP roadmap](docs/mvp-roadmap.md)
+- [MVP scope](docs/planning/mvp-scope.md)
+- [Implementation slices](docs/planning/implementation-slices.md)
