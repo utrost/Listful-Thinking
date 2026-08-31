@@ -32,9 +32,14 @@
     "delete": "Delete"
   },
   "sharing": {
-    "title": "Internal sharing",
+    "title": "Sharing",
     "username": "Username to share with",
     "share": "Share read-only",
-    "revoke": "Revoke"
+    "revoke": "Revoke",
+    "createPublic": "Create public link",
+    "revokePublic": "Revoke public link",
+    "publicList": "Shared list",
+    "guestName": "Your name",
+    "claim": "Claim"
   }
 }

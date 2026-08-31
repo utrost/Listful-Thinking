@@ -169,6 +169,20 @@ small,
   margin: 0 0 0.75rem;
 }
 
+.button-row,
+.claim-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.copyable-link {
+  overflow-wrap: anywhere;
+  color: #315c48;
+  font-weight: 700;
+}
+
 button.subtle {
   padding: 0.45rem 0.75rem;
   font-size: 0.85rem;

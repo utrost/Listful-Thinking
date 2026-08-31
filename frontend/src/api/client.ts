@@ -84,6 +84,36 @@ export interface ShareListRequest {
   username: string;
 }
 
+export interface PublicShareToken {
+  listId: string;
+  publicList: boolean;
+  shareToken: string;
+  shareUrl: string;
+}
+
+export interface PublicItemEntry {
+  id: string;
+  name: string;
+  url: string | null;
+  imageUrl: string | null;
+  price: number | null;
+  status: ItemStatus;
+  dueDate: string | null;
+  reservedByGuest: string | null;
+}
+
+export interface PublicListEntry {
+  title: string;
+  description: string | null;
+  type: ListType;
+  targetDate: string | null;
+  items: PublicItemEntry[];
+}
+
+export interface GuestClaimRequest {
+  guestName: string;
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -239,4 +269,32 @@ export async function revokeListShare(listId: string, username: string): Promise
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
+}
+
+export async function createPublicShare(listId: string): Promise<PublicShareToken> {
+  return requestJson<PublicShareToken>(`/api/v1/lists/${listId}/public-share`, {
+    method: 'POST'
+  });
+}
+
+export async function revokePublicShare(listId: string): Promise<void> {
+  const response = await fetch(`/api/v1/lists/${listId}/public-share`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+}
+
+export async function getPublicShare(token: string): Promise<PublicListEntry> {
+  return requestJson<PublicListEntry>(`/api/v1/share/${encodeURIComponent(token)}`);
+}
+
+export async function claimPublicItem(token: string, itemId: string, request: GuestClaimRequest): Promise<PublicItemEntry> {
+  return requestJson<PublicItemEntry>(`/api/v1/share/${encodeURIComponent(token)}/items/${itemId}/claim`, {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
 }

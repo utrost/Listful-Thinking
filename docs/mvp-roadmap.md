@@ -38,6 +38,8 @@ Status: complete for owner list/item CRUD, type-specific MVP validation, and int
 
 ## Phase 4: Public sharing
 
+Status: complete for public token lifecycle, safe guest read DTOs, and one-time wishlist claiming.
+
 - Cryptographic share tokens
 - Guest read endpoint
 - Guest claim endpoint

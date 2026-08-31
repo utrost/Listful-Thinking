@@ -80,6 +80,14 @@ Future extension point:
 - Shared users are intentionally read-only for MVP: list update/delete, item create/update/delete, and share management still require ownership.
 - Non-owners and non-shared users receive `404` for private resources to avoid leaking existence.
 
+## Implemented public sharing API behavior
+
+- Owners create/revoke public guest links with `POST/DELETE /api/v1/lists/{id}/public-share`.
+- Tokens are URL-safe cryptographic random strings and are unique in the local database.
+- Public API responses use dedicated DTOs and omit owner email, owner ID, internal shares, settings, admin flags, and password data.
+- Guest claiming is limited to WISH lists and only items that belong to the token's list.
+- Duplicate claims return `409 item_already_claimed`; revoked or mismatched tokens/items return `404`.
+
 ## Required authorization checks
 
 All list and item operations should resolve:

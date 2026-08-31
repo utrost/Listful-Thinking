@@ -180,8 +180,47 @@ Revokes read access for the named registered user. Returns `204 No Content`.
 
 ## Public access
 
-- `GET /api/v1/share/{token}`
-- `POST /api/v1/share/{token}/items/{itemId}/claim`
+Public endpoints do not require authentication. Browser links use `/s/{token}` and are served by the SPA; API clients use `/api/v1/share/{token}`.
+
+### `POST /api/v1/lists/{id}/public-share`
+
+Requires ownership. Creates or returns an existing public token.
+
+Response:
+
+```json
+{"listId":"uuid","publicList":true,"shareToken":"urlsafetoken","shareUrl":"/s/urlsafetoken"}
+```
+
+### `DELETE /api/v1/lists/{id}/public-share`
+
+Requires ownership. Revokes the current public token. Previously issued URLs then return `404`.
+
+### `GET /api/v1/share/{token}`
+
+Returns a safe public representation of a public list and its items. It excludes owner email, owner ID, internal shares, settings, and admin data.
+
+Response:
+
+```json
+{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"items":[{"id":"uuid","name":"Book","url":"https://example.test/book","imageUrl":null,"price":19.99,"status":"OPEN","dueDate":null,"reservedByGuest":null}]}
+```
+
+### `POST /api/v1/share/{token}/items/{itemId}/claim`
+
+Claims an open wishlist item for a guest.
+
+Request:
+
+```json
+{"guestName":"Annette"}
+```
+
+Responses:
+
+- `200 OK` with updated public item.
+- `404 Not Found` when token/item do not match or token was revoked.
+- `409 Conflict` with `item_already_claimed` when the item is no longer open.
 
 ## Admin
 

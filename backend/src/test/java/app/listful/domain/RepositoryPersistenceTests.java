@@ -42,7 +42,7 @@ class RepositoryPersistenceTests {
         User sharedUser = userRepository.save(new User("annette", "annette@example.test", "hash2", UserRole.USER, now));
 
         ListEntity list = listRepository.save(new ListEntity(owner, "Birthday", "Ideas", ListType.WISH, now));
-        list.enablePublicShare("abc123", now.plusSeconds(86400));
+        list.enablePublicShare("abc123");
         list = listRepository.save(list);
 
         Item item = itemRepository.save(new Item(list, "Plotter pen", now));

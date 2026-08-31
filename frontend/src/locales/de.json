@@ -32,9 +32,14 @@
     "delete": "Löschen"
   },
   "sharing": {
-    "title": "Intern teilen",
+    "title": "Teilen",
     "username": "Benutzername zum Teilen",
     "share": "Lesend teilen",
-    "revoke": "Entziehen"
+    "revoke": "Entziehen",
+    "createPublic": "Öffentlichen Link erstellen",
+    "revokePublic": "Öffentlichen Link entziehen",
+    "publicList": "Geteilte Liste",
+    "guestName": "Dein Name",
+    "claim": "Reservieren"
   }
 }

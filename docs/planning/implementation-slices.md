@@ -171,6 +171,8 @@ Tests:
 
 ## Slice 09: Public share tokens
 
+Status: complete.
+
 User outcome:
 
 - Owner can create/revoke a public guest link.
@@ -190,6 +192,8 @@ Tests:
 - Old token fails after revoke.
 
 ## Slice 10: Public guest view and claim
+
+Status: complete.
 
 User outcome:
 

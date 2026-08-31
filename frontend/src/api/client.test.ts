@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, login, logout, register, revokeListShare, shareListWithUser, updateAdminSettings, updateItem, updateList } from './client';
+import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, getPublicShare, login, logout, register, revokeListShare, revokePublicShare, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -137,6 +137,33 @@ describe('auth API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/lists/l1/shares/shared', expect.objectContaining({
       method: 'DELETE',
       credentials: 'include'
+    }));
+  });
+
+  it('calls public share token and guest endpoints', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ shareToken: 'tok123', title: 'Birthday', items: [] })
+    } as Response);
+
+    await createPublicShare('l1');
+    await revokePublicShare('l1');
+    await getPublicShare('tok123');
+    await claimPublicItem('tok123', 'i1', { guestName: 'Annette' });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/lists/l1/public-share', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/lists/l1/public-share', expect.objectContaining({
+      method: 'DELETE',
+      credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/share/tok123', expect.objectContaining({ credentials: 'include' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/v1/share/tok123/items/i1/claim', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ guestName: 'Annette' })
     }));
   });
 });

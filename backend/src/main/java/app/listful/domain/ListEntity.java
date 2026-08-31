@@ -57,10 +57,9 @@ public class ListEntity {
         this.publicFlag = 0;
     }
 
-    public void enablePublicShare(String shareToken, Instant targetDate) {
+    public void enablePublicShare(String shareToken) {
         this.shareToken = shareToken;
         this.publicFlag = 1;
-        this.targetDate = targetDate;
     }
 
     public void disablePublicShare() {

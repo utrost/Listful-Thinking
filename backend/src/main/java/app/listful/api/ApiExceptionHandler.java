@@ -20,6 +20,12 @@ public class ApiExceptionHandler {
             .body(new ApiError("validation_failed", ex.getMessage()));
     }
 
+    @ExceptionHandler(ConflictException.class)
+    ResponseEntity<ApiError> conflict(ConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiError(ex.getCode(), ex.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiError> beanValidationFailed(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()

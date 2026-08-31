@@ -12,7 +12,24 @@
 
       <p v-if="message" class="status">{{ message }}</p>
 
-      <section v-if="!currentUser" class="panel-grid">
+      <section v-if="publicToken" class="panel public-panel">
+        <h2>{{ publicList?.title ?? t('sharing.publicList') }}</h2>
+        <p v-if="publicList?.description">{{ publicList.description }}</p>
+        <ul class="item-list">
+          <li v-for="item in publicList?.items ?? []" :key="item.id">
+            <span>
+              <strong>{{ item.name }}</strong>
+              <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
+            </span>
+            <form v-if="item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
+              <input v-model="guestName" :placeholder="t('sharing.guestName')" required />
+              <button type="submit">{{ t('sharing.claim') }}</button>
+            </form>
+          </li>
+        </ul>
+      </section>
+
+      <section v-else-if="!currentUser" class="panel-grid">
         <form class="panel" @submit.prevent="handleRegister">
           <h2>{{ t('auth.register') }}</h2>
           <label>{{ t('auth.username') }}<input v-model="registerForm.username" required minlength="3" /></label>
@@ -71,6 +88,11 @@
 
             <section class="share-panel">
               <h4>{{ t('sharing.title') }}</h4>
+              <div class="button-row">
+                <button type="button" class="secondary" @click="handleCreatePublicShare">{{ t('sharing.createPublic') }}</button>
+                <button v-if="selectedList.publicList" type="button" class="danger subtle" @click="handleRevokePublicShare">{{ t('sharing.revokePublic') }}</button>
+              </div>
+              <p v-if="selectedList.publicList && selectedList.shareToken" class="copyable-link">{{ publicShareUrl(selectedList.shareToken) }}</p>
               <form class="inline-form" @submit.prevent="handleShareList">
                 <input v-model="shareForm.username" :placeholder="t('sharing.username')" required />
                 <button type="submit">{{ t('sharing.share') }}</button>
@@ -115,22 +137,27 @@ import { useI18n } from 'vue-i18n';
 import {
   createItem,
   createList,
+  createPublicShare,
+  claimPublicItem,
   deleteItem,
   deleteList,
   getCurrentUser,
   getItems,
   getListShares,
   getLists,
+  getPublicShare,
   login,
   logout,
   register,
   revokeListShare,
+  revokePublicShare,
   shareListWithUser,
   type AuthUser,
   type ItemEntry,
   type ListEntry,
   type ListShareEntry,
-  type ListType
+  type ListType,
+  type PublicListEntry
 } from './api/client';
 import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
 
@@ -140,6 +167,9 @@ const lists = ref<ListEntry[]>([]);
 const selectedList = ref<ListEntry | null>(null);
 const items = ref<ItemEntry[]>([]);
 const shares = ref<ListShareEntry[]>([]);
+const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
+const publicList = ref<PublicListEntry | null>(null);
+const guestName = ref('');
 const message = ref('');
 
 const registerForm = reactive({ username: '', email: '', password: '' });
@@ -151,6 +181,13 @@ const newListRules = computed(() => listFormRulesForType(listForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
 
 onMounted(async () => {
+  if (publicToken) {
+    await run(async () => {
+      publicList.value = await getPublicShare(publicToken);
+    });
+    return;
+  }
+
   try {
     currentUser.value = await getCurrentUser();
     await loadLists();
@@ -243,6 +280,37 @@ async function handleRevokeShare(username: string) {
     await revokeListShare(selectedList.value!.id, username);
     shares.value = shares.value.filter((share) => share.username !== username);
   });
+}
+
+async function handleCreatePublicShare() {
+  if (!selectedList.value) return;
+  await run(async () => {
+    const token = await createPublicShare(selectedList.value!.id);
+    selectedList.value = { ...selectedList.value!, publicList: token.publicList, shareToken: token.shareToken };
+    lists.value = lists.value.map((list) => list.id === selectedList.value!.id ? selectedList.value! : list);
+  });
+}
+
+async function handleRevokePublicShare() {
+  if (!selectedList.value) return;
+  await run(async () => {
+    await revokePublicShare(selectedList.value!.id);
+    selectedList.value = { ...selectedList.value!, publicList: false, shareToken: null };
+    lists.value = lists.value.map((list) => list.id === selectedList.value!.id ? selectedList.value! : list);
+  });
+}
+
+async function handleClaimPublicItem(itemId: string) {
+  if (!publicToken) return;
+  await run(async () => {
+    await claimPublicItem(publicToken, itemId, { guestName: guestName.value });
+    guestName.value = '';
+    publicList.value = await getPublicShare(publicToken);
+  });
+}
+
+function publicShareUrl(token: string) {
+  return `${window.location.origin}/s/${token}`;
 }
 
 async function handleCreateItem() {
