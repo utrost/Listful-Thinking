@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+project="${LISTFUL_SMOKE_PROJECT:-listful-thinking-smoke}"
+port="${LISTFUL_SMOKE_PORT:-18080}"
+base_url="http://localhost:${port}"
+workdir="$(mktemp -d)"
+compose_file="$workdir/docker-compose.smoke.yml"
+admin_cookie="$workdir/admin.cookies"
+user_cookie="$workdir/user.cookies"
+
+cleanup() {
+  if [ "${LISTFUL_KEEP_SMOKE:-false}" = "true" ]; then
+    echo "Keeping smoke stack '$project' for debugging. Remove with: docker compose -p '$project' -f '$compose_file' down -v"
+    echo "Temporary smoke files kept in: $workdir"
+    return
+  fi
+  docker compose -p "$project" -f "$compose_file" down -v --remove-orphans >/dev/null 2>&1 || true
+  rm -rf "$workdir"
+}
+trap cleanup EXIT
+
+require_command() {
+  command -v "$1" >/dev/null 2>&1 || { echo "Missing required command: $1" >&2; exit 1; }
+}
+
+json_field() {
+  python3 -c 'import json, sys
+path = sys.argv[1].split(".")
+data = json.load(sys.stdin)
+for part in path:
+    data = data[int(part)] if isinstance(data, list) else data[part]
+print(data)' "$1"
+}
+
+assert_json() {
+  python3 -c 'import json, sys
+expr = sys.argv[1]
+data = json.load(sys.stdin)
+if not eval(expr, {"__builtins__": {"all": all, "len": len}}, {"data": data}):
+    raise SystemExit(f"JSON assertion failed: {expr}; data={data!r}")' "$1"
+}
+
+curl_json() {
+  curl -fsS "$@"
+}
+
+require_command docker
+require_command curl
+require_command python3
+
+docker compose version >/dev/null
+
+cat > "$compose_file" <<YAML
+services:
+  listful-thinking:
+    build: $repo_root
+    image: listful-thinking:smoke
+    ports:
+      - "$port:8080"
+    environment:
+      SYSTEM_LANG: en
+      REGISTRATION_ENABLED: "true"
+      MAIL_HOST: ""
+      MAIL_PORT: ""
+      MAIL_USER: ""
+      MAIL_PASS: ""
+    volumes:
+      - listful-smoke-data:/app/data
+volumes:
+  listful-smoke-data:
+YAML
+
+echo "Starting smoke stack '$project' on $base_url"
+docker compose -p "$project" -f "$compose_file" down -v --remove-orphans >/dev/null 2>&1 || true
+docker compose -p "$project" -f "$compose_file" up --build -d
+
+for attempt in $(seq 1 90); do
+  if curl -fsS "$base_url/api/v1/health" >/dev/null 2>&1; then
+    break
+  fi
+  if [ "$attempt" = 90 ]; then
+    docker compose -p "$project" -f "$compose_file" logs --no-color listful-thinking >&2 || true
+    echo "Timed out waiting for health endpoint" >&2
+    exit 1
+  fi
+  sleep 1
+done
+
+uid_gid="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'printf "%s:%s" "$(id -u)" "$(id -g)"')"
+[ "$uid_gid" = "1000:1000" ] || { echo "Expected runtime UID:GID 1000:1000, got $uid_gid" >&2; exit 1; }
+
+curl_json -c "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"username":"admin","email":"admin@example.test","password":"correct horse battery staple"}' \
+  "$base_url/api/v1/auth/register" | assert_json 'data["role"] == "ADMIN"'
+
+curl_json -c "$user_cookie" -H 'Content-Type: application/json' \
+  -d '{"username":"martha","email":"martha@example.test","password":"another good password"}' \
+  "$base_url/api/v1/auth/register" | assert_json 'data["role"] == "USER"'
+
+curl_json -b "$admin_cookie" "$base_url/api/v1/admin/users" \
+  | assert_json 'len(data) == 2 and data[0]["role"] == "ADMIN" and data[1]["role"] == "USER" and all("passwordHash" not in user for user in data)'
+
+curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"registrationEnabled":false}' \
+  "$base_url/api/v1/admin/settings" | assert_json 'data["registrationEnabled"] is False'
+
+list_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"title":"Birthday","description":"Gift ideas","type":"WISH"}' \
+  "$base_url/api/v1/lists")"
+list_id="$(printf '%s' "$list_json" | json_field id)"
+
+item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Book","url":"https://example.test/book","price":19.99}' \
+  "$base_url/api/v1/lists/$list_id/items")"
+item_id="$(printf '%s' "$item_json" | json_field id)"
+
+share_json="$(curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/lists/$list_id/public-share")"
+token="$(printf '%s' "$share_json" | json_field shareToken)"
+
+curl_json "$base_url/api/v1/share/$token" \
+  | assert_json 'data["title"] == "Birthday" and len(data["items"]) == 1 and data["items"][0]["status"] == "OPEN"'
+
+curl_json -H 'Content-Type: application/json' \
+  -d '{"guestName":"Annette"}' \
+  "$base_url/api/v1/share/$token/items/$item_id/claim" | assert_json 'data["status"] == "CLAIMED" and data["reservedByGuest"] == "Annette"'
+
+[ -f "$workdir/../nonexistent" ] || true
+sqlite_path="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'test -f /app/data/listful-thinking.sqlite && echo present')"
+[ "$sqlite_path" = "present" ] || { echo "SQLite database missing in /app/data" >&2; exit 1; }
+
+echo "Smoke OK: health, non-root runtime, admin/users/settings, list/item/public claim, SQLite volume"

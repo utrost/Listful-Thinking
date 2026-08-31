@@ -298,6 +298,8 @@ Tests:
 
 ## Slice 15: Docker smoke and release docs
 
+Status: complete.
+
 User outcome:
 
 - A self-hoster can trust the README quickstart.

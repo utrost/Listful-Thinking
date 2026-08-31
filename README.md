@@ -14,6 +14,14 @@ docker compose up --build
 
 Then open <http://localhost:8080>.
 
+To run an automated container smoke test instead:
+
+```bash
+scripts/smoke.sh
+```
+
+The smoke script builds with Docker Compose, starts an isolated stack, verifies non-root runtime and the SQLite volume, then exercises auth, admin settings/users, list/item creation, public sharing, and guest claiming.
+
 The app uses one persistent volume mount:
 
 - Docker Compose default: named volume `listful-data:/app/data`
@@ -61,6 +69,7 @@ Domain and architecture:
 - [Reminders and notifications](docs/domain/reminders.md)
 - [Security architecture](docs/architecture/security.md)
 - [Architecture decisions](docs/architecture/architecture-decision-records.md)
+- [Release verification](docs/release.md)
 
 Planning:
 

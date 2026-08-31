@@ -72,6 +72,8 @@ Status: complete for MVP auth/list/detail/type/share/admin workflows.
 
 ## Phase 8: Release verification
 
+Status: complete for MVP release smoke and docs.
+
 - Docker smoke script
 - README quickstart
 - Security test matrix
