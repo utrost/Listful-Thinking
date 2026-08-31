@@ -1,6 +1,10 @@
 package app.listful.items;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.reset;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,12 +16,19 @@ import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
 import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
+import app.listful.scraping.ScraperService;
+import app.listful.scraping.dto.ScrapeResponse;
 import com.jayway.jsonpath.JsonPath;
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,9 +47,11 @@ class ItemControllerTests {
     @Autowired ListRepository listRepository;
     @Autowired UserRepository userRepository;
     @Autowired SettingRepository settingRepository;
+    @MockBean ScraperService scraperService;
 
     @BeforeEach
     void cleanDatabase() {
+        reset(scraperService);
         itemRepository.deleteAll();
         listRepository.deleteAll();
         userRepository.deleteAll();
@@ -96,6 +109,75 @@ class ItemControllerTests {
 
         mockMvc.perform(delete("/api/v1/items/{itemId}", itemId).session(other))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void creatingWishItemWithOnlyUrlCreatesPlaceholderAndEnrichesMetadataAsynchronously() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createList(owner, "Birthday");
+        CountDownLatch scraperStarted = new CountDownLatch(1);
+        CountDownLatch releaseScraper = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            scraperStarted.countDown();
+            releaseScraper.await(2, TimeUnit.SECONDS);
+            return new ScrapeResponse("Fetched camera", "Fetched description", "https://shop.test/camera.jpg", new BigDecimal("49.95"));
+        }).when(scraperService).scrape(eq("https://shop.test/camera"));
+
+        MvcResult result = mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"url\":\"https://shop.test/camera\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Loading metadata…"))
+            .andExpect(jsonPath("$.url").value("https://shop.test/camera"))
+            .andExpect(jsonPath("$.imageUrl").doesNotExist())
+            .andReturn();
+        String itemId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+
+        if (!scraperStarted.await(2, TimeUnit.SECONDS)) {
+            throw new AssertionError("scraper did not start asynchronously");
+        }
+        releaseScraper.countDown();
+
+        awaitItemName(itemId, "Fetched camera");
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].name").value("Fetched camera"))
+            .andExpect(jsonPath("$[0].imageUrl").value("https://shop.test/camera.jpg"))
+            .andExpect(jsonPath("$[0].price").value(49.95));
+    }
+
+    @Test
+    void urlOnlyEnrichmentFailureLeavesPlaceholderItem() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createList(owner, "Birthday");
+        doThrow(new RuntimeException("offline")).when(scraperService).scrape(eq("https://shop.test/offline"));
+
+        MvcResult result = mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"url\":\"https://shop.test/offline\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Loading metadata…"))
+            .andReturn();
+        String itemId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+
+        Thread.sleep(Duration.ofMillis(200).toMillis());
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].id").value(itemId))
+            .andExpect(jsonPath("$[0].name").value("Loading metadata…"))
+            .andExpect(jsonPath("$[0].url").value("https://shop.test/offline"));
+    }
+
+    private void awaitItemName(String itemId, String expectedName) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+        while (System.nanoTime() < deadline) {
+            String currentName = itemRepository.findById(itemId).orElseThrow().getName();
+            if (expectedName.equals(currentName)) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("item was not enriched within timeout");
     }
 
     private String createItem(MockHttpSession session, String listId, String name) throws Exception {

@@ -46,7 +46,7 @@ Status: complete for public token lifecycle, safe guest read DTOs, and one-time 
 
 ## Phase 5: Scraping
 
-Status: direct URL metadata preview complete; async URL-only item enrichment pending.
+Status: complete for direct URL metadata preview and async URL-only item enrichment.
 
 - Jsoup metadata scraping
 - Async URL-only item enrichment

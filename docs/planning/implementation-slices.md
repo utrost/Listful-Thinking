@@ -235,6 +235,8 @@ Tests:
 
 ## Slice 12: Async URL-only enrichment
 
+Status: complete.
+
 User outcome:
 
 - Pasting only a URL creates an item and later fills metadata.

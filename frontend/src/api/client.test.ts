@@ -118,6 +118,21 @@ describe('auth API client', () => {
     }));
   });
 
+  it('allows creating a URL-only wishlist item payload', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'i2', listId: 'l1', name: 'Loading metadata…', url: 'https://shop.test/camera', status: 'OPEN' })
+    } as Response);
+
+    await createItem('l1', { url: 'https://shop.test/camera' });
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/lists/l1/items', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ url: 'https://shop.test/camera' })
+    }));
+  });
+
   it('calls list share endpoints with credentials included', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,

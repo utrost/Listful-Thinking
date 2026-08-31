@@ -106,7 +106,7 @@
             </section>
 
             <form class="inline-form" @submit.prevent="handleCreateItem">
-              <input v-model="itemForm.name" :placeholder="t('items.newName')" required />
+              <input v-model="itemForm.name" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" />
               <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" />
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
               <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :placeholder="t('items.imageUrl')" />
@@ -336,7 +336,7 @@ async function handleCreateItem() {
   await run(async () => {
     const fields = currentItemFields.value;
     const created = await createItem(selectedList.value!.id, {
-      name: itemForm.name,
+      name: itemForm.name || undefined,
       url: fields.showUrl ? itemForm.url || undefined : undefined,
       imageUrl: fields.showImageUrl ? itemForm.imageUrl || undefined : undefined,
       price: fields.showPrice ? itemForm.price : undefined,
@@ -345,6 +345,9 @@ async function handleCreateItem() {
     });
     resetItemForm();
     items.value = [created, ...items.value];
+    if (created.name === 'Loading metadata…') {
+      window.setTimeout(() => void loadItems(), 1500);
+    }
   });
 }
 

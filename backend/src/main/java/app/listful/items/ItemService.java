@@ -20,10 +20,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ItemService {
     private final ItemRepository itemRepository;
     private final ListAccessService listAccessService;
+    private final ItemEnrichmentService itemEnrichmentService;
 
-    public ItemService(ItemRepository itemRepository, ListAccessService listAccessService) {
+    public ItemService(ItemRepository itemRepository, ListAccessService listAccessService, ItemEnrichmentService itemEnrichmentService) {
         this.itemRepository = itemRepository;
         this.listAccessService = listAccessService;
+        this.itemEnrichmentService = itemEnrichmentService;
     }
 
     @Transactional(readOnly = true)
@@ -38,9 +40,14 @@ public class ItemService {
     public ItemResponse create(User actor, String listId, ItemRequest request) {
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
         validateForListType(list, request);
-        Item item = new Item(list, request.name(), Instant.now());
-        item.update(request.name(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
-        return toResponse(itemRepository.save(item));
+        String itemName = itemNameFor(request);
+        Item item = new Item(list, itemName, Instant.now());
+        item.update(itemName, request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
+        Item saved = itemRepository.save(item);
+        if (shouldEnrichUrlOnlyItem(list, request)) {
+            itemEnrichmentService.enrichUrlOnlyItem(saved.getId(), request.url().trim());
+        }
+        return toResponse(saved);
     }
 
     @Transactional
@@ -68,12 +75,29 @@ public class ItemService {
 
     private void validateForListType(ListEntity list, ItemRequest request) {
         ListType listType = list.getType();
+        if (!hasText(request.name()) && !isWishUrlOnlyCandidate(list, request)) {
+            throw new ValidationFailedException("Item name is required.");
+        }
         if (listType != ListType.WISH && hasShoppingFields(request)) {
             throw new ValidationFailedException("Shopping fields are only allowed on wish lists.");
         }
         if (listType == ListType.EVENT && hasText(request.recurrenceRule())) {
             throw new ValidationFailedException("Recurrence rules are only allowed on chore items.");
         }
+    }
+
+    private String itemNameFor(ItemRequest request) {
+        return hasText(request.name()) ? request.name().trim() : ItemEnrichmentService.PLACEHOLDER_NAME;
+    }
+
+    private boolean shouldEnrichUrlOnlyItem(ListEntity list, ItemRequest request) {
+        return isWishUrlOnlyCandidate(list, request);
+    }
+
+    private boolean isWishUrlOnlyCandidate(ListEntity list, ItemRequest request) {
+        return list.getType() == ListType.WISH
+            && !hasText(request.name())
+            && hasText(request.url());
     }
 
     private boolean hasShoppingFields(ItemRequest request) {

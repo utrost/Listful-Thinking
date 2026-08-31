@@ -19,7 +19,7 @@ Implemented:
 
 When an item is created with a URL and no name:
 
-1. Create the item immediately with a placeholder name derived from URL/host.
+1. Create the item immediately with the placeholder name `Loading metadata…`.
 2. Return the created item.
 3. Start asynchronous scraping.
 4. Update item metadata when scraping succeeds.

@@ -64,7 +64,7 @@ export interface ItemEntry {
 }
 
 export interface ItemRequest {
-  name: string;
+  name?: string;
   url?: string;
   imageUrl?: string;
   price?: number;
