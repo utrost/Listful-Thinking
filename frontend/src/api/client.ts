@@ -48,6 +48,31 @@ export interface ListRequest {
   targetDate?: string;
 }
 
+export type ItemStatus = 'OPEN' | 'CLAIMED' | 'PURCHASED';
+
+export interface ItemEntry {
+  id: string;
+  listId: string;
+  name: string;
+  url: string | null;
+  imageUrl: string | null;
+  price: number | null;
+  status: ItemStatus;
+  dueDate: string | null;
+  recurrenceRule: string | null;
+  reservedByGuest: string | null;
+}
+
+export interface ItemRequest {
+  name: string;
+  url?: string;
+  imageUrl?: string;
+  price?: number;
+  status?: ItemStatus;
+  dueDate?: string;
+  recurrenceRule?: string;
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -145,6 +170,35 @@ export async function updateList(id: string, request: ListRequest): Promise<List
 
 export async function deleteList(id: string): Promise<void> {
   const response = await fetch(`/api/v1/lists/${id}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+}
+
+export async function getItems(listId: string): Promise<ItemEntry[]> {
+  return requestJson<ItemEntry[]>(`/api/v1/lists/${listId}/items`);
+}
+
+export async function createItem(listId: string, request: ItemRequest): Promise<ItemEntry> {
+  return requestJson<ItemEntry>(`/api/v1/lists/${listId}/items`, {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function updateItem(itemId: string, request: ItemRequest): Promise<ItemEntry> {
+  return requestJson<ItemEntry>(`/api/v1/items/${itemId}`, {
+    method: 'PUT',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function deleteItem(itemId: string): Promise<void> {
+  const response = await fetch(`/api/v1/items/${itemId}`, {
     method: 'DELETE',
     credentials: 'include'
   });

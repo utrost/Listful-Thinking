@@ -104,9 +104,37 @@ List response:
 
 ## Items
 
-- `POST /api/v1/lists/{id}/items`
-- `PUT /api/v1/items/{id}`
-- `DELETE /api/v1/items/{id}`
+All item endpoints require authenticated access to the parent list. MVP access is owner-only.
+
+### `GET /api/v1/lists/{id}/items`
+
+Returns items for an owned list, or `404` when the list is not owned.
+
+### `POST /api/v1/lists/{id}/items`
+
+Creates an item on an owned list.
+
+Request:
+
+```json
+{"name":"Camera strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null}
+```
+
+Response: `201 Created` with item.
+
+### `PUT /api/v1/items/{id}`
+
+Updates an item only when its parent list is owned by the authenticated user. Returns `404` for missing or non-owned items.
+
+### `DELETE /api/v1/items/{id}`
+
+Deletes an item only when its parent list is owned by the authenticated user. Returns `404` for missing or non-owned items.
+
+Item response:
+
+```json
+{"id":"uuid","listId":"uuid","name":"Camera strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"reservedByGuest":null}
+```
 
 ## Scraper
 

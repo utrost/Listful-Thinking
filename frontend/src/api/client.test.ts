@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createList, deleteList, getAdminSettings, getCurrentUser, getList, getLists, login, logout, register, updateAdminSettings, updateList } from './client';
+import { createItem, createList, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getLists, login, logout, register, updateAdminSettings, updateItem, updateList } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -86,6 +86,33 @@ describe('auth API client', () => {
       credentials: 'include'
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(5, '/api/v1/lists/l1', expect.objectContaining({
+      method: 'DELETE',
+      credentials: 'include'
+    }));
+  });
+
+  it('calls owner item CRUD endpoints with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'i1', listId: 'l1', name: 'Camera strap', status: 'OPEN' })
+    } as Response);
+
+    await getItems('l1');
+    await createItem('l1', { name: 'Camera strap' });
+    await updateItem('i1', { name: 'Leather strap', status: 'PURCHASED', price: 29.9 });
+    await deleteItem('i1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/lists/l1/items', expect.objectContaining({ credentials: 'include' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/lists/l1/items', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ name: 'Camera strap' })
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/items/i1', expect.objectContaining({
+      method: 'PUT',
+      credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/v1/items/i1', expect.objectContaining({
       method: 'DELETE',
       credentials: 'include'
     }));

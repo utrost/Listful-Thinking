@@ -62,6 +62,16 @@ public class Item {
         this.reservedByGuest = guestName;
     }
 
+    public void update(String name, String url, String imageUrl, BigDecimal price, ItemStatus status, Instant dueDate, String recurrenceRule) {
+        this.name = name;
+        this.url = url;
+        this.imageUrl = imageUrl;
+        this.price = price;
+        this.status = status == null ? ItemStatus.OPEN : status;
+        this.dueDate = dueDate;
+        this.recurrenceRule = recurrenceRule;
+    }
+
     public String getId() { return id; }
     public ListEntity getList() { return list; }
     public String getName() { return name; }

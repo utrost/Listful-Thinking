@@ -105,6 +105,8 @@ Tests:
 
 ## Slice 06: Item CRUD by list access
 
+Status: complete.
+
 User outcome:
 
 - Owner can manage items on owned lists.

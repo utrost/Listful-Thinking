@@ -29,6 +29,8 @@ Status: complete for auth, settings, and initial backend i18n.
 
 ## Phase 3: Lists and items
 
+Status: owner-isolated list and item CRUD complete; internal sharing pending.
+
 - Owner-isolated list CRUD
 - Item CRUD
 - Internal sharing
