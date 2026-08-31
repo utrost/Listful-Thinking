@@ -68,7 +68,7 @@ Authenticated user response:
 
 ## Lists
 
-All list endpoints require an authenticated registered user. MVP list access is owner-only.
+All list endpoints require an authenticated registered user. `GET /lists/{id}` allows the owner or an internally shared read-only user. Mutating list endpoints remain owner-only.
 
 ### `GET /api/v1/lists`
 
@@ -83,6 +83,12 @@ Request:
 ```
 
 Response: `201 Created` with list.
+
+Type validation:
+
+- `EVENT` lists require `targetDate`.
+- `WISH` and `CHORE` lists reject `targetDate`; due dates live on their items.
+- Type validation failures return `400 Bad Request` with `validation_failed`.
 
 ### `GET /api/v1/lists/{id}`
 
@@ -104,7 +110,7 @@ List response:
 
 ## Items
 
-All item endpoints require authenticated access to the parent list. MVP access is owner-only.
+All item endpoints require authenticated access to the parent list. Read access allows the owner or an internally shared read-only user. Item create/update/delete remain owner-only.
 
 ### `GET /api/v1/lists/{id}/items`
 
@@ -122,6 +128,12 @@ Request:
 
 Response: `201 Created` with item.
 
+Type validation:
+
+- `WISH` items allow shopping fields: `url`, `imageUrl`, and `price`.
+- `CHORE` items reject shopping fields and allow `dueDate` plus `recurrenceRule`.
+- `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
+
 ### `PUT /api/v1/items/{id}`
 
 Updates an item only when its parent list is owned by the authenticated user. Returns `404` for missing or non-owned items.
@@ -135,6 +147,32 @@ Item response:
 ```json
 {"id":"uuid","listId":"uuid","name":"Camera strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"reservedByGuest":null}
 ```
+
+## Internal sharing
+
+Internal sharing is read-only for MVP. Share management endpoints require the list owner.
+
+### `GET /api/v1/lists/{id}/shares`
+
+Returns users who can read the owned list.
+
+### `POST /api/v1/lists/{id}/shares`
+
+Request:
+
+```json
+{"username":"shared-user"}
+```
+
+Response: `201 Created` with share.
+
+```json
+{"listId":"uuid","userId":"uuid","username":"shared-user","createdAt":"2026-08-31T17:00:00Z"}
+```
+
+### `DELETE /api/v1/lists/{id}/shares/{username}`
+
+Revokes read access for the named registered user. Returns `204 No Content`.
 
 ## Scraper
 

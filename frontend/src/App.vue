@@ -42,6 +42,13 @@
             <option value="CHORE">CHORE</option>
             <option value="EVENT">EVENT</option>
           </select>
+          <input
+            v-if="newListRules.showTargetDate"
+            v-model="listForm.targetDate"
+            type="datetime-local"
+            :required="newListRules.requireTargetDate"
+            :placeholder="t('lists.targetDate')"
+          />
           <button type="submit">{{ t('lists.create') }}</button>
         </form>
 
@@ -62,9 +69,27 @@
             </div>
             <p>{{ selectedList.description }}</p>
 
+            <section class="share-panel">
+              <h4>{{ t('sharing.title') }}</h4>
+              <form class="inline-form" @submit.prevent="handleShareList">
+                <input v-model="shareForm.username" :placeholder="t('sharing.username')" required />
+                <button type="submit">{{ t('sharing.share') }}</button>
+              </form>
+              <ul class="chip-list">
+                <li v-for="share in shares" :key="share.userId">
+                  <span>{{ share.username }}</span>
+                  <button type="button" class="danger subtle" @click="handleRevokeShare(share.username)">{{ t('sharing.revoke') }}</button>
+                </li>
+              </ul>
+            </section>
+
             <form class="inline-form" @submit.prevent="handleCreateItem">
               <input v-model="itemForm.name" :placeholder="t('items.newName')" required />
-              <input v-model="itemForm.url" placeholder="URL" />
+              <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" />
+              <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :placeholder="t('items.imageUrl')" />
+              <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
+              <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
+              <input v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule" placeholder="FREQ=WEEKLY" />
               <button type="submit">{{ t('items.create') }}</button>
             </form>
 
@@ -85,7 +110,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   createItem,
@@ -94,27 +119,36 @@ import {
   deleteList,
   getCurrentUser,
   getItems,
+  getListShares,
   getLists,
   login,
   logout,
   register,
+  revokeListShare,
+  shareListWithUser,
   type AuthUser,
   type ItemEntry,
   type ListEntry,
+  type ListShareEntry,
   type ListType
 } from './api/client';
+import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
 
 const { t } = useI18n();
 const currentUser = ref<AuthUser | null>(null);
 const lists = ref<ListEntry[]>([]);
 const selectedList = ref<ListEntry | null>(null);
 const items = ref<ItemEntry[]>([]);
+const shares = ref<ListShareEntry[]>([]);
 const message = ref('');
 
 const registerForm = reactive({ username: '', email: '', password: '' });
 const loginForm = reactive({ username: '', password: '' });
-const listForm = reactive<{ title: string; type: ListType }>({ title: '', type: 'WISH' });
-const itemForm = reactive({ name: '', url: '' });
+const listForm = reactive<{ title: string; type: ListType; targetDate: string }>({ title: '', type: 'WISH', targetDate: '' });
+const itemForm = reactive({ name: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '' });
+const shareForm = reactive({ username: '' });
+const newListRules = computed(() => listFormRulesForType(listForm.type));
+const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
 
 onMounted(async () => {
   try {
@@ -147,23 +181,33 @@ async function handleLogout() {
   lists.value = [];
   selectedList.value = null;
   items.value = [];
+  shares.value = [];
 }
 
 async function loadLists() {
   lists.value = await getLists();
   selectedList.value = lists.value[0] ?? null;
-  await loadItems();
+  await loadListDetails();
 }
 
 async function selectList(list: ListEntry) {
   selectedList.value = list;
-  await loadItems();
+  await loadListDetails();
+}
+
+async function loadListDetails() {
+  await Promise.all([loadItems(), loadShares()]);
 }
 
 async function handleCreateList() {
   await run(async () => {
-    const created = await createList({ title: listForm.title, type: listForm.type });
+    const created = await createList({
+      title: listForm.title,
+      type: listForm.type,
+      targetDate: listForm.type === 'EVENT' ? toIsoInstant(listForm.targetDate) : undefined
+    });
     listForm.title = '';
+    listForm.targetDate = '';
     lists.value = [created, ...lists.value];
     await selectList(created);
   });
@@ -180,12 +224,40 @@ async function loadItems() {
   items.value = selectedList.value ? await getItems(selectedList.value.id) : [];
 }
 
+async function loadShares() {
+  shares.value = selectedList.value ? await getListShares(selectedList.value.id) : [];
+}
+
+async function handleShareList() {
+  if (!selectedList.value) return;
+  await run(async () => {
+    const share = await shareListWithUser(selectedList.value!.id, { username: shareForm.username });
+    shareForm.username = '';
+    shares.value = [share, ...shares.value.filter((existing) => existing.userId !== share.userId)];
+  });
+}
+
+async function handleRevokeShare(username: string) {
+  if (!selectedList.value) return;
+  await run(async () => {
+    await revokeListShare(selectedList.value!.id, username);
+    shares.value = shares.value.filter((share) => share.username !== username);
+  });
+}
+
 async function handleCreateItem() {
   if (!selectedList.value) return;
   await run(async () => {
-    const created = await createItem(selectedList.value!.id, { name: itemForm.name, url: itemForm.url || undefined });
-    itemForm.name = '';
-    itemForm.url = '';
+    const fields = currentItemFields.value;
+    const created = await createItem(selectedList.value!.id, {
+      name: itemForm.name,
+      url: fields.showUrl ? itemForm.url || undefined : undefined,
+      imageUrl: fields.showImageUrl ? itemForm.imageUrl || undefined : undefined,
+      price: fields.showPrice ? itemForm.price : undefined,
+      dueDate: fields.showDueDate ? toIsoInstant(itemForm.dueDate) : undefined,
+      recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined
+    });
+    resetItemForm();
     items.value = [created, ...items.value];
   });
 }
@@ -204,5 +276,18 @@ async function run(action: () => Promise<void>) {
   } catch (error) {
     message.value = error instanceof Error ? error.message : String(error);
   }
+}
+
+function toIsoInstant(localDateTime: string): string | undefined {
+  return localDateTime ? new Date(localDateTime).toISOString() : undefined;
+}
+
+function resetItemForm() {
+  itemForm.name = '';
+  itemForm.url = '';
+  itemForm.imageUrl = '';
+  itemForm.price = undefined;
+  itemForm.dueDate = '';
+  itemForm.recurrenceRule = '';
 }
 </script>

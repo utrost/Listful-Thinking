@@ -29,11 +29,12 @@ Status: complete for auth, settings, and initial backend i18n.
 
 ## Phase 3: Lists and items
 
-Status: owner-isolated list and item CRUD complete; internal sharing pending.
+Status: complete for owner list/item CRUD, type-specific MVP validation, and internal read-only sharing.
 
 - Owner-isolated list CRUD
 - Item CRUD
-- Internal sharing
+- Type-specific WISH/CHORE/EVENT form and API validation
+- Internal read-only sharing
 
 ## Phase 4: Public sharing
 

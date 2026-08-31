@@ -126,6 +126,8 @@ Tests:
 
 ## Slice 07: List type behavior
 
+Status: complete.
+
 User outcome:
 
 - Wish/chore/event forms and validation differ appropriately.
@@ -145,6 +147,8 @@ Tests:
 - Backend rejects invalid type-specific inputs where MVP requires it.
 
 ## Slice 08: Internal read-only sharing
+
+Status: complete.
 
 User outcome:
 

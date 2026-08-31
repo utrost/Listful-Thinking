@@ -19,12 +19,22 @@
   "lists": {
     "title": "Your lists",
     "newTitle": "New list title",
+    "targetDate": "Target date",
     "create": "Create list",
     "delete": "Delete list"
   },
   "items": {
     "newName": "New item name",
+    "imageUrl": "Image URL",
+    "price": "Price",
+    "dueDate": "Due date",
     "create": "Add item",
     "delete": "Delete"
+  },
+  "sharing": {
+    "title": "Internal sharing",
+    "username": "Username to share with",
+    "share": "Share read-only",
+    "revoke": "Revoke"
   }
 }

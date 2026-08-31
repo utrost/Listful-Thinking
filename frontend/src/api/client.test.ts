@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getLists, login, logout, register, updateAdminSettings, updateItem, updateList } from './client';
+import { createItem, createList, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, login, logout, register, revokeListShare, shareListWithUser, updateAdminSettings, updateItem, updateList } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -113,6 +113,28 @@ describe('auth API client', () => {
       credentials: 'include'
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/v1/items/i1', expect.objectContaining({
+      method: 'DELETE',
+      credentials: 'include'
+    }));
+  });
+
+  it('calls list share endpoints with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ listId: 'l1', userId: 'u2', username: 'shared' })
+    } as Response);
+
+    await getListShares('l1');
+    await shareListWithUser('l1', { username: 'shared' });
+    await revokeListShare('l1', 'shared');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/lists/l1/shares', expect.objectContaining({ credentials: 'include' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/lists/l1/shares', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ username: 'shared' })
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/lists/l1/shares/shared', expect.objectContaining({
       method: 'DELETE',
       credentials: 'include'
     }));

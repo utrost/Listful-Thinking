@@ -14,6 +14,10 @@ Relevant list fields:
 - `description`
 - optional public `share_token`
 
+Validation:
+
+- Must not set list-level `target_date`; deadlines belong on items for this type.
+
 Relevant item fields:
 
 - `name`
@@ -56,6 +60,8 @@ MVP rules:
 
 - Public guest claiming is not a primary CHORE use case.
 - Recurrence rule may be stored before full automatic recurrence expansion exists.
+- Shopping fields (`url`, `image_url`, `price`) are rejected by the API for chore items.
+- Must not set list-level `target_date`; use item `due_date` instead.
 
 Future extension:
 
@@ -86,7 +92,9 @@ UI behavior:
 
 MVP rules:
 
+- Event lists require `target_date`.
 - Event lists can trigger reminders based on `target_date` and item `due_date`.
+- Event items reject shopping fields and recurrence rules in the MVP.
 - Public guest claiming is not the primary EVENT behavior.
 
 ## Shared validation principles

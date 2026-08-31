@@ -73,6 +73,17 @@ export interface ItemRequest {
   recurrenceRule?: string;
 }
 
+export interface ListShareEntry {
+  listId: string;
+  userId: string;
+  username: string;
+  createdAt: string;
+}
+
+export interface ShareListRequest {
+  username: string;
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -199,6 +210,28 @@ export async function updateItem(itemId: string, request: ItemRequest): Promise<
 
 export async function deleteItem(itemId: string): Promise<void> {
   const response = await fetch(`/api/v1/items/${itemId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+}
+
+export async function getListShares(listId: string): Promise<ListShareEntry[]> {
+  return requestJson<ListShareEntry[]>(`/api/v1/lists/${listId}/shares`);
+}
+
+export async function shareListWithUser(listId: string, request: ShareListRequest): Promise<ListShareEntry> {
+  return requestJson<ListShareEntry>(`/api/v1/lists/${listId}/shares`, {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function revokeListShare(listId: string, username: string): Promise<void> {
+  const response = await fetch(`/api/v1/lists/${listId}/shares/${encodeURIComponent(username)}`, {
     method: 'DELETE',
     credentials: 'include'
   });

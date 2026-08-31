@@ -73,6 +73,13 @@ Future extension point:
 
 - If moderation/support access is added, it should be explicit, audited, and documented separately.
 
+## Implemented internal sharing API behavior
+
+- Owners manage internal shares with `GET/POST/DELETE /api/v1/lists/{id}/shares` endpoints.
+- Shared users can read the shared list detail and item collection.
+- Shared users are intentionally read-only for MVP: list update/delete, item create/update/delete, and share management still require ownership.
+- Non-owners and non-shared users receive `404` for private resources to avoid leaking existence.
+
 ## Required authorization checks
 
 All list and item operations should resolve:

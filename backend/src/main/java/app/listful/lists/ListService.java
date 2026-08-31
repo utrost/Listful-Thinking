@@ -1,7 +1,9 @@
 package app.listful.lists;
 
+import app.listful.api.ValidationFailedException;
 import app.listful.domain.ListEntity;
 import app.listful.domain.User;
+import app.listful.domain.enums.ListType;
 import app.listful.domain.repository.ListRepository;
 import app.listful.lists.dto.ListRequest;
 import app.listful.lists.dto.ListResponse;
@@ -29,6 +31,7 @@ public class ListService {
 
     @Transactional
     public ListResponse create(User actor, ListRequest request) {
+        validateListType(request);
         ListEntity list = new ListEntity(actor, request.title(), request.description(), request.type(), Instant.now());
         list.update(request.title(), request.description(), request.type(), request.targetDate());
         return toResponse(listRepository.save(list));
@@ -36,11 +39,12 @@ public class ListService {
 
     @Transactional(readOnly = true)
     public ListResponse getOwned(User actor, String listId) {
-        return toResponse(listAccessService.requireOwnedList(actor, listId));
+        return toResponse(listAccessService.requireReadableList(actor, listId));
     }
 
     @Transactional
     public ListResponse update(User actor, String listId, ListRequest request) {
+        validateListType(request);
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
         list.update(request.title(), request.description(), request.type(), request.targetDate());
         return toResponse(list);
@@ -50,6 +54,15 @@ public class ListService {
     public void delete(User actor, String listId) {
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
         listRepository.delete(list);
+    }
+
+    private void validateListType(ListRequest request) {
+        if (request.type() == ListType.EVENT && request.targetDate() == null) {
+            throw new ValidationFailedException("Event lists require a target date.");
+        }
+        if (request.type() != ListType.EVENT && request.targetDate() != null) {
+            throw new ValidationFailedException("Only event lists can have a target date.");
+        }
     }
 
     public ListResponse toResponse(ListEntity list) {

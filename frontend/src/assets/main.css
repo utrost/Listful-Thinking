@@ -121,7 +121,8 @@ h3 {
 }
 
 .list-cards,
-.item-list {
+.item-list,
+.chip-list {
   display: grid;
   gap: 0.7rem;
   padding: 0;
@@ -150,11 +151,27 @@ small,
   color: #705f4c;
 }
 
-.item-list li {
+.item-list li,
+.chip-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.share-panel {
+  border-top: 1px solid #e1d5c1;
+  border-bottom: 1px solid #e1d5c1;
+  padding: 1rem 0;
+}
+
+.share-panel h4 {
+  margin: 0 0 0.75rem;
+}
+
+button.subtle {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 640px) {
@@ -164,7 +181,8 @@ small,
 
   .header-row,
   .section-header,
-  .item-list li {
+  .item-list li,
+  .chip-list li {
     display: grid;
   }
 

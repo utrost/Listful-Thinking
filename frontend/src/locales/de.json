@@ -19,12 +19,22 @@
   "lists": {
     "title": "Deine Listen",
     "newTitle": "Neuer Listentitel",
+    "targetDate": "Zieldatum",
     "create": "Liste erstellen",
     "delete": "Liste löschen"
   },
   "items": {
     "newName": "Neuer Eintrag",
+    "imageUrl": "Bild-URL",
+    "price": "Preis",
+    "dueDate": "Fällig am",
     "create": "Eintrag hinzufügen",
     "delete": "Löschen"
+  },
+  "sharing": {
+    "title": "Intern teilen",
+    "username": "Benutzername zum Teilen",
+    "share": "Lesend teilen",
+    "revoke": "Entziehen"
   }
 }
