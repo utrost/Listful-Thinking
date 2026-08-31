@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getAdminSettings, getCurrentUser, login, logout, register, updateAdminSettings } from './client';
+import { createList, deleteList, getAdminSettings, getCurrentUser, getList, getLists, login, logout, register, updateAdminSettings, updateList } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -59,6 +59,35 @@ describe('auth API client', () => {
       method: 'PUT',
       credentials: 'include',
       body: JSON.stringify({ registrationEnabled: true })
+    }));
+  });
+
+  it('calls owner list CRUD endpoints with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'l1', title: 'Birthday', type: 'WISH' })
+    } as Response);
+
+    await getLists();
+    await getList('l1');
+    await createList({ title: 'Birthday', description: 'Gift ideas', type: 'WISH' });
+    await updateList('l1', { title: 'Birthday 2027', type: 'EVENT', targetDate: '2027-01-01T00:00:00Z' });
+    await deleteList('l1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/lists', expect.objectContaining({ credentials: 'include' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/lists/l1', expect.objectContaining({ credentials: 'include' }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/lists', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ title: 'Birthday', description: 'Gift ideas', type: 'WISH' })
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/v1/lists/l1', expect.objectContaining({
+      method: 'PUT',
+      credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(5, '/api/v1/lists/l1', expect.objectContaining({
+      method: 'DELETE',
+      credentials: 'include'
     }));
   });
 });

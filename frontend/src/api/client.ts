@@ -28,6 +28,26 @@ export interface UpdateAdminSettingsRequest {
   registrationEnabled: boolean;
 }
 
+export type ListType = 'WISH' | 'CHORE' | 'EVENT';
+
+export interface ListEntry {
+  id: string;
+  title: string;
+  description: string | null;
+  type: ListType;
+  publicList: boolean;
+  shareToken: string | null;
+  targetDate: string | null;
+  createdAt: string;
+}
+
+export interface ListRequest {
+  title: string;
+  description?: string;
+  type: ListType;
+  targetDate?: string;
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -99,4 +119,37 @@ export async function updateAdminSettings(request: UpdateAdminSettingsRequest): 
     method: 'PUT',
     body: JSON.stringify(request)
   });
+}
+
+export async function getLists(): Promise<ListEntry[]> {
+  return requestJson<ListEntry[]>('/api/v1/lists');
+}
+
+export async function getList(id: string): Promise<ListEntry> {
+  return requestJson<ListEntry>(`/api/v1/lists/${id}`);
+}
+
+export async function createList(request: ListRequest): Promise<ListEntry> {
+  return requestJson<ListEntry>('/api/v1/lists', {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function updateList(id: string, request: ListRequest): Promise<ListEntry> {
+  return requestJson<ListEntry>(`/api/v1/lists/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function deleteList(id: string): Promise<void> {
+  const response = await fetch(`/api/v1/lists/${id}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
 }

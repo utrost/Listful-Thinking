@@ -84,6 +84,8 @@ Tests:
 
 ## Slice 05: Owner-only list CRUD
 
+Status: complete.
+
 User outcome:
 
 - Logged-in user can create and manage own lists.

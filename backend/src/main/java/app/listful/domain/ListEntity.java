@@ -68,6 +68,13 @@ public class ListEntity {
         this.publicFlag = 0;
     }
 
+    public void update(String title, String description, ListType type, Instant targetDate) {
+        this.title = title;
+        this.description = description;
+        this.type = type;
+        this.targetDate = targetDate;
+    }
+
     public String getId() { return id; }
     public User getUser() { return user; }
     public String getTitle() { return title; }

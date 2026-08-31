@@ -68,10 +68,39 @@ Authenticated user response:
 
 ## Lists
 
-- `GET /api/v1/lists`
-- `POST /api/v1/lists`
-- `PUT /api/v1/lists/{id}`
-- `DELETE /api/v1/lists/{id}`
+All list endpoints require an authenticated registered user. MVP list access is owner-only.
+
+### `GET /api/v1/lists`
+
+Returns lists owned by the authenticated user only.
+
+### `POST /api/v1/lists`
+
+Request:
+
+```json
+{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null}
+```
+
+Response: `201 Created` with list.
+
+### `GET /api/v1/lists/{id}`
+
+Returns owned list, or `404` when the list does not exist or belongs to another user.
+
+### `PUT /api/v1/lists/{id}`
+
+Updates owned list metadata, or returns `404` when not owned.
+
+### `DELETE /api/v1/lists/{id}`
+
+Deletes owned list, or returns `404` when not owned.
+
+List response:
+
+```json
+{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"targetDate":null,"createdAt":"2026-08-31T17:00:00Z"}
+```
 
 ## Items
 
