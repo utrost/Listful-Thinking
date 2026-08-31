@@ -52,6 +52,16 @@
           <span>{{ currentUser.username }} · {{ currentUser.role }}</span>
         </div>
 
+        <section v-if="notifications.length" class="panel notifications-panel">
+          <h3>{{ t('notifications.title') }}</h3>
+          <ul class="notification-list">
+            <li v-for="notification in notifications" :key="notification.id">
+              <span>{{ notification.message }}</span>
+              <button type="button" class="secondary subtle" @click="handleMarkNotificationRead(notification.id)">{{ t('notifications.markRead') }}</button>
+            </li>
+          </ul>
+        </section>
+
         <form class="inline-form" @submit.prevent="handleCreateList">
           <input v-model="listForm.title" :placeholder="t('lists.newTitle')" required />
           <select v-model="listForm.type">
@@ -146,9 +156,11 @@ import {
   getItems,
   getListShares,
   getLists,
+  getNotifications,
   getPublicShare,
   login,
   logout,
+  markNotificationRead,
   register,
   revokeListShare,
   revokePublicShare,
@@ -159,6 +171,7 @@ import {
   type ListEntry,
   type ListShareEntry,
   type ListType,
+  type NotificationEntry,
   type PublicListEntry
 } from './api/client';
 import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
@@ -169,6 +182,7 @@ const lists = ref<ListEntry[]>([]);
 const selectedList = ref<ListEntry | null>(null);
 const items = ref<ItemEntry[]>([]);
 const shares = ref<ListShareEntry[]>([]);
+const notifications = ref<NotificationEntry[]>([]);
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
 const publicList = ref<PublicListEntry | null>(null);
 const guestName = ref('');
@@ -193,6 +207,7 @@ onMounted(async () => {
   try {
     currentUser.value = await getCurrentUser();
     await loadLists();
+    await loadNotifications();
   } catch {
     currentUser.value = null;
   }
@@ -203,6 +218,7 @@ async function handleRegister() {
     currentUser.value = await register(registerForm);
     registerForm.password = '';
     await loadLists();
+    await loadNotifications();
   });
 }
 
@@ -211,6 +227,7 @@ async function handleLogin() {
     currentUser.value = await login(loginForm);
     loginForm.password = '';
     await loadLists();
+    await loadNotifications();
   });
 }
 
@@ -221,6 +238,7 @@ async function handleLogout() {
   selectedList.value = null;
   items.value = [];
   shares.value = [];
+  notifications.value = [];
 }
 
 async function loadLists() {
@@ -265,6 +283,17 @@ async function loadItems() {
 
 async function loadShares() {
   shares.value = selectedList.value ? await getListShares(selectedList.value.id) : [];
+}
+
+async function loadNotifications() {
+  notifications.value = await getNotifications();
+}
+
+async function handleMarkNotificationRead(notificationId: string) {
+  await run(async () => {
+    await markNotificationRead(notificationId);
+    notifications.value = notifications.value.filter((notification) => notification.id !== notificationId);
+  });
 }
 
 async function handleShareList() {

@@ -122,7 +122,8 @@ h3 {
 
 .list-cards,
 .item-list,
-.chip-list {
+.chip-list,
+.notification-list {
   display: grid;
   gap: 0.7rem;
   padding: 0;
@@ -152,7 +153,8 @@ small,
 }
 
 .item-list li,
-.chip-list li {
+.chip-list li,
+.notification-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;

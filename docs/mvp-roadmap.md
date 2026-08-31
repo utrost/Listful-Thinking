@@ -53,6 +53,8 @@ Status: complete for direct URL metadata preview and async URL-only item enrichm
 
 ## Phase 6: Reminders
 
+Status: complete for item due-date scanning, SMTP-or-in-app delivery, unread notification API, and basic frontend notification list.
+
 - Notifications
 - SMTP-or-in-app graceful fallback
 

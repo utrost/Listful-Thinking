@@ -42,5 +42,9 @@
     "publicList": "Shared list",
     "guestName": "Your name",
     "claim": "Claim"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markRead": "Mark read"
   }
 }

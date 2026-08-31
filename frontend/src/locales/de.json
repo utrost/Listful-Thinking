@@ -42,5 +42,9 @@
     "publicList": "Geteilte Liste",
     "guestName": "Dein Name",
     "claim": "Reservieren"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "markRead": "Als gelesen markieren"
   }
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, getPublicShare, login, logout, register, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -196,4 +196,23 @@ describe('auth API client', () => {
       body: JSON.stringify({ url: 'https://example.test/pen' })
     }));
   });
+
+  it('calls notification endpoints with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'n1', message: 'Water plants is due on 2027-01-01.' })
+    } as Response);
+
+    await getNotifications();
+    await markNotificationRead('n1');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/notifications', expect.objectContaining({
+      credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/notifications/n1/read', expect.objectContaining({
+      method: 'PUT',
+      credentials: 'include'
+    }));
+  });
+
 });

@@ -253,6 +253,22 @@ Responses:
 - `404 Not Found` when token/item do not match or token was revoked.
 - `409 Conflict` with `item_already_claimed` when the item is no longer open.
 
+## Notifications
+
+### `GET /api/v1/notifications`
+
+Requires authentication. Returns unread in-app notifications for the current user, localized by `Accept-Language`.
+
+Response:
+
+```json
+[{"id":"uuid","messageKey":"notification.item_due_soon","message":"Water plants is due on 2027-01-01.","readAt":null,"createdAt":"2027-01-01T08:00:00Z"}]
+```
+
+### `PUT /api/v1/notifications/{id}/read`
+
+Requires authentication and ownership of the notification. Marks one notification read and returns it. Returns `404` for missing or non-owned notifications.
+
 ## Admin
 
 ### `GET /api/v1/admin/settings`

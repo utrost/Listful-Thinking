@@ -257,6 +257,8 @@ Tests:
 
 ## Slice 13: Notifications and reminders
 
+Status: complete.
+
 User outcome:
 
 - Due reminders show in app or email if configured.

@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NotificationRepository extends JpaRepository<Notification, String> {
     List<Notification> findByUserIdAndReadAtIsNull(String userId);
+    boolean existsByUserIdAndMessageKeyAndMessageArgs(String userId, String messageKey, String messageArgs);
 }

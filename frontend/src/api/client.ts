@@ -125,6 +125,14 @@ export interface ScrapeResponse {
   price: number | null;
 }
 
+export interface NotificationEntry {
+  id: string;
+  messageKey: string;
+  message: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...init,
@@ -314,5 +322,15 @@ export async function scrapeUrl(request: ScrapeRequest): Promise<ScrapeResponse>
   return requestJson<ScrapeResponse>('/api/v1/utils/scrape', {
     method: 'POST',
     body: JSON.stringify(request)
+  });
+}
+
+export async function getNotifications(): Promise<NotificationEntry[]> {
+  return requestJson<NotificationEntry[]>('/api/v1/notifications');
+}
+
+export async function markNotificationRead(notificationId: string): Promise<NotificationEntry> {
+  return requestJson<NotificationEntry>(`/api/v1/notifications/${notificationId}/read`, {
+    method: 'PUT'
   });
 }

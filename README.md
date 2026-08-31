@@ -4,7 +4,7 @@ Self-hosted, multi-tenant list management for wishlists, chores, and events.
 
 ## Status
 
-Fresh MVP scaffold: Spring Boot backend, Vue frontend, SQLite config, and single-container Docker build path.
+Current MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public wishlist sharing, URL metadata scraping, reminders, and the single-container Docker build path.
 
 ## Quickstart
 
@@ -57,6 +57,8 @@ Domain and architecture:
 - [Domain model](docs/domain/domain-model.md)
 - [Permissions and sharing](docs/domain/permissions-and-sharing.md)
 - [List types](docs/domain/list-types.md)
+- [Scraping](docs/domain/scraping.md)
+- [Reminders and notifications](docs/domain/reminders.md)
 - [Security architecture](docs/architecture/security.md)
 - [Architecture decisions](docs/architecture/architecture-decision-records.md)
 
