@@ -4,6 +4,8 @@ This is the preferred implementation order. Each slice should leave the reposito
 
 ## Slice 01: Full SQLite schema
 
+Status: complete.
+
 User outcome:
 
 - The app starts with the real MVP schema in SQLite.
@@ -19,6 +21,8 @@ Tests:
 - Optional schema smoke verifies expected tables exist.
 
 ## Slice 02: Domain entities and repositories
+
+Status: complete.
 
 User outcome:
 

@@ -13,7 +13,7 @@ Status: complete in the initial repository scaffold.
 
 ## Phase 1: Persistence
 
-Next implementation phase.
+Status: complete for MVP foundation.
 
 - Flyway SQLite schema
 - JPA entities and repositories
