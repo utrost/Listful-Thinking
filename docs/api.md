@@ -6,12 +6,65 @@ Base path: `/api/v1`
 
 - `GET /api/v1/health`
 
+Response:
+
+```json
+{"status":"ok"}
+```
+
 ## Auth
 
-- `POST /api/v1/auth/register`
-- `POST /api/v1/auth/login`
-- `POST /api/v1/auth/logout`
-- `GET /api/v1/auth/me`
+Auth uses stateful Spring Security sessions. Successful register/login creates an HTTP session. Frontend calls must include credentials.
+
+### `POST /api/v1/auth/register`
+
+Request:
+
+```json
+{"username":"uwe","email":"uwe@example.test","password":"correct horse battery staple"}
+```
+
+Responses:
+
+- `201 Created` with authenticated user for successful registration.
+- `403 Forbidden` with `registration_disabled` when non-first registration is disabled.
+- `409 Conflict` with `username_taken` when username already exists.
+
+First registered user becomes `ADMIN`. Later registered users become `USER` when registration is enabled.
+
+### `POST /api/v1/auth/login`
+
+Request:
+
+```json
+{"username":"uwe","password":"correct horse battery staple"}
+```
+
+Responses:
+
+- `200 OK` with authenticated user.
+- `401 Unauthorized` with `bad_credentials` for invalid username/password.
+
+### `POST /api/v1/auth/logout`
+
+Invalidates the current session.
+
+Responses:
+
+- `204 No Content`
+
+### `GET /api/v1/auth/me`
+
+Responses:
+
+- `200 OK` with authenticated user.
+- `401 Unauthorized` when no session is authenticated.
+
+Authenticated user response:
+
+```json
+{"id":"uuid","username":"uwe","email":"uwe@example.test","role":"ADMIN"}
+```
 
 ## Lists
 

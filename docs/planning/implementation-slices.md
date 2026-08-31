@@ -40,6 +40,8 @@ Tests:
 
 ## Slice 03: Auth bootstrap
 
+Status: complete.
+
 User outcome:
 
 - First visitor can create admin account and log in.
