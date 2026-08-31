@@ -4,6 +4,8 @@ spring:
   datasource:
     url: jdbc:sqlite:${LISTFUL_DB_PATH:/app/data/listful-thinking.sqlite}
     driver-class-name: org.sqlite.JDBC
+    hikari:
+      connection-init-sql: PRAGMA foreign_keys=ON
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:
