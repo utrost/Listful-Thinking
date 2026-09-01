@@ -22,6 +22,11 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 ## Admin settings
 
 - Admins can list users.
+- Admins can create users while public registration is disabled.
+- Admins can create either `USER` or `ADMIN` accounts.
+- Admins can deactivate and reactivate users.
+- Deactivated users cannot log in or use email auth tokens.
+- Admins can list all lists with owner metadata.
 - Admins can read and update global settings.
 - Non-admin users cannot access admin endpoints.
 - Database settings override environment defaults where applicable.
@@ -35,9 +40,10 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 
 ## Lists and items
 
-- Owners can create, update, and delete `WISH`, `CHORE`, and `EVENT` lists.
+- Owners can create, update, and delete `WISH`, `TODO`, `CHORE`, and `EVENT` lists.
 - Owners can add, update, and delete items in owned lists.
 - `WISH` items support URL, image URL, and price.
+- `TODO` items support due date/time and reject shopping fields.
 - `CHORE` items support due date and recurrence rule.
 - `EVENT` lists support target date and item due dates.
 

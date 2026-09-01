@@ -13,14 +13,17 @@ Fields:
 - `email`
 - `password_hash`
 - `role`: `ADMIN` or `USER`
+- `active`
 - `created_at`
 
 Rules:
 
 - Usernames are unique.
 - The first user created on an empty instance becomes `ADMIN`.
-- Later users become `USER` unless explicitly changed by admin functionality in a future story.
-- Admin role grants instance management, not blanket access to private list content.
+- Later public registrations become `USER` when registration is enabled.
+- Admin-created users can be created as either `USER` or `ADMIN`.
+- Deactivated users cannot log in or use email auth tokens.
+- Admin role grants instance management and list metadata inventory, not blanket access to private item content.
 
 ## Lists
 
@@ -32,7 +35,7 @@ Fields:
 - `user_id` owner
 - `title`
 - `description`
-- `type`: `WISH`, `CHORE`, or `EVENT`
+- `type`: `WISH`, `TODO`, `CHORE`, or `EVENT`
 - `share_token`
 - `is_public`
 - `target_date`
@@ -43,7 +46,7 @@ Rules:
 - Lists are private by default.
 - Public sharing is opt-in per list.
 - Internal sharing is opt-in per list and per registered user.
-- `target_date` is meaningful for `EVENT` lists and optional/ignored for other types unless future stories expand it.
+- `target_date` is required for `EVENT` lists and rejected for `WISH`, `TODO`, and `CHORE` lists.
 
 ## Items
 

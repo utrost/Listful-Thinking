@@ -62,12 +62,15 @@ Cannot:
 Can:
 
 - View users.
+- Create local users as `USER` or `ADMIN`.
+- Activate and deactivate users.
+- View all lists as an owner metadata inventory.
 - Read/update global settings.
 - Enable/disable registration.
 
 MVP cannot by default:
 
-- Browse or mutate private list content owned by other users.
+- Browse or mutate private item content owned by other users.
 
 Future extension point:
 

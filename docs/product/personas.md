@@ -9,12 +9,13 @@ Primary goals:
 - Start the app with minimal configuration.
 - Create the first account.
 - Toggle registration.
-- Manage users and instance settings.
+- Create, activate, and deactivate users.
+- Inspect users, owner metadata, list inventory, and instance settings.
 - Keep data local and easy to back up.
 
 Non-goal for MVP:
 
-- Admins do not automatically browse every user's private list content.
+- Admin list inventory is metadata-focused; admins do not automatically browse every user's private item content.
 
 ## Registered User
 
@@ -22,7 +23,7 @@ A local account holder who creates and owns lists.
 
 Primary goals:
 
-- Create wish, chore, and event lists.
+- Create wish, to-do, chore, and event lists.
 - Add and edit items.
 - Share lists with trusted people.
 - Use public links when guests should claim wishlist items.

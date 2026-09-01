@@ -8,7 +8,7 @@ A self-hoster can start one Docker container, mount one data volume, create the 
 
 ## What the app is
 
-- A lightweight list manager for wishlists, chores, and events.
+- A lightweight list manager for wishlists, to-dos, chores, and events.
 - A family/household-friendly tool with simple sharing and clear ownership.
 - A zero-config application that works with SQLite and no external services.
 - A single deployable web app, not a collection of microservices.
@@ -32,4 +32,4 @@ A self-hoster can start one Docker container, mount one data volume, create the 
 
 ## MVP success
 
-The MVP is successful when a self-hoster can run the container, create the first admin, create a wishlist, add a URL-only item, generate a public share link, and have a guest claim an item without another account.
+The MVP is successful when a self-hoster can run the container, create the first admin, keep registration private, manage local users, create useful typed lists, add a URL-only wishlist item, generate a public share link, and have a guest claim an item without another account.

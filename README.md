@@ -55,6 +55,7 @@ Start here:
 - [Product vision](docs/product/vision.md)
 - [Personas and actors](docs/product/personas.md)
 - [Terminology](docs/product/terminology.md)
+- [Use cases and story backlog](docs/product/use-cases.md)
 - [User stories](docs/product/user-stories.md)
 - [MVP acceptance criteria](docs/product/acceptance-criteria.md)
 

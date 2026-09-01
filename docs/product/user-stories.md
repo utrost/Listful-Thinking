@@ -1,6 +1,6 @@
 # User Stories
 
-This document captures intended product behavior before implementation. Acceptance-level details live in `acceptance-criteria.md`.
+This document captures intended product behavior before implementation. Acceptance-level details live in `acceptance-criteria.md`; narrative flows and adjacent brainstorm candidates live in `use-cases.md`.
 
 ## Epic: First-run bootstrap
 
@@ -26,11 +26,45 @@ As a registered user, I want logout to end my session so shared devices are safe
 
 As the frontend, I need to ask who is logged in so the UI can route and show admin options.
 
+### Story: Magic-link login
+
+As a user with an email address, I want to receive a one-time magic login link so I can sign in without entering my password.
+
+### Story: Password reset by email
+
+As a user, I want to request a time-limited password reset link so I can recover access when I forget my password.
+
+### Story: Email auth remains optional
+
+As a self-hoster, I want password login and in-app fallback behavior to keep working when SMTP is not configured so the app remains zero-config.
+
+## Epic: Admin user management
+
+### Story: Admin creates users
+
+As an admin, I want to create users myself so public registration can stay disabled on a private instance.
+
+### Story: Admin assigns role at creation
+
+As an admin, I want to choose `USER` or `ADMIN` when creating an account so instance maintenance can be delegated deliberately.
+
+### Story: Admin activates and deactivates users
+
+As an admin, I want to deactivate or reactivate users so old accounts can be locked out without deleting history.
+
+### Story: Deactivated users cannot authenticate
+
+As an admin, I want inactive users blocked from password, magic-link, and reset-token flows so account closure is reliable.
+
+### Story: Admin list inventory
+
+As an admin, I want to see all lists with owner metadata so I can understand instance usage and abandoned lists without opening private item details.
+
 ## Epic: Private lists
 
 ### Story: Create typed list
 
-As a registered user, I want to create a `WISH`, `CHORE`, or `EVENT` list so the UI can show relevant fields.
+As a registered user, I want to create a `WISH`, `TODO`, `CHORE`, or `EVENT` list so the UI can show relevant fields.
 
 ### Story: Manage my own lists
 
@@ -53,6 +87,10 @@ As a list owner, I want to update item status so I can track open, claimed, and 
 ### Story: URL-only wishlist item
 
 As a wishlist owner, I want to paste only a URL so the app can create a placeholder and enrich it from metadata.
+
+### Story: To-do due date
+
+As a to-do list owner, I want each task to have an optional due date/time so one-off follow-ups can trigger reminders.
 
 ## Epic: Internal sharing
 
@@ -83,6 +121,10 @@ As a guest, I want to open a share link and see list items so I can decide what 
 As a guest, I want to claim an open item with my name so duplicate purchases are avoided.
 
 ## Epic: List templates
+
+### Story: To-do-specific fields
+
+As a to-do-list owner, I want due dates without shopping or recurrence fields so one-off tasks stay simple.
 
 ### Story: Wishlist-specific fields
 
