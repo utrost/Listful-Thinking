@@ -23,7 +23,7 @@ A local account holder who creates and owns lists.
 
 Primary goals:
 
-- Create wish, to-do, chore, and event lists.
+- Create wish, to-do, grocery, chore, and event lists.
 - Add and edit items.
 - Share lists with trusted people.
 - Use public links when guests should claim wishlist items.

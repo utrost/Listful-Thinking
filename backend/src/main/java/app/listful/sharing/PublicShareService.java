@@ -108,6 +108,8 @@ public class PublicShareService {
             item.getPrice(),
             item.getStatus().name(),
             item.getDueDate() == null ? null : item.getDueDate().toString(),
+            item.getQuantity(),
+            item.getCategory(),
             item.getReservedByGuest()
         );
     }

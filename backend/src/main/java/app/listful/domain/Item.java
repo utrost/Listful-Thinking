@@ -46,6 +46,10 @@ public class Item {
     @Column(name = "recurrence_rule")
     private String recurrenceRule;
 
+    private String quantity;
+
+    private String category;
+
     @Column(name = "reserved_by_guest")
     private String reservedByGuest;
 
@@ -73,6 +77,10 @@ public class Item {
     }
 
     public void update(String name, String description, String url, String imageUrl, BigDecimal price, ItemStatus status, Instant dueDate, String recurrenceRule) {
+        update(name, description, url, imageUrl, price, status, dueDate, recurrenceRule, null, null);
+    }
+
+    public void update(String name, String description, String url, String imageUrl, BigDecimal price, ItemStatus status, Instant dueDate, String recurrenceRule, String quantity, String category) {
         this.name = name;
         this.description = description;
         this.url = url;
@@ -81,6 +89,8 @@ public class Item {
         this.status = status == null ? ItemStatus.OPEN : status;
         this.dueDate = dueDate;
         this.recurrenceRule = recurrenceRule;
+        this.quantity = quantity;
+        this.category = category;
     }
 
     public String getId() { return id; }
@@ -99,5 +109,9 @@ public class Item {
     public void setDueDate(Instant dueDate) { this.dueDate = dueDate; }
     public String getRecurrenceRule() { return recurrenceRule; }
     public void setRecurrenceRule(String recurrenceRule) { this.recurrenceRule = recurrenceRule; }
+    public String getQuantity() { return quantity; }
+    public void setQuantity(String quantity) { this.quantity = quantity; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
     public String getReservedByGuest() { return reservedByGuest; }
 }

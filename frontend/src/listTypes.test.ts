@@ -7,6 +7,7 @@ describe('list type UI rules', () => {
     expect(listFormRulesForType('WISH')).toEqual({ showTargetDate: false, requireTargetDate: false });
     expect(listFormRulesForType('CHORE')).toEqual({ showTargetDate: false, requireTargetDate: false });
     expect(listFormRulesForType('TODO')).toEqual({ showTargetDate: false, requireTargetDate: false });
+    expect(listFormRulesForType('GROCERY')).toEqual({ showTargetDate: false, requireTargetDate: false });
   });
 
   it('shows item fields according to list type', () => {
@@ -37,6 +38,15 @@ describe('list type UI rules', () => {
       showPrice: false,
       showDueDate: true,
       showRecurrenceRule: false
+    });
+    expect(itemFormFieldsForListType('GROCERY')).toEqual({
+      showUrl: false,
+      showImageUrl: false,
+      showPrice: false,
+      showDueDate: false,
+      showRecurrenceRule: false,
+      showQuantity: true,
+      showCategory: true
     });
   });
 });

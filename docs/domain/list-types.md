@@ -64,6 +64,32 @@ MVP rules:
 - Recurrence rules are rejected by the API for todo items; recurring work belongs in `CHORE`.
 - Todo items with a due date participate in the same notification scan as event/chore items.
 
+## GROCERY
+
+Purpose:
+
+- Weekly shopping and errands.
+- Fast item entry with practical shop-facing metadata.
+
+Relevant item fields:
+
+- `name`
+- `quantity`
+- `category`
+- `status`
+
+UI behavior:
+
+- Hide URL, image, price, due-date, and recurrence fields.
+- Show quantity and category inputs for shop/aisle grouping.
+
+MVP rules:
+
+- Must not set list-level `target_date`.
+- Shopping fields (`url`, `image_url`, `price`) are rejected by the API for grocery items.
+- Due dates and recurrence rules are rejected by the API for grocery items; dated follow-ups belong in `TODO`/`CHORE`/`EVENT`.
+- Public guest claiming is not the primary GROCERY behavior.
+
 ## CHORE
 
 Purpose:

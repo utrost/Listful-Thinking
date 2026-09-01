@@ -142,8 +142,16 @@ curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"name":"Call optician","dueDate":"2030-01-01T09:00:00Z"}' \
   "$base_url/api/v1/lists/$todo_id/items" | assert_json 'data["name"] == "Call optician" and data["dueDate"] == "2030-01-01T09:00:00Z"'
 
+grocery_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"title":"Groceries","description":"Weekly shop","type":"GROCERY"}' \
+  "$base_url/api/v1/lists")"
+grocery_id="$(printf '%s' "$grocery_json" | json_field id)"
+curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Oat milk","quantity":"2 cartons","category":"Dairy alternatives"}' \
+  "$base_url/api/v1/lists/$grocery_id/items" | assert_json 'data["name"] == "Oat milk" and data["quantity"] == "2 cartons" and data["category"] == "Dairy alternatives"'
+
 curl_json -b "$admin_cookie" "$base_url/api/v1/admin/lists" \
-  | assert_json 'any(item["title"] == "Next actions" and item["ownerUsername"] == "admin" for item in data)'
+  | assert_json 'any(item["title"] == "Next actions" and item["ownerUsername"] == "admin" for item in data) and any(item["title"] == "Groceries" and item["type"] == "GROCERY" for item in data)'
 
 share_json="$(curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/lists/$list_id/public-share")"
 token="$(printf '%s' "$share_json" | json_field shareToken)"

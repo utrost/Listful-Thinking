@@ -139,6 +139,48 @@ class ListTypeBehaviorTests {
             .andExpect(jsonPath("$", hasSize(1)));
     }
 
+    @Test
+    void groceryListsAcceptQuantityAndCategoryButRejectNonGroceryFields() throws Exception {
+        MockHttpSession owner = register("owner");
+
+        mockMvc.perform(post("/api/v1/lists").session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"title":"Weekly groceries","description":"","type":"GROCERY","targetDate":"2027-01-01T00:00:00Z"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"))
+            .andExpect(jsonPath("$.message").value("Only event lists can have a target date."));
+
+        String groceryListId = createList(owner, "Weekly groceries", "GROCERY", null);
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", groceryListId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Oat milk","quantity":"2 cartons","category":"Dairy alternatives"}
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Oat milk"))
+            .andExpect(jsonPath("$.quantity").value("2 cartons"))
+            .andExpect(jsonPath("$.category").value("Dairy alternatives"));
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", groceryListId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Online thing","url":"https://shop.test/thing"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", groceryListId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Water plants","dueDate":"2027-01-01T09:30:00Z","recurrenceRule":"FREQ=WEEKLY"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
     private String createList(MockHttpSession session, String title, String type, String targetDate) throws Exception {
         String targetDateJson = targetDate == null ? "" : ",\"targetDate\":\"" + targetDate + "\"";
         MvcResult result = mockMvc.perform(post("/api/v1/lists").session(session)

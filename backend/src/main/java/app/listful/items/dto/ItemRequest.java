@@ -13,6 +13,8 @@ public record ItemRequest(
     BigDecimal price,
     ItemStatus status,
     Instant dueDate,
-    @Size(max = 255) String recurrenceRule
+    @Size(max = 255) String recurrenceRule,
+    @Size(max = 255) String quantity,
+    @Size(max = 255) String category
 ) {
 }

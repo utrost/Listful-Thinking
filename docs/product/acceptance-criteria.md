@@ -40,10 +40,11 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 
 ## Lists and items
 
-- Owners can create, update, and delete `WISH`, `TODO`, `CHORE`, and `EVENT` lists.
+- Owners can create, update, and delete `WISH`, `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists.
 - Owners can add, update, and delete items in owned lists.
 - `WISH` items support URL, image URL, and price.
 - `TODO` items support due date/time and reject shopping fields.
+- `GROCERY` items support quantity and category, and reject shopping, due-date, and recurrence fields.
 - `CHORE` items support due date and recurrence rule.
 - `EVENT` lists support target date and item due dates.
 

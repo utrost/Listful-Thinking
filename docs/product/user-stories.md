@@ -64,7 +64,7 @@ As an admin, I want to see all lists with owner metadata so I can understand ins
 
 ### Story: Create typed list
 
-As a registered user, I want to create a `WISH`, `TODO`, `CHORE`, or `EVENT` list so the UI can show relevant fields.
+As a registered user, I want to create a `WISH`, `TODO`, `GROCERY`, `CHORE`, or `EVENT` list so the UI can show relevant fields.
 
 ### Story: Manage my own lists
 
@@ -125,6 +125,10 @@ As a guest, I want to claim an open item with my name so duplicate purchases are
 ### Story: To-do-specific fields
 
 As a to-do-list owner, I want due dates without shopping or recurrence fields so one-off tasks stay simple.
+
+### Story: Grocery-specific fields
+
+As a grocery-list owner, I want quantity and category fields without shopping URLs or recurrence so weekly shopping stays quick.
 
 ### Story: Wishlist-specific fields
 

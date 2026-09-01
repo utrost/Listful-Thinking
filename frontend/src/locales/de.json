@@ -34,6 +34,8 @@
     "description": "Beschreibung",
     "imageUrl": "Bild-URL",
     "price": "Preis",
+    "quantity": "Menge",
+    "category": "Kategorie",
     "dueDate": "Fällig am",
     "previewUrl": "URL-Vorschau",
     "create": "Eintrag hinzufügen",

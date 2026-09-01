@@ -13,6 +13,8 @@ public record ItemResponse(
     String status,
     String dueDate,
     String recurrenceRule,
+    String quantity,
+    String category,
     String reservedByGuest
 ) {
 }

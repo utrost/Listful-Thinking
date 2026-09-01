@@ -42,7 +42,7 @@ public class ItemService {
         validateForListType(list, request);
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
-        item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
+        item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category());
         Item saved = itemRepository.save(item);
         if (shouldEnrichWishUrlItem(list, request)) {
             itemEnrichmentService.enrichUrlItem(saved.getId(), request.url().trim());
@@ -54,7 +54,7 @@ public class ItemService {
     public ItemResponse update(User actor, String itemId, ItemRequest request) {
         Item item = requireOwnedItem(actor, itemId);
         validateForListType(item.getList(), request);
-        item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
+        item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category());
         return toResponse(item);
     }
 
@@ -84,6 +84,12 @@ public class ItemService {
         if (listType != ListType.CHORE && hasText(request.recurrenceRule())) {
             throw new ValidationFailedException("Recurrence rules are only allowed on chore items.");
         }
+        if (listType != ListType.GROCERY && hasGroceryFields(request)) {
+            throw new ValidationFailedException("Quantity and category are only allowed on grocery items.");
+        }
+        if (listType == ListType.GROCERY && request.dueDate() != null) {
+            throw new ValidationFailedException("Due dates are only allowed on to-do, chore, and event items.");
+        }
     }
 
     private String itemNameFor(ItemRequest request) {
@@ -109,6 +115,10 @@ public class ItemService {
         return hasText(request.url()) || hasText(request.imageUrl()) || request.price() != null;
     }
 
+    private boolean hasGroceryFields(ItemRequest request) {
+        return hasText(request.quantity()) || hasText(request.category());
+    }
+
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
     }
@@ -125,6 +135,8 @@ public class ItemService {
             item.getStatus().name(),
             item.getDueDate() == null ? null : item.getDueDate().toString(),
             item.getRecurrenceRule(),
+            item.getQuantity(),
+            item.getCategory(),
             item.getReservedByGuest()
         );
     }

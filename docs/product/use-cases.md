@@ -196,8 +196,8 @@ These are not commitments. They are candidate directions for Listful Thinking or
 
 **Candidate stories:**
 
-- As a household member, I want a grocery template so item entry is optimized for shops, quantities, and quick completion.
-- As a shopper, I want items grouped by store aisle or category so the in-store pass is faster.
+- As a household member, I want a grocery template so item entry is optimized for quantities and categories.
+- As a shopper, I want items grouped or labeled by store aisle/category so the in-store pass is faster.
 - As a household member, I want recently bought items suggested so repeated staples are easy to re-add.
 - As a household member, I want multiple people to check off grocery items live so parallel shopping does not duplicate work.
 
@@ -315,7 +315,7 @@ Promote a brainstormed use case when it satisfies most of these:
 
 These are the most natural next candidates from the brainstorm because they extend current features rather than requiring a new product shape.
 
-1. **Grocery/errand list template** — fast add/check-off, quantity, category, optional live collaboration.
+1. **Grocery/errand list template** — first slice implemented with quantity/category fields; future work: faster check-off grouping and optional live collaboration.
 2. **Reusable packing/event templates** — clone a known-good list for trips, birthdays, or recurring events.
 3. **Maintenance schedule list** — recurrence plus last-done history for home, bikes, appliances, plants.
 4. **Signup sheet mode for public links** — public guests can claim slots/tasks, not only wishlist items.

@@ -11,6 +11,8 @@ export type ItemFormFields = {
   showPrice: boolean;
   showDueDate: boolean;
   showRecurrenceRule: boolean;
+  showQuantity?: boolean;
+  showCategory?: boolean;
 };
 
 export function listFormRulesForType(type: ListType): ListFormRules {
@@ -26,6 +28,7 @@ export function itemFormFieldsForListType(type: ListType): ItemFormFields {
     showImageUrl: type === 'WISH',
     showPrice: type === 'WISH',
     showDueDate: type === 'TODO' || type === 'CHORE' || type === 'EVENT',
-    showRecurrenceRule: type === 'CHORE'
+    showRecurrenceRule: type === 'CHORE',
+    ...(type === 'GROCERY' ? { showQuantity: true, showCategory: true } : {})
   };
 }

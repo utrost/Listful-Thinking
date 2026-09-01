@@ -117,6 +117,7 @@
           <select v-model="listForm.type">
             <option value="WISH">WISH</option>
             <option value="TODO">TODO</option>
+            <option value="GROCERY">GROCERY</option>
             <option value="CHORE">CHORE</option>
             <option value="EVENT">EVENT</option>
           </select>
@@ -174,6 +175,8 @@
               <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :placeholder="t('items.imageUrl')" />
               <img v-if="itemForm.imageUrl" class="item-image preview" :src="itemForm.imageUrl" :alt="itemForm.name || t('items.newName')" />
               <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
+              <input v-if="currentItemFields.showQuantity" v-model="itemForm.quantity" :placeholder="t('items.quantity')" />
+              <input v-if="currentItemFields.showCategory" v-model="itemForm.category" :placeholder="t('items.category')" />
               <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
               <input v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule" placeholder="FREQ=WEEKLY" />
               <button type="submit">{{ t('items.create') }}</button>
@@ -185,6 +188,7 @@
                 <span>
                   <strong>{{ item.name }}</strong>
                   <small v-if="item.description">{{ item.description }}</small>
+                  <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
                 </span>
                 <button type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
@@ -267,7 +271,7 @@ const emailAuthForm = reactive({ email: '' });
 const resetPasswordForm = reactive({ password: '' });
 const adminUserForm = reactive<{ username: string; email: string; password: string; role: 'ADMIN' | 'USER' }>({ username: '', email: '', password: '', role: 'USER' });
 const listForm = reactive<{ title: string; type: ListType; targetDate: string }>({ title: '', type: 'WISH', targetDate: '' });
-const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '' });
+const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const shareForm = reactive({ username: '' });
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
@@ -533,7 +537,9 @@ async function handleCreateItem() {
       imageUrl: fields.showImageUrl ? itemForm.imageUrl || undefined : undefined,
       price: fields.showPrice ? itemForm.price : undefined,
       dueDate: fields.showDueDate ? toIsoInstant(itemForm.dueDate) : undefined,
-      recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined
+      recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined,
+      quantity: fields.showQuantity ? itemForm.quantity || undefined : undefined,
+      category: fields.showCategory ? itemForm.category || undefined : undefined
     });
     resetItemForm();
     items.value = [created, ...items.value];
@@ -571,5 +577,7 @@ function resetItemForm() {
   itemForm.price = undefined;
   itemForm.dueDate = '';
   itemForm.recurrenceRule = '';
+  itemForm.quantity = '';
+  itemForm.category = '';
 }
 </script>

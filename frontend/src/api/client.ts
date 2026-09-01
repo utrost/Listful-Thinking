@@ -74,7 +74,7 @@ export interface AdminListEntry {
   createdAt: string;
 }
 
-export type ListType = 'WISH' | 'TODO' | 'CHORE' | 'EVENT';
+export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT';
 
 export interface ListEntry {
   id: string;
@@ -107,6 +107,8 @@ export interface ItemEntry {
   status: ItemStatus;
   dueDate: string | null;
   recurrenceRule: string | null;
+  quantity: string | null;
+  category: string | null;
   reservedByGuest: string | null;
 }
 
@@ -119,6 +121,8 @@ export interface ItemRequest {
   status?: ItemStatus;
   dueDate?: string;
   recurrenceRule?: string;
+  quantity?: string;
+  category?: string;
 }
 
 export interface ListShareEntry {
@@ -148,6 +152,8 @@ export interface PublicItemEntry {
   price: number | null;
   status: ItemStatus;
   dueDate: string | null;
+  quantity: string | null;
+  category: string | null;
   reservedByGuest: string | null;
 }
 

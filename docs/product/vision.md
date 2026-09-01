@@ -8,7 +8,7 @@ A self-hoster can start one Docker container, mount one data volume, create the 
 
 ## What the app is
 
-- A lightweight list manager for wishlists, to-dos, chores, and events.
+- A lightweight list manager for wishlists, to-dos, grocery lists, chores, and events.
 - A family/household-friendly tool with simple sharing and clear ownership.
 - A zero-config application that works with SQLite and no external services.
 - A single deployable web app, not a collection of microservices.

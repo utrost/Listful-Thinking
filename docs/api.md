@@ -127,7 +127,7 @@ Response: `201 Created` with list.
 Type validation:
 
 - `EVENT` lists require `targetDate`.
-- `WISH`, `TODO`, and `CHORE` lists reject `targetDate`; due dates live on their items.
+- `WISH`, `TODO`, `GROCERY`, and `CHORE` lists reject `targetDate`; due dates live on supported item types.
 - Type validation failures return `400 Bad Request` with `validation_failed`.
 
 ### `GET /api/v1/lists/{id}`
@@ -163,7 +163,7 @@ Creates an item on an owned list.
 Request:
 
 ```json
-{"name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null}
+{"name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null}
 ```
 
 Response: `201 Created` with item.
@@ -180,6 +180,7 @@ Type validation:
 
 - `WISH` items allow shopping fields: `url`, `description`, `imageUrl`, and `price`.
 - `TODO` items reject shopping fields and recurrence rules, and allow `dueDate` for reminders.
+- `GROCERY` items allow `quantity` and `category`, and reject shopping fields, due dates, and recurrence rules.
 - `CHORE` items reject shopping fields and allow `dueDate` plus `recurrenceRule`.
 - `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
 
@@ -194,7 +195,7 @@ Deletes an item only when its parent list is owned by the authenticated user. Re
 Item response:
 
 ```json
-{"id":"uuid","listId":"uuid","name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"reservedByGuest":null}
+{"id":"uuid","listId":"uuid","name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null,"reservedByGuest":null}
 ```
 
 ## Internal sharing
@@ -275,7 +276,7 @@ Returns a safe public representation of a public list and its items. It excludes
 Response:
 
 ```json
-{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"items":[{"id":"uuid","name":"Book","url":"https://example.test/book","imageUrl":null,"price":19.99,"status":"OPEN","dueDate":null,"reservedByGuest":null}]}
+{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"items":[{"id":"uuid","name":"Book","url":"https://example.test/book","imageUrl":null,"price":19.99,"status":"OPEN","dueDate":null,"quantity":null,"category":null,"reservedByGuest":null}]}
 ```
 
 ### `POST /api/v1/share/{token}/items/{itemId}/claim`

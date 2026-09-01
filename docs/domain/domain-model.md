@@ -35,7 +35,7 @@ Fields:
 - `user_id` owner
 - `title`
 - `description`
-- `type`: `WISH`, `TODO`, `CHORE`, or `EVENT`
+- `type`: `WISH`, `TODO`, `GROCERY`, `CHORE`, or `EVENT`
 - `share_token`
 - `is_public`
 - `target_date`
@@ -46,7 +46,7 @@ Rules:
 - Lists are private by default.
 - Public sharing is opt-in per list.
 - Internal sharing is opt-in per list and per registered user.
-- `target_date` is required for `EVENT` lists and rejected for `WISH`, `TODO`, and `CHORE` lists.
+- `target_date` is required for `EVENT` lists and rejected for `WISH`, `TODO`, `GROCERY`, and `CHORE` lists.
 
 ## Items
 
@@ -63,6 +63,8 @@ Fields:
 - `status`: `OPEN`, `CLAIMED`, `PURCHASED`
 - `due_date`
 - `recurrence_rule`
+- `quantity`
+- `category`
 - `reserved_by_guest`
 
 Rules:
@@ -73,6 +75,7 @@ Rules:
 - `CLAIMED` means someone reserved the item, usually through a public wishlist link.
 - `PURCHASED` is owner-controlled for MVP.
 - Type-specific fields are interpreted by the parent list type.
+- `quantity` and `category` are grocery-specific.
 
 ## Settings
 

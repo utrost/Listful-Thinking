@@ -34,6 +34,8 @@
     "description": "Description",
     "imageUrl": "Image URL",
     "price": "Price",
+    "quantity": "Quantity",
+    "category": "Category",
     "dueDate": "Due date",
     "previewUrl": "Preview URL",
     "create": "Add item",

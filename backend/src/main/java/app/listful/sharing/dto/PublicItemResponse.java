@@ -11,6 +11,8 @@ public record PublicItemResponse(
     BigDecimal price,
     String status,
     String dueDate,
+    String quantity,
+    String category,
     String reservedByGuest
 ) {
 }
