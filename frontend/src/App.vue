@@ -217,8 +217,42 @@
               <button type="submit">{{ t('items.create') }}</button>
             </form>
 
-            <ul class="item-list">
-              <li v-for="item in items" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
+            <div v-if="selectedList.type === 'GROCERY'" class="button-row shop-controls">
+              <label class="toggle-row">
+                <input v-model="hideCompletedGroceries" type="checkbox" />
+                <span>{{ t('items.hideCompleted') }}</span>
+              </label>
+              <button v-if="selectedList.access === 'OWNER'" type="button" class="danger subtle" @click="handleClearCompletedGroceries">{{ t('items.clearCompleted') }}</button>
+            </div>
+
+            <template v-if="selectedList.type === 'GROCERY'">
+              <section v-for="[category, groupItems] in groceryGroups" :key="category" class="grocery-group">
+                <h4>{{ category }}</h4>
+                <ul class="item-list">
+                  <li v-for="item in groupItems" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
+                    <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @submit.prevent="handleSaveEditedItem(item)">
+                      <input v-model="editItemForm.name" :placeholder="t('items.newName')" required />
+                      <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :placeholder="t('items.quantity')" />
+                      <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :placeholder="t('items.category')" />
+                      <button type="submit">{{ t('items.save') }}</button>
+                      <button type="button" class="secondary subtle" @click="handleCancelEditItem">{{ t('items.cancel') }}</button>
+                    </form>
+                    <span v-else>
+                      <strong>{{ item.name }}</strong>
+                      <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
+                      <small>{{ item.status }}</small>
+                    </span>
+                    <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
+                    <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                    <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
+                    <button v-if="selectedList.access === 'OWNER'" type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
+                  </li>
+                </ul>
+              </section>
+            </template>
+
+            <ul v-else class="item-list">
+              <li v-for="item in displayedItems" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
                 <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
                 <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @submit.prevent="handleSaveEditedItem(item)">
                   <input v-model="editItemForm.name" :placeholder="t('items.newName')" required />
@@ -261,6 +295,7 @@ import {
   createList,
   createPublicShare,
   claimPublicItem,
+  clearCompletedItems,
   deleteItem,
   deleteList,
   getAdminSettings,
@@ -306,6 +341,7 @@ const currentUser = ref<AuthUser | null>(null);
 const lists = ref<ListEntry[]>([]);
 const selectedList = ref<ListEntry | null>(null);
 const items = ref<ItemEntry[]>([]);
+const hideCompletedGroceries = ref(false);
 const shares = ref<ListShareEntry[]>([]);
 const notifications = ref<NotificationEntry[]>([]);
 const adminSettings = ref<AdminSettings | null>(null);
@@ -334,6 +370,20 @@ const shareForm = reactive<{ username: string; permission: 'READ' | 'CONTRIBUTE'
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const editListRules = computed(() => listFormRulesForType(editListForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
+const displayedItems = computed(() => {
+  if (selectedList.value?.type !== 'GROCERY' || !hideCompletedGroceries.value) {
+    return items.value;
+  }
+  return items.value.filter((item) => item.status !== 'DONE');
+});
+const groceryGroups = computed(() => {
+  const grouped = new Map<string, ItemEntry[]>();
+  for (const item of displayedItems.value) {
+    const category = item.category?.trim() || t('items.uncategorized');
+    grouped.set(category, [...(grouped.get(category) ?? []), item]);
+  }
+  return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
+});
 
 onMounted(async () => {
   if (publicToken) {
@@ -686,6 +736,14 @@ async function handleDeleteItem(id: string) {
   await run(async () => {
     await deleteItem(id);
     items.value = items.value.filter((item) => item.id !== id);
+  });
+}
+
+async function handleClearCompletedGroceries() {
+  if (!selectedList.value) return;
+  await run(async () => {
+    await clearCompletedItems(selectedList.value!.id);
+    items.value = items.value.filter((item) => item.status !== 'DONE');
   });
 }
 

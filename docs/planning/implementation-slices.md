@@ -432,7 +432,7 @@ Tests:
 
 ### Slice 19: Grocery shop mode
 
-Status: proposed.
+Status: complete for first shop-mode slice.
 
 User outcome:
 

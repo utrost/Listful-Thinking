@@ -380,6 +380,17 @@ export async function deleteItem(itemId: string): Promise<void> {
   }
 }
 
+export async function clearCompletedItems(listId: string): Promise<void> {
+  const response = await fetch(`/api/v1/lists/${listId}/items/completed`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+}
+
 export async function getListShares(listId: string): Promise<ListShareEntry[]> {
   return requestJson<ListShareEntry[]>(`/api/v1/lists/${listId}/shares`);
 }

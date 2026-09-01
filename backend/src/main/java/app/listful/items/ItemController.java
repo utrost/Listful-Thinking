@@ -48,6 +48,12 @@ public class ItemController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/lists/{listId}/items/completed")
+    public ResponseEntity<Void> clearCompleted(@PathVariable String listId, Authentication authentication) {
+        itemService.clearCompleted(currentUser(authentication), listId);
+        return ResponseEntity.noContent().build();
+    }
+
     private User currentUser(Authentication authentication) {
         return CurrentUser.from(authentication);
     }

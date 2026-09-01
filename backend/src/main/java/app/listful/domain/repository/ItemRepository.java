@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface ItemRepository extends JpaRepository<Item, String> {
     List<Item> findByListId(String listId);
+    long deleteByListIdAndStatus(String listId, ItemStatus status);
 
     @Query("""
         select i from Item i

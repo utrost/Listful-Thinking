@@ -168,6 +168,14 @@ Status meaning:
 - `OPEN`: still to buy/handle.
 - `DONE`: bought/handled and ready to reopen if needed.
 
+Shop mode:
+
+- Grocery items are grouped by category in the list detail view.
+- Items without a category appear under **Uncategorized**.
+- Use **Done** as the one-tap check-off while shopping.
+- Use **Hide completed** to keep only remaining open items visible on a phone.
+- List owners can use **Clear completed** after the trip. This deletes only `DONE` grocery items from that grocery list. It does not clear completed TODO, CHORE, EVENT, or WISH items.
+
 ### CHORE
 
 Use for household work and recurring duties.

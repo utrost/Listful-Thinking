@@ -197,8 +197,18 @@ small,
   padding: 1rem 0;
 }
 
-.share-panel h4 {
+.share-panel h4,
+.grocery-group h4 {
   margin: 0 0 0.75rem;
+}
+
+.grocery-group {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.shop-controls {
+  justify-content: space-between;
 }
 
 .button-row,

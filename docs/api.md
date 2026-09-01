@@ -192,6 +192,10 @@ Updates an item when its parent list is owned by the authenticated user or share
 
 Deletes an item only when its parent list is owned by the authenticated user. Returns `404` for missing or non-owned items.
 
+### `DELETE /api/v1/lists/{id}/items/completed`
+
+Deletes `DONE` items from an owned `GROCERY` list. This is the shop-mode reset path after a shopping trip. It returns `400 validation_failed` for non-grocery lists and `404` for missing or non-owned lists.
+
 Item response:
 
 ```json

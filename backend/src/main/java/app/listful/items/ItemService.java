@@ -64,6 +64,15 @@ public class ItemService {
         itemRepository.delete(item);
     }
 
+    @Transactional
+    public void clearCompleted(User actor, String listId) {
+        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        if (list.getType() != ListType.GROCERY) {
+            throw new ValidationFailedException("Clear completed is only available for grocery lists.");
+        }
+        itemRepository.deleteByListIdAndStatus(list.getId(), ItemStatus.DONE);
+    }
+
     private Item requireOwnedItem(User actor, String itemId) {
         Item item = itemRepository.findById(itemId)
             .orElseThrow(() -> new ResourceNotFoundException("Item not found"));

@@ -171,6 +171,44 @@ class ItemControllerTests {
     }
 
     @Test
+    void ownerCanClearCompletedGroceryItemsOnly() throws Exception {
+        MockHttpSession owner = register("owner");
+        String groceryId = createList(owner, "Groceries", "GROCERY");
+        String todoId = createList(owner, "Next actions", "TODO");
+        String openMilk = createItem(owner, groceryId, "Oat milk");
+        String boughtApples = createItem(owner, groceryId, "Apples");
+        String doneTodo = createItem(owner, todoId, "Call optician");
+
+        markDone(owner, boughtApples, "Apples");
+        markDone(owner, doneTodo, "Call optician");
+
+        mockMvc.perform(delete("/api/v1/lists/{listId}/items/completed", groceryId).session(owner))
+            .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", groceryId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].id").value(openMilk));
+
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", todoId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].id").value(doneTodo));
+    }
+
+    @Test
+    void clearCompletedIsOnlyForGroceryLists() throws Exception {
+        MockHttpSession owner = register("owner");
+        String todoId = createList(owner, "Next actions", "TODO");
+        String todoItem = createItem(owner, todoId, "Call optician");
+        markDone(owner, todoItem, "Call optician");
+
+        mockMvc.perform(delete("/api/v1/lists/{listId}/items/completed", todoId).session(owner))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
+    @Test
     void wishItemsKeepClaimAndPurchaseStatusesButRejectDone() throws Exception {
         MockHttpSession owner = register("owner");
         String wishListId = createList(owner, "Birthday", "WISH");
@@ -306,6 +344,14 @@ class ItemControllerTests {
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private void markDone(MockHttpSession session, String itemId, String name) throws Exception {
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(session)
+                .contentType("application/json")
+                .content("{\"name\":\"%s\",\"status\":\"DONE\"}".formatted(name)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("DONE"));
     }
 
     private String createList(MockHttpSession session, String title) throws Exception {

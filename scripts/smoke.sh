@@ -171,6 +171,16 @@ grocery_id="$(printf '%s' "$grocery_json" | json_field id)"
 curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"name":"Oat milk","quantity":"2 cartons","category":"Dairy alternatives"}' \
   "$base_url/api/v1/lists/$grocery_id/items" | assert_json 'data["name"] == "Oat milk" and data["quantity"] == "2 cartons" and data["category"] == "Dairy alternatives"'
+grocery_done_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Apples","quantity":"1 kg","category":"Fruit"}' \
+  "$base_url/api/v1/lists/$grocery_id/items")"
+grocery_done_id="$(printf '%s' "$grocery_done_json" | json_field id)"
+curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"Apples","quantity":"1 kg","category":"Fruit","status":"DONE"}' \
+  "$base_url/api/v1/items/$grocery_done_id" | assert_json 'data["status"] == "DONE"'
+curl -fsS -b "$admin_cookie" -X DELETE "$base_url/api/v1/lists/$grocery_id/items/completed" >/dev/null
+curl_json -b "$admin_cookie" "$base_url/api/v1/lists/$grocery_id/items" \
+  | assert_json 'len(data) == 1 and data[0]["name"] == "Oat milk"'
 
 curl_json -b "$admin_cookie" "$base_url/api/v1/admin/lists" \
   | assert_json 'any(item["title"] == "Next actions" and item["ownerUsername"] == "admin" for item in data) and any(item["title"] == "Groceries" and item["type"] == "GROCERY" for item in data)'
@@ -189,4 +199,4 @@ curl_json -H 'Content-Type: application/json' \
 sqlite_path="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'test -f /app/data/listful-thinking.sqlite && echo present')"
 [ "$sqlite_path" = "present" ] || { echo "SQLite database missing in /app/data" >&2; exit 1; }
 
-echo "Smoke OK: health, non-root runtime, admin/users/settings, list/item/public claim, SQLite volume"
+echo "Smoke OK: health, non-root runtime, admin/users/settings, list/item/grocery clear-completed/public claim, SQLite volume"
