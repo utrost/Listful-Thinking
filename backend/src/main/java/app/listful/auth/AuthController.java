@@ -2,8 +2,11 @@ package app.listful.auth;
 
 import app.listful.api.ApiError;
 import app.listful.auth.dto.AuthUserResponse;
+import app.listful.auth.dto.EmailLinkRequest;
 import app.listful.auth.dto.LoginRequest;
+import app.listful.auth.dto.PasswordResetConsumeRequest;
 import app.listful.auth.dto.RegisterRequest;
+import app.listful.auth.dto.TokenRequest;
 import app.listful.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -45,6 +48,31 @@ public class AuthController {
         User user = authService.login(request);
         SessionAuthentication.authenticate(httpRequest, user);
         return authService.toResponse(user);
+    }
+
+    @PostMapping("/magic-link")
+    public ResponseEntity<Void> requestMagicLink(@Valid @RequestBody EmailLinkRequest request) {
+        authService.sendMagicLink(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/magic-link/consume")
+    public AuthUserResponse consumeMagicLink(@Valid @RequestBody TokenRequest request, HttpServletRequest httpRequest) {
+        User user = authService.consumeMagicLink(request);
+        SessionAuthentication.authenticate(httpRequest, user);
+        return authService.toResponse(user);
+    }
+
+    @PostMapping("/password-reset")
+    public ResponseEntity<Void> requestPasswordReset(@Valid @RequestBody EmailLinkRequest request) {
+        authService.sendPasswordReset(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/password-reset/consume")
+    public ResponseEntity<Void> consumePasswordReset(@Valid @RequestBody PasswordResetConsumeRequest request) {
+        authService.consumePasswordReset(request);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/logout")

@@ -7,6 +7,7 @@ services:
     environment:
       SYSTEM_LANG: ${SYSTEM_LANG:-en}
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
       MAIL_HOST: ${MAIL_HOST:-}
       MAIL_PORT: ${MAIL_PORT:-}
       MAIL_USER: ${MAIL_USER:-}

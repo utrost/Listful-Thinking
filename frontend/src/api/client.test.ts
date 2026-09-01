@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -40,6 +40,31 @@ describe('auth API client', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/v1/auth/logout', expect.objectContaining({
       method: 'POST',
       credentials: 'include'
+    }));
+  });
+
+  it('posts magic link and password reset auth flows with credentials included', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'u1', username: 'uwe', email: 'uwe@example.test', role: 'ADMIN' })
+    } as Response);
+
+    await requestMagicLink({ email: 'uwe@example.test' });
+    await consumeMagicLink({ token: 'magic-token' });
+    await requestPasswordReset({ email: 'uwe@example.test' });
+    await consumePasswordReset({ token: 'reset-token', password: 'new password' });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/auth/magic-link', expect.objectContaining({
+      method: 'POST', credentials: 'include', body: JSON.stringify({ email: 'uwe@example.test' })
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/auth/magic-link/consume', expect.objectContaining({
+      method: 'POST', credentials: 'include', body: JSON.stringify({ token: 'magic-token' })
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/auth/password-reset', expect.objectContaining({
+      method: 'POST', credentials: 'include', body: JSON.stringify({ email: 'uwe@example.test' })
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(4, '/api/v1/auth/password-reset/consume', expect.objectContaining({
+      method: 'POST', credentials: 'include', body: JSON.stringify({ token: 'reset-token', password: 'new password' })
     }));
   });
 

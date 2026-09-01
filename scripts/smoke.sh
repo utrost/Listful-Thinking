@@ -62,6 +62,7 @@ services:
     environment:
       SYSTEM_LANG: en
       REGISTRATION_ENABLED: "true"
+      PUBLIC_BASE_URL: "http://localhost:${port}"
       MAIL_HOST: ""
       MAIL_PORT: ""
       MAIL_USER: ""
@@ -105,6 +106,15 @@ curl_json -b "$admin_cookie" "$base_url/api/v1/admin/users" \
 curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
   -d '{"registrationEnabled":false}' \
   "$base_url/api/v1/admin/settings" | assert_json 'data["registrationEnabled"] is False'
+
+curl -fsS "$base_url/magic-login?token=smoke" >/dev/null
+curl -fsS "$base_url/reset-password?token=smoke" >/dev/null
+curl_json -H 'Content-Type: application/json' \
+  -d '{"email":"nobody@example.test"}' \
+  "$base_url/api/v1/auth/magic-link" >/dev/null
+curl_json -H 'Content-Type: application/json' \
+  -d '{"email":"nobody@example.test"}' \
+  "$base_url/api/v1/auth/password-reset" >/dev/null
 
 list_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Birthday","description":"Gift ideas","type":"WISH"}' \

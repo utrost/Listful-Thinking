@@ -53,6 +53,46 @@ Responses:
 
 - `204 No Content`
 
+### `POST /api/v1/auth/magic-link`
+
+Request:
+
+```json
+{"email":"uwe@example.test"}
+```
+
+Creates a 30-minute one-time token for the matching email address and sends a magic login link. Always returns `204 No Content` so callers cannot enumerate accounts.
+
+### `POST /api/v1/auth/magic-link/consume`
+
+Request:
+
+```json
+{"token":"url-token"}
+```
+
+Consumes the one-time token, creates a session, and returns the authenticated user. Invalid, expired, or reused tokens return `401 Unauthorized`.
+
+### `POST /api/v1/auth/password-reset`
+
+Request:
+
+```json
+{"email":"uwe@example.test"}
+```
+
+Creates a 30-minute one-time token for the matching email address and sends a password reset link. Always returns `204 No Content`.
+
+### `POST /api/v1/auth/password-reset/consume`
+
+Request:
+
+```json
+{"token":"url-token","password":"new correct horse battery staple"}
+```
+
+Consumes the one-time token and stores a new BCrypt password hash. Invalid, expired, or reused tokens return `401 Unauthorized`.
+
 ### `GET /api/v1/auth/me`
 
 Responses:

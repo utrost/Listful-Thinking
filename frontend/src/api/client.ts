@@ -20,6 +20,19 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface EmailLinkRequest {
+  email: string;
+}
+
+export interface TokenRequest {
+  token: string;
+}
+
+export interface PasswordResetConsumeRequest {
+  token: string;
+  password: string;
+}
+
 export interface AdminSettings {
   registrationEnabled: boolean;
 }
@@ -199,6 +212,38 @@ export async function logout(): Promise<void> {
   const response = await fetch('/api/v1/auth/logout', {
     method: 'POST',
     credentials: 'include'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+}
+
+export async function requestMagicLink(request: EmailLinkRequest): Promise<void> {
+  await requestNoContent('/api/v1/auth/magic-link', request);
+}
+
+export async function consumeMagicLink(request: TokenRequest): Promise<AuthUser> {
+  return requestJson<AuthUser>('/api/v1/auth/magic-link/consume', {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function requestPasswordReset(request: EmailLinkRequest): Promise<void> {
+  await requestNoContent('/api/v1/auth/password-reset', request);
+}
+
+export async function consumePasswordReset(request: PasswordResetConsumeRequest): Promise<void> {
+  await requestNoContent('/api/v1/auth/password-reset/consume', request);
+}
+
+async function requestNoContent(path: string, body: unknown): Promise<void> {
+  const response = await fetch(path, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {

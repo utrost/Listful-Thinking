@@ -1,6 +1,7 @@
 package app.listful.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -8,12 +9,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import app.listful.domain.enums.UserRole;
 import app.listful.domain.repository.UserRepository;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mock.web.MockHttpSession;
+import org.mockito.ArgumentCaptor;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -31,6 +38,9 @@ class AuthControllerTests {
 
     @Autowired
     private UserRepository userRepository;
+
+    @MockBean
+    private JavaMailSender mailSender;
 
     @BeforeEach
     void cleanDatabase() {
@@ -104,6 +114,70 @@ class AuthControllerTests {
 
         mockMvc.perform(get("/api/v1/auth/me").session(session))
             .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void magicLinkEmailAuthenticatesSessionWithoutPassword() throws Exception {
+        register("uwe", "uwe@example.test", "correct horse battery staple");
+
+        mockMvc.perform(post("/api/v1/auth/magic-link")
+                .contentType("application/json")
+                .content("{\"email\":\"uwe@example.test\"}"))
+            .andExpect(status().isNoContent());
+
+        SimpleMailMessage message = sentMail();
+        assertThat(message.getTo()).containsExactly("uwe@example.test");
+        assertThat(message.getSubject()).contains("magic link");
+        String token = extractToken(message.getText());
+
+        MvcResult login = mockMvc.perform(post("/api/v1/auth/magic-link/consume")
+                .contentType("application/json")
+                .content("{\"token\":\"%s\"}".formatted(token)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.username").value("uwe"))
+            .andReturn();
+
+        mockMvc.perform(get("/api/v1/auth/me").session((MockHttpSession) login.getRequest().getSession(false)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.username").value("uwe"));
+    }
+
+    @Test
+    void passwordResetEmailLetsUserSetNewPassword() throws Exception {
+        register("uwe", "uwe@example.test", "correct horse battery staple");
+
+        mockMvc.perform(post("/api/v1/auth/password-reset")
+                .contentType("application/json")
+                .content("{\"email\":\"uwe@example.test\"}"))
+            .andExpect(status().isNoContent());
+
+        SimpleMailMessage message = sentMail();
+        assertThat(message.getTo()).containsExactly("uwe@example.test");
+        assertThat(message.getSubject()).contains("password reset");
+        String token = extractToken(message.getText());
+
+        mockMvc.perform(post("/api/v1/auth/password-reset/consume")
+                .contentType("application/json")
+                .content("{\"token\":\"%s\",\"password\":\"new correct horse battery staple\"}".formatted(token)))
+            .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType("application/json")
+                .content("{\"username\":\"uwe\",\"password\":\"new correct horse battery staple\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.username").value("uwe"));
+    }
+
+    private SimpleMailMessage sentMail() {
+        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mailSender).send(captor.capture());
+        return captor.getValue();
+    }
+
+    private String extractToken(String body) {
+        Matcher matcher = Pattern.compile("token=([A-Za-z0-9_-]+)").matcher(body);
+        assertThat(matcher.find()).isTrue();
+        return matcher.group(1);
     }
 
     private void register(String username, String email, String password) throws Exception {

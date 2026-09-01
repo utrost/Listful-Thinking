@@ -10,7 +10,13 @@
     "logout": "Log out",
     "username": "Username",
     "email": "Email",
-    "password": "Password"
+    "password": "Password",
+    "magicLink": "Email me a magic link",
+    "passwordReset": "Reset password",
+    "newPassword": "New password",
+    "setNewPassword": "Set new password",
+    "emailSent": "If that email exists, a link has been sent.",
+    "passwordUpdated": "Password updated. You can log in now."
   },
   "health": {
     "check": "Check backend",

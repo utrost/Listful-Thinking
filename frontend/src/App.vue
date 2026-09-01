@@ -45,6 +45,15 @@
           <label>{{ t('auth.username') }}<input v-model="loginForm.username" required /></label>
           <label>{{ t('auth.password') }}<input v-model="loginForm.password" type="password" required /></label>
           <button type="submit">{{ t('auth.login') }}</button>
+          <label>{{ t('auth.email') }}<input v-model="emailAuthForm.email" type="email" /></label>
+          <div class="button-row">
+            <button type="button" class="secondary" @click="handleRequestMagicLink">{{ t('auth.magicLink') }}</button>
+            <button type="button" class="secondary" @click="handleRequestPasswordReset">{{ t('auth.passwordReset') }}</button>
+          </div>
+          <template v-if="resetToken">
+            <label>{{ t('auth.newPassword') }}<input v-model="resetPasswordForm.password" type="password" minlength="8" /></label>
+            <button type="button" class="secondary" @click="handleConsumePasswordReset">{{ t('auth.setNewPassword') }}</button>
+          </template>
         </form>
       </section>
 
@@ -191,6 +200,10 @@ import {
   logout,
   markNotificationRead,
   register,
+  requestMagicLink,
+  requestPasswordReset,
+  consumeMagicLink,
+  consumePasswordReset,
   revokeListShare,
   revokePublicShare,
   scrapeUrl,
@@ -218,12 +231,16 @@ const notifications = ref<NotificationEntry[]>([]);
 const adminSettings = ref<AdminSettings | null>(null);
 const adminUsers = ref<AdminUserEntry[]>([]);
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
+const magicToken = window.location.pathname === '/magic-login' ? new URLSearchParams(window.location.search).get('token') : '';
+const resetToken = window.location.pathname === '/reset-password' ? new URLSearchParams(window.location.search).get('token') : '';
 const publicList = ref<PublicListEntry | null>(null);
 const guestName = ref('');
 const message = ref('');
 
 const registerForm = reactive({ username: '', email: '', password: '' });
 const loginForm = reactive({ username: '', password: '' });
+const emailAuthForm = reactive({ email: '' });
+const resetPasswordForm = reactive({ password: '' });
 const listForm = reactive<{ title: string; type: ListType; targetDate: string }>({ title: '', type: 'WISH', targetDate: '' });
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '' });
 const shareForm = reactive({ username: '' });
@@ -234,6 +251,16 @@ onMounted(async () => {
   if (publicToken) {
     await run(async () => {
       publicList.value = await getPublicShare(publicToken);
+    });
+    return;
+  }
+
+  if (magicToken) {
+    await run(async () => {
+      currentUser.value = await consumeMagicLink({ token: magicToken });
+      await loadLists();
+      await loadNotifications();
+      await maybeLoadAdminPanel();
     });
     return;
   }
@@ -265,6 +292,29 @@ async function handleLogin() {
     await loadLists();
     await loadNotifications();
     await maybeLoadAdminPanel();
+  });
+}
+
+async function handleRequestMagicLink() {
+  await run(async () => {
+    await requestMagicLink({ email: emailAuthForm.email });
+    message.value = t('auth.emailSent');
+  });
+}
+
+async function handleRequestPasswordReset() {
+  await run(async () => {
+    await requestPasswordReset({ email: emailAuthForm.email });
+    message.value = t('auth.emailSent');
+  });
+}
+
+async function handleConsumePasswordReset() {
+  if (!resetToken) return;
+  await run(async () => {
+    await consumePasswordReset({ token: resetToken, password: resetPasswordForm.password });
+    resetPasswordForm.password = '';
+    message.value = t('auth.passwordUpdated');
   });
 }
 

@@ -10,7 +10,13 @@
     "logout": "Abmelden",
     "username": "Benutzername",
     "email": "E-Mail",
-    "password": "Passwort"
+    "password": "Passwort",
+    "magicLink": "Magic Link per E-Mail",
+    "passwordReset": "Passwort zurücksetzen",
+    "newPassword": "Neues Passwort",
+    "setNewPassword": "Neues Passwort setzen",
+    "emailSent": "Falls diese E-Mail existiert, wurde ein Link verschickt.",
+    "passwordUpdated": "Passwort aktualisiert. Du kannst dich jetzt anmelden."
   },
   "health": {
     "check": "Backend prüfen",
