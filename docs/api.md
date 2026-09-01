@@ -182,11 +182,28 @@ Type validation:
 - `TODO` items reject shopping fields and recurrence rules, and allow `dueDate` for reminders.
 - `GROCERY` items allow `quantity` and `category`, and reject shopping fields, due dates, and recurrence rules.
 - `CHORE` items reject shopping fields and allow `dueDate` plus `recurrenceRule`.
+- Supported chore recurrence rules are `FREQ=DAILY`, `FREQ=WEEKLY`, and `FREQ=MONTHLY`.
 - `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
 
 ### `PUT /api/v1/items/{id}`
 
 Updates an item when its parent list is owned by the authenticated user or shared with `CONTRIBUTE` permission. Returns `404` for missing or inaccessible items.
+
+When a recurring `CHORE` item is updated to `DONE`, the API stores `lastCompletedAt`, advances `dueDate` by the recurrence rule, and returns the item as `OPEN` for the next occurrence.
+
+### `POST /api/v1/items/{id}/skip`
+
+Skips one occurrence of a dated recurring `CHORE` item by advancing its `dueDate` according to its recurrence rule. The item remains `OPEN` and `lastCompletedAt` is unchanged.
+
+### `POST /api/v1/items/{id}/postpone`
+
+Postpones a dated `CHORE` item by a fixed number of days.
+
+Request:
+
+```json
+{"days":3}
+```
 
 ### `DELETE /api/v1/items/{id}`
 
@@ -199,7 +216,7 @@ Deletes `DONE` items from an owned `GROCERY` list. This is the shop-mode reset p
 Item response:
 
 ```json
-{"id":"uuid","listId":"uuid","name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null,"reservedByGuest":null}
+{"id":"uuid","listId":"uuid","name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null,"reservedByGuest":null,"lastCompletedAt":null}
 ```
 
 ## Internal sharing

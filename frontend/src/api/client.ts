@@ -111,6 +111,7 @@ export interface ItemEntry {
   quantity: string | null;
   category: string | null;
   reservedByGuest: string | null;
+  lastCompletedAt: string | null;
 }
 
 export interface ItemRequest {
@@ -124,6 +125,10 @@ export interface ItemRequest {
   recurrenceRule?: string;
   quantity?: string;
   category?: string;
+}
+
+export interface PostponeRequest {
+  days: number;
 }
 
 export interface ListShareEntry {
@@ -389,6 +394,19 @@ export async function clearCompletedItems(listId: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
+}
+
+export async function skipChoreItem(itemId: string): Promise<ItemEntry> {
+  return requestJson<ItemEntry>(`/api/v1/items/${itemId}/skip`, {
+    method: 'POST'
+  });
+}
+
+export async function postponeChoreItem(itemId: string, request: PostponeRequest): Promise<ItemEntry> {
+  return requestJson<ItemEntry>(`/api/v1/items/${itemId}/postpone`, {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
 }
 
 export async function getListShares(listId: string): Promise<ListShareEntry[]> {

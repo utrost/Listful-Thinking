@@ -164,6 +164,22 @@ curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
   -d '{"name":"Call optician","status":"OPEN","dueDate":"2030-01-01T09:00:00Z"}' \
   "$base_url/api/v1/items/$todo_item_id" | assert_json 'data["status"] == "OPEN"'
 
+chore_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"title":"Chores","description":"Home care","type":"CHORE"}' \
+  "$base_url/api/v1/lists")"
+chore_id="$(printf '%s' "$chore_json" | json_field id)"
+chore_item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Water plants","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY"}' \
+  "$base_url/api/v1/lists/$chore_id/items")"
+chore_item_id="$(printf '%s' "$chore_item_json" | json_field id)"
+curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"Water plants","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY"}' \
+  "$base_url/api/v1/items/$chore_item_id" | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-08T09:00:00Z" and data["lastCompletedAt"]'
+curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/items/$chore_item_id/skip" \
+  | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-15T09:00:00Z"'
+curl_json -b "$admin_cookie" -X POST -H 'Content-Type: application/json' -d '{"days":1}' "$base_url/api/v1/items/$chore_item_id/postpone" \
+  | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-16T09:00:00Z"'
+
 grocery_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Groceries","description":"Weekly shop","type":"GROCERY"}' \
   "$base_url/api/v1/lists")"
@@ -199,4 +215,4 @@ curl_json -H 'Content-Type: application/json' \
 sqlite_path="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'test -f /app/data/listful-thinking.sqlite && echo present')"
 [ "$sqlite_path" = "present" ] || { echo "SQLite database missing in /app/data" >&2; exit 1; }
 
-echo "Smoke OK: health, non-root runtime, admin/users/settings, list/item/grocery clear-completed/public claim, SQLite volume"
+echo "Smoke OK: health, non-root runtime, admin/users/settings, list/item/chore recurrence/grocery clear-completed/public claim, SQLite volume"

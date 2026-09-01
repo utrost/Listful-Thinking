@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, createPublicShare, createAdminUser, clearCompletedItems, deleteItem, deleteList, getAdminLists, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateAdminUser, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, createPublicShare, createAdminUser, clearCompletedItems, deleteItem, deleteList, getAdminLists, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, skipChoreItem, postponeChoreItem, updateAdminSettings, updateAdminUser, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -140,6 +140,8 @@ describe('auth API client', () => {
     await updateItem('i1', { name: 'Leather strap', status: 'PURCHASED', price: 29.9 });
     await deleteItem('i1');
     await clearCompletedItems('l1');
+    await skipChoreItem('i2');
+    await postponeChoreItem('i2', { days: 3 });
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/lists/l1/items', expect.objectContaining({ credentials: 'include' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/lists/l1/items', expect.objectContaining({
@@ -158,6 +160,15 @@ describe('auth API client', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(5, '/api/v1/lists/l1/items/completed', expect.objectContaining({
       method: 'DELETE',
       credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/v1/items/i2/skip', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include'
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(7, '/api/v1/items/i2/postpone', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ days: 3 })
     }));
   });
 

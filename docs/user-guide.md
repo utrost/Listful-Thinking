@@ -199,7 +199,15 @@ CHORE lists do not use shopping fields.
 Status meaning:
 
 - `OPEN`: still due.
-- `DONE`: completed; due-date reminders stop for this occurrence.
+- `DONE`: completed for one-off chores; for recurring chores the app immediately advances the due date and keeps the item open for the next occurrence.
+
+Recurring chores:
+
+- Choose daily, weekly, or monthly recurrence instead of typing a raw rule.
+- Completing a recurring chore records the last completion time and advances the due date to the next occurrence.
+- Use **Skip** to move a recurring chore to its next occurrence without marking it completed.
+- Use **Postpone 1 day** for a small delay without changing the recurrence rule.
+- Unsupported recurrence rules are rejected so reminders do not silently drift.
 
 ### EVENT
 
@@ -230,7 +238,7 @@ Status meaning:
 
 List owners can edit their own items after creation. The edit form shows the same type-specific fields as the create form, so grocery items expose quantity/category, wish items expose URL/image/price, and dated items expose due-date controls.
 
-For `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists, use **Done** to complete an item and **Reopen** to move it back to `OPEN`. Done items do not create due-date reminders.
+For `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists, use **Done** to complete an item and **Reopen** to move one-off completed items back to `OPEN`. Done items do not create due-date reminders. Recurring chores are special: **Done** records a completion and immediately advances the due date, so the item stays `OPEN` for its next occurrence.
 
 For `WISH` lists, the lifecycle stays gift-specific: guests can claim open items from a public link, and owners can use `PURCHASED` for bought items.
 

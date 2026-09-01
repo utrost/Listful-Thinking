@@ -209,6 +209,57 @@ class ItemControllerTests {
     }
 
     @Test
+    void weeklyChoreCompletionAdvancesDueDateAndKeepsChoreOpen() throws Exception {
+        MockHttpSession owner = register("owner");
+        String choreId = createList(owner, "Chores", "CHORE");
+        String itemId = createChore(owner, choreId, "Water plants", "2027-01-01T09:00:00Z", "FREQ=WEEKLY");
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Water plants","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY"}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("OPEN"))
+            .andExpect(jsonPath("$.dueDate").value("2027-01-08T09:00:00Z"))
+            .andExpect(jsonPath("$.lastCompletedAt").isNotEmpty());
+    }
+
+    @Test
+    void recurringChoreSkipAndPostponeAdjustDueDateWithoutCompleting() throws Exception {
+        MockHttpSession owner = register("owner");
+        String choreId = createList(owner, "Chores", "CHORE");
+        String itemId = createChore(owner, choreId, "Clean filter", "2027-01-01T09:00:00Z", "FREQ=WEEKLY");
+
+        mockMvc.perform(post("/api/v1/items/{itemId}/skip", itemId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("OPEN"))
+            .andExpect(jsonPath("$.dueDate").value("2027-01-08T09:00:00Z"))
+            .andExpect(jsonPath("$.lastCompletedAt").doesNotExist());
+
+        mockMvc.perform(post("/api/v1/items/{itemId}/postpone", itemId).session(owner)
+                .contentType("application/json")
+                .content("{\"days\":3}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("OPEN"))
+            .andExpect(jsonPath("$.dueDate").value("2027-01-11T09:00:00Z"));
+    }
+
+    @Test
+    void unsupportedChoreRecurrenceFailsClearly() throws Exception {
+        MockHttpSession owner = register("owner");
+        String choreId = createList(owner, "Chores", "CHORE");
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", choreId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Clean filter","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=HOURLY"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
+    @Test
     void wishItemsKeepClaimAndPurchaseStatusesButRejectDone() throws Exception {
         MockHttpSession owner = register("owner");
         String wishListId = createList(owner, "Birthday", "WISH");
@@ -352,6 +403,15 @@ class ItemControllerTests {
                 .content("{\"name\":\"%s\",\"status\":\"DONE\"}".formatted(name)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("DONE"));
+    }
+
+    private String createChore(MockHttpSession session, String listId, String name, String dueDate, String recurrenceRule) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(session)
+                .contentType("application/json")
+                .content("{\"name\":\"%s\",\"dueDate\":\"%s\",\"recurrenceRule\":\"%s\"}".formatted(name, dueDate, recurrenceRule)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
 
     private String createList(MockHttpSession session, String title) throws Exception {

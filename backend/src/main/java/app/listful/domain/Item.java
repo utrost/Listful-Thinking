@@ -53,6 +53,9 @@ public class Item {
     @Column(name = "reserved_by_guest")
     private String reservedByGuest;
 
+    @Column(name = "last_completed_at")
+    private Instant lastCompletedAt;
+
     protected Item() {
     }
 
@@ -105,6 +108,7 @@ public class Item {
     public BigDecimal getPrice() { return price; }
     public void setPrice(BigDecimal price) { this.price = price; }
     public ItemStatus getStatus() { return status; }
+    public void setStatus(ItemStatus status) { this.status = status; }
     public Instant getDueDate() { return dueDate; }
     public void setDueDate(Instant dueDate) { this.dueDate = dueDate; }
     public String getRecurrenceRule() { return recurrenceRule; }
@@ -114,4 +118,6 @@ public class Item {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
     public String getReservedByGuest() { return reservedByGuest; }
+    public Instant getLastCompletedAt() { return lastCompletedAt; }
+    public void setLastCompletedAt(Instant lastCompletedAt) { this.lastCompletedAt = lastCompletedAt; }
 }

@@ -213,7 +213,9 @@
               <input v-if="currentItemFields.showQuantity" v-model="itemForm.quantity" :placeholder="t('items.quantity')" />
               <input v-if="currentItemFields.showCategory" v-model="itemForm.category" :placeholder="t('items.category')" />
               <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
-              <input v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule" placeholder="FREQ=WEEKLY" />
+              <select v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule">
+                <option v-for="option in recurrenceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+              </select>
               <button type="submit">{{ t('items.create') }}</button>
             </form>
 
@@ -263,7 +265,9 @@
                   <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :placeholder="t('items.quantity')" />
                   <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :placeholder="t('items.category')" />
                   <input v-if="currentItemFields.showDueDate" v-model="editItemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
-                  <input v-if="currentItemFields.showRecurrenceRule" v-model="editItemForm.recurrenceRule" placeholder="FREQ=WEEKLY" />
+                  <select v-if="currentItemFields.showRecurrenceRule" v-model="editItemForm.recurrenceRule">
+                    <option v-for="option in recurrenceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
                   <button type="submit">{{ t('items.save') }}</button>
                   <button type="button" class="secondary subtle" @click="handleCancelEditItem">{{ t('items.cancel') }}</button>
                 </form>
@@ -271,10 +275,12 @@
                   <strong>{{ item.name }}</strong>
                   <small v-if="item.description">{{ item.description }}</small>
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
-                  <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
+                  <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ item.lastCompletedAt }}</template></small>
                 </span>
                 <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
                 <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.recurrenceRule" type="button" class="secondary subtle" @click="handleSkipChore(item)">{{ t('items.skipOccurrence') }}</button>
+                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.dueDate" type="button" class="secondary subtle" @click="handlePostponeChore(item)">{{ t('items.postpone') }}</button>
                 <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
                 <button v-if="selectedList.access === 'OWNER'" type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
               </li>
@@ -319,6 +325,8 @@ import {
   revokePublicShare,
   scrapeUrl,
   shareListWithUser,
+  skipChoreItem,
+  postponeChoreItem,
   updateList,
   updateItem,
   updateAdminSettings,
@@ -366,6 +374,12 @@ const editListForm = reactive<{ title: string; description: string; type: ListTy
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const editingItemId = ref<string | null>(null);
 const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
+const recurrenceOptions = computed(() => [
+  { value: '', label: t('items.noRepeat') },
+  { value: 'FREQ=DAILY', label: t('items.daily') },
+  { value: 'FREQ=WEEKLY', label: t('items.weekly') },
+  { value: 'FREQ=MONTHLY', label: t('items.monthly') }
+]);
 const shareForm = reactive<{ username: string; permission: 'READ' | 'CONTRIBUTE' }>({ username: '', permission: 'READ' });
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const editListRules = computed(() => listFormRulesForType(editListForm.type));
@@ -728,6 +742,20 @@ async function handleToggleItemDone(item: ItemEntry) {
   const nextStatus = item.status === 'DONE' ? 'OPEN' : 'DONE';
   await run(async () => {
     const updated = await updateItem(item.id, itemPayloadFromItem(item, nextStatus));
+    items.value = items.value.map((existing) => existing.id === item.id ? updated : existing);
+  });
+}
+
+async function handleSkipChore(item: ItemEntry) {
+  await run(async () => {
+    const updated = await skipChoreItem(item.id);
+    items.value = items.value.map((existing) => existing.id === item.id ? updated : existing);
+  });
+}
+
+async function handlePostponeChore(item: ItemEntry) {
+  await run(async () => {
+    const updated = await postponeChoreItem(item.id, { days: 1 });
     items.value = items.value.map((existing) => existing.id === item.id ? updated : existing);
   });
 }

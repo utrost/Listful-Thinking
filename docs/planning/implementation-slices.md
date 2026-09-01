@@ -467,7 +467,7 @@ Tests:
 
 ### Slice 20: Operational recurring chores
 
-Status: proposed.
+Status: complete for first operational recurrence slice.
 
 User outcome:
 

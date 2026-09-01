@@ -15,6 +15,7 @@ public record ItemResponse(
     String recurrenceRule,
     String quantity,
     String category,
-    String reservedByGuest
+    String reservedByGuest,
+    String lastCompletedAt
 ) {
 }

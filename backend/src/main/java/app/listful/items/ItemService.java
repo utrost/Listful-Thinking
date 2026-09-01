@@ -12,6 +12,8 @@ import app.listful.items.dto.ItemRequest;
 import app.listful.items.dto.ItemResponse;
 import app.listful.lists.ListAccessService;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +57,7 @@ public class ItemService {
         Item item = requireContributableItem(actor, itemId);
         validateForListType(item.getList(), request);
         item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category());
+        advanceCompletedRecurringChore(item);
         return toResponse(item);
     }
 
@@ -71,6 +74,26 @@ public class ItemService {
             throw new ValidationFailedException("Clear completed is only available for grocery lists.");
         }
         itemRepository.deleteByListIdAndStatus(list.getId(), ItemStatus.DONE);
+    }
+
+    @Transactional
+    public ItemResponse skipRecurringChore(User actor, String itemId) {
+        Item item = requireContributableItem(actor, itemId);
+        requireRecurringChore(item);
+        item.setDueDate(nextDueDate(item.getDueDate(), item.getRecurrenceRule()));
+        item.setStatus(ItemStatus.OPEN);
+        return toResponse(item);
+    }
+
+    @Transactional
+    public ItemResponse postponeChore(User actor, String itemId, int days) {
+        Item item = requireContributableItem(actor, itemId);
+        if (item.getList().getType() != ListType.CHORE || item.getDueDate() == null) {
+            throw new ValidationFailedException("Only dated chore items can be postponed.");
+        }
+        item.setDueDate(item.getDueDate().plus(days, ChronoUnit.DAYS));
+        item.setStatus(ItemStatus.OPEN);
+        return toResponse(item);
     }
 
     private Item requireOwnedItem(User actor, String itemId) {
@@ -101,6 +124,9 @@ public class ItemService {
         }
         if (listType != ListType.CHORE && hasText(request.recurrenceRule())) {
             throw new ValidationFailedException("Recurrence rules are only allowed on chore items.");
+        }
+        if (listType == ListType.CHORE && hasText(request.recurrenceRule()) && !isSupportedRecurrence(request.recurrenceRule())) {
+            throw new ValidationFailedException("Unsupported recurrence rule. Use FREQ=DAILY, FREQ=WEEKLY, or FREQ=MONTHLY.");
         }
         if (listType != ListType.GROCERY && hasGroceryFields(request)) {
             throw new ValidationFailedException("Quantity and category are only allowed on grocery items.");
@@ -147,6 +173,40 @@ public class ItemService {
         return value != null && !value.isBlank();
     }
 
+    private void advanceCompletedRecurringChore(Item item) {
+        if (item.getList().getType() == ListType.CHORE
+                && item.getStatus() == ItemStatus.DONE
+                && hasText(item.getRecurrenceRule())) {
+            requireRecurringChore(item);
+            item.setLastCompletedAt(Instant.now());
+            item.setDueDate(nextDueDate(item.getDueDate(), item.getRecurrenceRule()));
+            item.setStatus(ItemStatus.OPEN);
+        }
+    }
+
+    private void requireRecurringChore(Item item) {
+        if (item.getList().getType() != ListType.CHORE || item.getDueDate() == null || !hasText(item.getRecurrenceRule())) {
+            throw new ValidationFailedException("Only dated recurring chore items support this action.");
+        }
+        if (!isSupportedRecurrence(item.getRecurrenceRule())) {
+            throw new ValidationFailedException("Unsupported recurrence rule. Use FREQ=DAILY, FREQ=WEEKLY, or FREQ=MONTHLY.");
+        }
+    }
+
+    private Instant nextDueDate(Instant dueDate, String recurrenceRule) {
+        return switch (recurrenceRule.trim().toUpperCase()) {
+            case "FREQ=DAILY" -> dueDate.plus(1, ChronoUnit.DAYS);
+            case "FREQ=WEEKLY" -> dueDate.plus(7, ChronoUnit.DAYS);
+            case "FREQ=MONTHLY" -> dueDate.atZone(ZoneOffset.UTC).plusMonths(1).toInstant();
+            default -> throw new ValidationFailedException("Unsupported recurrence rule. Use FREQ=DAILY, FREQ=WEEKLY, or FREQ=MONTHLY.");
+        };
+    }
+
+    private boolean isSupportedRecurrence(String recurrenceRule) {
+        String normalized = recurrenceRule.trim().toUpperCase();
+        return normalized.equals("FREQ=DAILY") || normalized.equals("FREQ=WEEKLY") || normalized.equals("FREQ=MONTHLY");
+    }
+
     private ItemResponse toResponse(Item item) {
         return new ItemResponse(
             item.getId(),
@@ -161,7 +221,8 @@ public class ItemService {
             item.getRecurrenceRule(),
             item.getQuantity(),
             item.getCategory(),
-            item.getReservedByGuest()
+            item.getReservedByGuest(),
+            item.getLastCompletedAt() == null ? null : item.getLastCompletedAt().toString()
         );
     }
 }

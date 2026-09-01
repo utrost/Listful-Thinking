@@ -3,6 +3,7 @@ package app.listful.items;
 import app.listful.domain.User;
 import app.listful.items.dto.ItemRequest;
 import app.listful.items.dto.ItemResponse;
+import app.listful.items.dto.PostponeRequest;
 import app.listful.lists.CurrentUser;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -52,6 +53,16 @@ public class ItemController {
     public ResponseEntity<Void> clearCompleted(@PathVariable String listId, Authentication authentication) {
         itemService.clearCompleted(currentUser(authentication), listId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/items/{itemId}/skip")
+    public ItemResponse skip(@PathVariable String itemId, Authentication authentication) {
+        return itemService.skipRecurringChore(currentUser(authentication), itemId);
+    }
+
+    @PostMapping("/items/{itemId}/postpone")
+    public ItemResponse postpone(@PathVariable String itemId, @Valid @RequestBody PostponeRequest request, Authentication authentication) {
+        return itemService.postponeChore(currentUser(authentication), itemId, request.days());
     }
 
     private User currentUser(Authentication authentication) {
