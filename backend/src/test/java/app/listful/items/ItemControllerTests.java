@@ -143,6 +143,53 @@ class ItemControllerTests {
     }
 
     @Test
+    void todoGroceryChoreAndEventItemsCanBeMarkedDoneButRejectWishlistStatuses() throws Exception {
+        MockHttpSession owner = register("owner");
+        String todoId = createList(owner, "Next actions", "TODO");
+        String groceryId = createList(owner, "Groceries", "GROCERY");
+        String choreId = createList(owner, "Chores", "CHORE");
+        String eventId = createEventList(owner, "Trip");
+
+        String todoItem = createItem(owner, todoId, "Call optician");
+        String groceryItem = createItem(owner, groceryId, "Oat milk");
+        String choreItem = createItem(owner, choreId, "Water plants");
+        String eventItem = createItem(owner, eventId, "Pack bag");
+
+        for (String itemId : java.util.List.of(todoItem, groceryItem, choreItem, eventItem)) {
+            mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+                    .contentType("application/json")
+                    .content("{\"name\":\"Done item\",\"status\":\"DONE\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("DONE"));
+        }
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", todoItem).session(owner)
+                .contentType("application/json")
+                .content("{\"name\":\"Bought task\",\"status\":\"PURCHASED\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
+    @Test
+    void wishItemsKeepClaimAndPurchaseStatusesButRejectDone() throws Exception {
+        MockHttpSession owner = register("owner");
+        String wishListId = createList(owner, "Birthday", "WISH");
+        String itemId = createItem(owner, wishListId, "Book");
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+                .contentType("application/json")
+                .content("{\"name\":\"Book\",\"status\":\"PURCHASED\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("PURCHASED"));
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+                .contentType("application/json")
+                .content("{\"name\":\"Book\",\"status\":\"DONE\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
+    @Test
     void creatingWishItemWithOnlyUrlCreatesPlaceholderAndEnrichesMetadataAsynchronously() throws Exception {
         MockHttpSession owner = register("owner");
         String listId = createList(owner, "Birthday");
@@ -269,6 +316,15 @@ class ItemControllerTests {
         MvcResult result = mockMvc.perform(post("/api/v1/lists").session(session)
                 .contentType("application/json")
                 .content("{\"title\":\"%s\",\"description\":\"\",\"type\":\"%s\"}".formatted(title, type)))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private String createEventList(MockHttpSession session, String title) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/v1/lists").session(session)
+                .contentType("application/json")
+                .content("{\"title\":\"%s\",\"description\":\"\",\"type\":\"EVENT\",\"targetDate\":\"2027-01-01T00:00:00Z\"}".formatted(title)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

@@ -10,6 +10,7 @@ import app.listful.domain.Item;
 import app.listful.domain.ListEntity;
 import app.listful.domain.Notification;
 import app.listful.domain.User;
+import app.listful.domain.enums.ItemStatus;
 import app.listful.domain.enums.ListType;
 import app.listful.domain.enums.UserRole;
 import app.listful.domain.repository.ItemRepository;
@@ -107,6 +108,20 @@ class ReminderServiceTests {
         List<Notification> notifications = notificationRepository.findByUserIdAndReadAtIsNull(owner.getId());
         assertThat(notifications).hasSize(1);
         assertThat(notifications.get(0).getMessageArgs()).contains(item.getId(), "Call optician", "2027-01-01");
+    }
+
+    @Test
+    void doneDueItemsDoNotCreateReminderNotifications() {
+        User owner = userRepository.save(new User("owner", "owner@example.test", "hash", UserRole.ADMIN, NOW.minusSeconds(3600)));
+        ListEntity todos = listRepository.save(new ListEntity(owner, "Todo", null, ListType.TODO, NOW.minusSeconds(3000)));
+        Item item = new Item(todos, "Call optician", NOW.minusSeconds(2000));
+        item.update("Call optician", null, null, null, null, ItemStatus.DONE, NOW.plusSeconds(5400), null);
+        itemRepository.save(item);
+
+        reminderService.processDueReminders(NOW);
+
+        assertThat(notificationRepository.findByUserIdAndReadAtIsNull(owner.getId())).isEmpty();
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
     }
 
     @Test

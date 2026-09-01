@@ -28,6 +28,12 @@ Relevant item fields:
 - `status`
 - `reserved_by_guest`
 
+Status meanings:
+
+- `OPEN`: available gift idea.
+- `CLAIMED`: reserved by a public guest.
+- `PURCHASED`: bought/handled by the owner.
+
 UI behavior:
 
 - Show description, URL, image, price, and status.
@@ -63,6 +69,8 @@ MVP rules:
 - Shopping fields (`url`, `image_url`, `price`) are rejected by the API for todo items.
 - Recurrence rules are rejected by the API for todo items; recurring work belongs in `CHORE`.
 - Todo items with a due date participate in the same notification scan as event/chore items.
+- Todo items use `OPEN` and `DONE`; wishlist statuses are rejected.
+- `DONE` todo items are excluded from reminder scans.
 
 ## GROCERY
 
@@ -89,6 +97,7 @@ MVP rules:
 - Shopping fields (`url`, `image_url`, `price`) are rejected by the API for grocery items.
 - Due dates and recurrence rules are rejected by the API for grocery items; dated follow-ups belong in `TODO`/`CHORE`/`EVENT`.
 - Public guest claiming is not the primary GROCERY behavior.
+- Grocery items use `OPEN` and `DONE`; wishlist statuses are rejected.
 
 ## CHORE
 
@@ -114,6 +123,8 @@ MVP rules:
 - Recurrence rule may be stored before full automatic recurrence expansion exists.
 - Shopping fields (`url`, `image_url`, `price`) are rejected by the API for chore items.
 - Must not set list-level `target_date`; use item `due_date` instead.
+- Chore items use `OPEN` and `DONE`; wishlist statuses are rejected.
+- `DONE` chore items are excluded from reminder scans.
 
 Future extension:
 
@@ -148,6 +159,8 @@ MVP rules:
 - Event lists can trigger reminders based on `target_date` and item `due_date`.
 - Event items reject shopping fields and recurrence rules in the MVP.
 - Public guest claiming is not the primary EVENT behavior.
+- Event items use `OPEN` and `DONE`; wishlist statuses are rejected.
+- `DONE` event items are excluded from item due-date reminder scans.
 
 ## Shared validation principles
 

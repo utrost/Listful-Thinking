@@ -141,6 +141,13 @@ todo_id="$(printf '%s' "$todo_json" | json_field id)"
 curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"name":"Call optician","dueDate":"2030-01-01T09:00:00Z"}' \
   "$base_url/api/v1/lists/$todo_id/items" | assert_json 'data["name"] == "Call optician" and data["dueDate"] == "2030-01-01T09:00:00Z"'
+todo_item_id="$(curl_json -b "$admin_cookie" "$base_url/api/v1/lists/$todo_id/items" | json_field 0.id)"
+curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"Call optician","status":"DONE","dueDate":"2030-01-01T09:00:00Z"}' \
+  "$base_url/api/v1/items/$todo_item_id" | assert_json 'data["status"] == "DONE"'
+curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"Call optician","status":"OPEN","dueDate":"2030-01-01T09:00:00Z"}' \
+  "$base_url/api/v1/items/$todo_item_id" | assert_json 'data["status"] == "OPEN"'
 
 grocery_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Groceries","description":"Weekly shop","type":"GROCERY"}' \

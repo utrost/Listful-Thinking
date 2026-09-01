@@ -18,11 +18,11 @@ public interface ItemRepository extends JpaRepository<Item, String> {
         where i.dueDate is not null
           and i.dueDate >= :start
           and i.dueDate < :end
-          and i.status <> :excludedStatus
+          and i.status not in :excludedStatuses
         """)
     List<Item> findDueItemsBetween(
         @Param("start") Instant start,
         @Param("end") Instant end,
-        @Param("excludedStatus") ItemStatus excludedStatus
+        @Param("excludedStatuses") List<ItemStatus> excludedStatuses
     );
 }

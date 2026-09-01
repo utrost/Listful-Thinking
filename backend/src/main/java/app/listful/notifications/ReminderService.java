@@ -50,7 +50,7 @@ public class ReminderService {
     @Transactional
     public void processDueReminders(Instant now) {
         Instant horizon = now.plusSeconds(24 * 60 * 60);
-        List<Item> dueItems = itemRepository.findDueItemsBetween(now, horizon, ItemStatus.PURCHASED);
+        List<Item> dueItems = itemRepository.findDueItemsBetween(now, horizon, List.of(ItemStatus.PURCHASED, ItemStatus.DONE));
         for (Item item : dueItems) {
             createOrSendReminder(item, now);
         }

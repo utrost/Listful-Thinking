@@ -39,6 +39,11 @@
     "dueDate": "Due date",
     "previewUrl": "Preview URL",
     "create": "Add item",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "done": "Done",
+    "reopen": "Reopen",
     "delete": "Delete"
   },
   "sharing": {

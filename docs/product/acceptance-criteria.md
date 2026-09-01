@@ -47,6 +47,9 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 - `GROCERY` items support quantity and category, and reject shopping, due-date, and recurrence fields.
 - `CHORE` items support due date and recurrence rule.
 - `EVENT` lists support target date and item due dates.
+- Owners can edit existing items.
+- Owners can mark TODO, GROCERY, CHORE, and EVENT items `DONE` and reopen them to `OPEN`.
+- WISH items keep gift statuses (`OPEN`, `CLAIMED`, `PURCHASED`) and reject `DONE`.
 
 ## Internal sharing
 
@@ -81,6 +84,7 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 ## Reminders and notifications
 
 - Daily reminder logic detects due items or upcoming event targets.
+- Done items do not trigger due-item reminders.
 - If complete SMTP configuration exists, reminder email is sent.
 - If SMTP is absent or incomplete, an in-app notification is created.
 - Duplicate notifications for the same entity/day are avoided.

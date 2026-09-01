@@ -94,7 +94,7 @@ export interface ListRequest {
   targetDate?: string;
 }
 
-export type ItemStatus = 'OPEN' | 'CLAIMED' | 'PURCHASED';
+export type ItemStatus = 'OPEN' | 'CLAIMED' | 'PURCHASED' | 'DONE';
 
 export interface ItemEntry {
   id: string;

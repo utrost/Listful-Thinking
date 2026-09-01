@@ -324,7 +324,7 @@ The MVP can create typed lists, share them, and notify on due work. The next gap
 
 ### Slice 16: Item lifecycle and status semantics
 
-Status: proposed next.
+Status: complete for first lifecycle slice.
 
 User outcome:
 

@@ -183,14 +183,30 @@
             </form>
 
             <ul class="item-list">
-              <li v-for="item in items" :key="item.id">
+              <li v-for="item in items" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
                 <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
-                <span>
+                <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @submit.prevent="handleSaveEditedItem(item)">
+                  <input v-model="editItemForm.name" :placeholder="t('items.newName')" required />
+                  <textarea v-if="currentItemFields.showUrl" v-model="editItemForm.description" :placeholder="t('items.description')"></textarea>
+                  <input v-if="currentItemFields.showUrl" v-model="editItemForm.url" placeholder="URL" />
+                  <input v-if="currentItemFields.showImageUrl" v-model="editItemForm.imageUrl" :placeholder="t('items.imageUrl')" />
+                  <input v-if="currentItemFields.showPrice" v-model.number="editItemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
+                  <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :placeholder="t('items.quantity')" />
+                  <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :placeholder="t('items.category')" />
+                  <input v-if="currentItemFields.showDueDate" v-model="editItemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
+                  <input v-if="currentItemFields.showRecurrenceRule" v-model="editItemForm.recurrenceRule" placeholder="FREQ=WEEKLY" />
+                  <button type="submit">{{ t('items.save') }}</button>
+                  <button type="button" class="secondary subtle" @click="handleCancelEditItem">{{ t('items.cancel') }}</button>
+                </form>
+                <span v-else>
                   <strong>{{ item.name }}</strong>
                   <small v-if="item.description">{{ item.description }}</small>
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
                 </span>
+                <button v-if="item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
+                <button v-else-if="item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                <button type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
                 <button type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
               </li>
             </ul>
@@ -233,6 +249,7 @@ import {
   revokePublicShare,
   scrapeUrl,
   shareListWithUser,
+  updateItem,
   updateAdminSettings,
   updateAdminUser,
   type AuthUser,
@@ -272,6 +289,8 @@ const resetPasswordForm = reactive({ password: '' });
 const adminUserForm = reactive<{ username: string; email: string; password: string; role: 'ADMIN' | 'USER' }>({ username: '', email: '', password: '', role: 'USER' });
 const listForm = reactive<{ title: string; type: ListType; targetDate: string }>({ title: '', type: 'WISH', targetDate: '' });
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
+const editingItemId = ref<string | null>(null);
+const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const shareForm = reactive({ username: '' });
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
@@ -549,11 +568,75 @@ async function handleCreateItem() {
   });
 }
 
+function handleStartEditItem(item: ItemEntry) {
+  editingItemId.value = item.id;
+  editItemForm.name = item.name;
+  editItemForm.description = item.description ?? '';
+  editItemForm.url = item.url ?? '';
+  editItemForm.imageUrl = item.imageUrl ?? '';
+  editItemForm.price = item.price ?? undefined;
+  editItemForm.dueDate = toLocalDateTime(item.dueDate);
+  editItemForm.recurrenceRule = item.recurrenceRule ?? '';
+  editItemForm.quantity = item.quantity ?? '';
+  editItemForm.category = item.category ?? '';
+}
+
+function handleCancelEditItem() {
+  editingItemId.value = null;
+}
+
+async function handleSaveEditedItem(item: ItemEntry) {
+  await run(async () => {
+    const updated = await updateItem(item.id, itemPayloadFromEditForm(item.status));
+    items.value = items.value.map((existing) => existing.id === item.id ? updated : existing);
+    editingItemId.value = null;
+  });
+}
+
+async function handleToggleItemDone(item: ItemEntry) {
+  const nextStatus = item.status === 'DONE' ? 'OPEN' : 'DONE';
+  await run(async () => {
+    const updated = await updateItem(item.id, itemPayloadFromItem(item, nextStatus));
+    items.value = items.value.map((existing) => existing.id === item.id ? updated : existing);
+  });
+}
+
 async function handleDeleteItem(id: string) {
   await run(async () => {
     await deleteItem(id);
     items.value = items.value.filter((item) => item.id !== id);
   });
+}
+
+function itemPayloadFromEditForm(status: ItemEntry['status']) {
+  const fields = currentItemFields.value;
+  return {
+    name: editItemForm.name,
+    description: fields.showUrl ? editItemForm.description || undefined : undefined,
+    url: fields.showUrl ? editItemForm.url || undefined : undefined,
+    imageUrl: fields.showImageUrl ? editItemForm.imageUrl || undefined : undefined,
+    price: fields.showPrice ? editItemForm.price : undefined,
+    status,
+    dueDate: fields.showDueDate ? toIsoInstant(editItemForm.dueDate) : undefined,
+    recurrenceRule: fields.showRecurrenceRule ? editItemForm.recurrenceRule || undefined : undefined,
+    quantity: fields.showQuantity ? editItemForm.quantity || undefined : undefined,
+    category: fields.showCategory ? editItemForm.category || undefined : undefined
+  };
+}
+
+function itemPayloadFromItem(item: ItemEntry, status: ItemEntry['status']) {
+  return {
+    name: item.name,
+    description: item.description ?? undefined,
+    url: item.url ?? undefined,
+    imageUrl: item.imageUrl ?? undefined,
+    price: item.price ?? undefined,
+    status,
+    dueDate: item.dueDate ?? undefined,
+    recurrenceRule: item.recurrenceRule ?? undefined,
+    quantity: item.quantity ?? undefined,
+    category: item.category ?? undefined
+  };
 }
 
 async function run(action: () => Promise<void>) {
@@ -567,6 +650,13 @@ async function run(action: () => Promise<void>) {
 
 function toIsoInstant(localDateTime: string): string | undefined {
   return localDateTime ? new Date(localDateTime).toISOString() : undefined;
+}
+
+function toLocalDateTime(isoInstant: string | null): string {
+  if (!isoInstant) return '';
+  const date = new Date(isoInstant);
+  const offsetMs = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
 }
 
 function resetItemForm() {

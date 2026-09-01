@@ -90,6 +90,12 @@ public class ItemService {
         if (listType == ListType.GROCERY && request.dueDate() != null) {
             throw new ValidationFailedException("Due dates are only allowed on to-do, chore, and event items.");
         }
+        if (listType == ListType.WISH && request.status() == ItemStatus.DONE) {
+            throw new ValidationFailedException("Done status is only allowed on to-do, grocery, chore, and event items.");
+        }
+        if (listType != ListType.WISH && (request.status() == ItemStatus.CLAIMED || request.status() == ItemStatus.PURCHASED)) {
+            throw new ValidationFailedException("Claimed and purchased statuses are only allowed on wish list items.");
+        }
     }
 
     private String itemNameFor(ItemRequest request) {

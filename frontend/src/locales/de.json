@@ -39,6 +39,11 @@
     "dueDate": "Fällig am",
     "previewUrl": "URL-Vorschau",
     "create": "Eintrag hinzufügen",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "done": "Erledigt",
+    "reopen": "Wieder öffnen",
     "delete": "Löschen"
   },
   "sharing": {

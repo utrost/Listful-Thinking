@@ -15,6 +15,7 @@ A user can:
 - Request a password reset link when their account has an email address and mail is configured.
 - Create and manage their own lists.
 - Add, edit, and delete items in their own lists.
+- Mark to-do, grocery, chore, and event items done and reopen them if needed.
 - See lists that other users explicitly shared with them.
 - Create public guest links for their own lists.
 - Revoke public guest links for their own lists.
@@ -112,6 +113,12 @@ Fields:
 - price
 - status
 
+Status meaning:
+
+- `OPEN`: still available as a gift idea.
+- `CLAIMED`: a guest reserved the item from a public link.
+- `PURCHASED`: the owner marked it bought/handled.
+
 ### TODO
 
 Use for one-off personal tasks and follow-ups.
@@ -130,6 +137,11 @@ Fields:
 - status
 
 TODO lists do not use shopping fields or recurrence rules.
+
+Status meaning:
+
+- `OPEN`: still to do.
+- `DONE`: completed; due-date reminders stop for this item.
 
 ### GROCERY
 
@@ -151,6 +163,11 @@ Fields:
 
 Grocery lists do not use product URLs, image URLs, prices, due dates, or recurrence rules in the current slice.
 
+Status meaning:
+
+- `OPEN`: still to buy/handle.
+- `DONE`: bought/handled and ready to reopen if needed.
+
 ### CHORE
 
 Use for household work and recurring duties.
@@ -171,6 +188,11 @@ Fields:
 
 CHORE lists do not use shopping fields.
 
+Status meaning:
+
+- `OPEN`: still due.
+- `DONE`: completed; due-date reminders stop for this occurrence.
+
 ### EVENT
 
 Use for planning around a target date, such as a birthday, trip, party, or school event.
@@ -190,6 +212,19 @@ Fields:
 - status
 
 EVENT items do not use shopping fields or recurrence rules in the MVP.
+
+Status meaning:
+
+- `OPEN`: still part of the event preparation.
+- `DONE`: completed; item-level reminders stop for this item.
+
+## Working with items
+
+List owners can edit their own items after creation. The edit form shows the same type-specific fields as the create form, so grocery items expose quantity/category, wish items expose URL/image/price, and dated items expose due-date controls.
+
+For `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists, use **Done** to complete an item and **Reopen** to move it back to `OPEN`. Done items do not create due-date reminders.
+
+For `WISH` lists, the lifecycle stays gift-specific: guests can claim open items from a public link, and owners can use `PURCHASED` for bought items.
 
 ## Sharing
 
@@ -345,7 +380,8 @@ The inventory is not a private item-content browser.
 
 - Internal sharing is read-only.
 - Public claiming is only for wishlist items.
-- Grocery lists support quantity/category but do not yet have live collaborative check-off or category grouping views.
+- Grocery lists support quantity/category and done/reopen, but do not yet have live collaborative check-off or category grouping views.
+- Hide-completed and richer filtering are still future roadmap work.
 - Recurrence rules can be stored for chores, but full automatic recurrence expansion is still a future extension.
 - Email features require SMTP configuration; otherwise the app stays functional with password login and in-app notifications.
 - Admin inventory is metadata-focused and does not include a break-glass private content view.
