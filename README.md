@@ -52,6 +52,7 @@ The first registered user will become `ADMIN`. Public registration is disabled b
 
 Start here:
 
+- [User and admin guide](docs/user-guide.md)
 - [Product vision](docs/product/vision.md)
 - [Personas and actors](docs/product/personas.md)
 - [Terminology](docs/product/terminology.md)
