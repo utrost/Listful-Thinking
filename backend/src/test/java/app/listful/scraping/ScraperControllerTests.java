@@ -111,6 +111,18 @@ class ScraperControllerTests {
     }
 
     @Test
+    void extractsProductGalleryImageWhenSocialMetadataIsMissing() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape")
+                .session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/fotoimpex\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("FILMOMAT PhotoPlug Verschlusszeiten-Tester"))
+            .andExpect(jsonPath("$.imageUrl").value(baseUrl() + "/shop/images/products/main/Filmomat_Photo_Plug_Verschlusszeit_Tester.jpg"))
+            .andExpect(jsonPath("$.price").value(39.90));
+    }
+
+    @Test
     void rejectsNonHttpUrls() throws Exception {
         mvc.perform(post("/api/v1/utils/scrape")
                 .session(session)
@@ -147,6 +159,19 @@ class ScraperControllerTests {
               <span id=\"productTitle\"> Knipex Zangenschlüssel 180 mm </span>
               <img id=\"landingImage\" src=\"https://example.test/knipex.jpg\" />
               <span class=\"a-price\"><span class=\"a-price-whole\">42<span class=\"a-price-decimal\">,</span></span><span class=\"a-price-fraction\">99</span></span>
+            </body></html>
+            """));
+        server.createContext("/fotoimpex", exchange -> respond(exchange, """
+            <!doctype html><html><head>
+              <title>FILMOMAT PhotoPlug Verschlusszeiten-Tester</title>
+              <meta name=\"description\" content=\"Camera shutter speed tester.\" />
+            </head><body>
+              <div class=\"os_detail_picbigdiv\">
+                <a class=\"os_detail_gallink os_detail_picpop\" href=\"/shop/images/products/main/Filmomat_Photo_Plug_Verschlusszeit_Tester.jpg\">
+                  <img class=\"os_detail_galmain\" src=\"/shop/images/products/main/detail/Filmomat_Photo_Plug_Verschlusszeit_Tester.jpg\" alt=\"Bild 1 - FILMOMAT PhotoPlug Verschlusszeiten-Tester\" />
+                </a>
+              </div>
+              <span itemprop=\"price\">39,90 €</span>
             </body></html>
             """));
         server.start();

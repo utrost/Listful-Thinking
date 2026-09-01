@@ -62,7 +62,8 @@ public class ScraperService {
                 meta(document, "meta[property=og:image]"),
                 meta(document, "meta[name=twitter:image]"),
                 attr(document, "#landingImage", "data-old-hires"),
-                attr(document, "#landingImage", "src")
+                attr(document, "#landingImage", "src"),
+                productGalleryImage(document)
             )),
             firstPrice(
                 meta(document, "meta[property=product:price:amount]"),
@@ -185,6 +186,28 @@ public class ScraperService {
             return null;
         }
         return fraction == null ? whole : whole + "." + fraction;
+    }
+
+    private String productGalleryImage(Document document) {
+        Element image = document.selectFirst("img[itemprop=image], .product img[src], .product-detail img[src], .os_detail_galmain[src]");
+        if (image == null) {
+            return null;
+        }
+        Element imageLink = image.closest("a[href]");
+        String linkedImage = imageLink == null ? null : imageLink.attr("href");
+        if (looksLikeImageUrl(linkedImage)) {
+            return linkedImage;
+        }
+        return image.attr("src");
+    }
+
+    private boolean looksLikeImageUrl(String value) {
+        String url = blankToNull(value);
+        if (url == null) {
+            return false;
+        }
+        String lower = url.toLowerCase();
+        return lower.contains(".jpg") || lower.contains(".jpeg") || lower.contains(".png") || lower.contains(".webp") || lower.contains(".gif");
     }
 
     private BigDecimal parsePrice(String candidate) {
