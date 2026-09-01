@@ -80,4 +80,15 @@ Status: complete for MVP release smoke and docs.
 
 ## Implementation slices
 
-Use [planning/implementation-slices.md](planning/implementation-slices.md) as the active development queue. It converts this roadmap into vertical testable slices.
+Use [planning/implementation-slices.md](planning/implementation-slices.md) as the active development queue. It converts this roadmap into vertical testable slices and now includes the post-MVP gap roadmap:
+
+- Slice 16: Item lifecycle and status semantics
+- Slice 17: List editing and cleanup UX
+- Slice 18: Shared contributor permissions
+- Slice 19: Grocery shop mode
+- Slice 20: Operational recurring chores
+- Slice 21: Reusable templates and list cloning
+- Slice 22: Flexible public claim/signup modes
+- Slice 23: Search, filter, sort, and review tools
+- Slice 24: Event planning upgrades
+- Slice 25: User troubleshooting and privacy hardening docs
