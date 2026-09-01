@@ -38,7 +38,7 @@ public class ItemService {
 
     @Transactional
     public ItemResponse create(User actor, String listId, ItemRequest request) {
-        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        ListEntity list = listAccessService.requireContributableList(actor, listId);
         validateForListType(list, request);
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
@@ -52,7 +52,7 @@ public class ItemService {
 
     @Transactional
     public ItemResponse update(User actor, String itemId, ItemRequest request) {
-        Item item = requireOwnedItem(actor, itemId);
+        Item item = requireContributableItem(actor, itemId);
         validateForListType(item.getList(), request);
         item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category());
         return toResponse(item);
@@ -68,6 +68,15 @@ public class ItemService {
         Item item = itemRepository.findById(itemId)
             .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         if (!item.getList().getUser().getId().equals(actor.getId())) {
+            throw new ResourceNotFoundException("Item not found");
+        }
+        return item;
+    }
+
+    private Item requireContributableItem(User actor, String itemId) {
+        Item item = itemRepository.findById(itemId)
+            .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+        if (!listAccessService.canContribute(actor, item.getList())) {
             throw new ResourceNotFoundException("Item not found");
         }
         return item;

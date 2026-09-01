@@ -149,9 +149,9 @@
                 <small>{{ selectedList.type }}<template v-if="selectedList.targetDate"> · {{ selectedList.targetDate }}</template></small>
               </div>
               <div class="button-row">
-                <button type="button" class="secondary subtle" @click="handleStartEditList">{{ t('lists.edit') }}</button>
-                <button v-if="pendingDeleteListId !== selectedList.id" type="button" class="danger" @click="handleRequestDeleteList(selectedList.id)">{{ t('lists.delete') }}</button>
-                <template v-else>
+                <button v-if="selectedList.access === 'OWNER'" type="button" class="secondary subtle" @click="handleStartEditList">{{ t('lists.edit') }}</button>
+                <button v-if="selectedList.access === 'OWNER' && pendingDeleteListId !== selectedList.id" type="button" class="danger" @click="handleRequestDeleteList(selectedList.id)">{{ t('lists.delete') }}</button>
+                <template v-else-if="selectedList.access === 'OWNER'">
                   <button type="button" class="danger" @click="handleConfirmDeleteList(selectedList.id)">{{ t('lists.deleteConfirm') }}</button>
                   <button type="button" class="secondary subtle" @click="pendingDeleteListId = null">{{ t('lists.deleteCancel') }}</button>
                 </template>
@@ -179,7 +179,7 @@
             </form>
             <p v-else>{{ selectedList.description }}</p>
 
-            <section class="share-panel">
+            <section v-if="selectedList.access === 'OWNER'" class="share-panel">
               <h4>{{ t('sharing.title') }}</h4>
               <div class="button-row">
                 <button type="button" class="secondary" @click="handleCreatePublicShare">{{ t('sharing.createPublic') }}</button>
@@ -188,17 +188,21 @@
               <p v-if="selectedList.publicList && selectedList.shareToken" class="copyable-link">{{ publicShareUrl(selectedList.shareToken) }}</p>
               <form class="inline-form" @submit.prevent="handleShareList">
                 <input v-model="shareForm.username" :placeholder="t('sharing.username')" required />
+                <select v-model="shareForm.permission">
+                  <option value="READ">{{ t('sharing.readOnly') }}</option>
+                  <option value="CONTRIBUTE">{{ t('sharing.contribute') }}</option>
+                </select>
                 <button type="submit">{{ t('sharing.share') }}</button>
               </form>
               <ul class="chip-list">
                 <li v-for="share in shares" :key="share.userId">
-                  <span>{{ share.username }}</span>
+                  <span>{{ share.username }} · {{ share.permission }}</span>
                   <button type="button" class="danger subtle" @click="handleRevokeShare(share.username)">{{ t('sharing.revoke') }}</button>
                 </li>
               </ul>
             </section>
 
-            <form class="inline-form" @submit.prevent="handleCreateItem">
+            <form v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" class="inline-form" @submit.prevent="handleCreateItem">
               <input v-model="itemForm.name" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" />
               <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" @change="handleScrapeItemUrl" />
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
@@ -235,10 +239,10 @@
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
                 </span>
-                <button v-if="item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
-                <button v-else-if="item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
-                <button type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
-                <button type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
+                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
+                <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
+                <button v-if="selectedList.access === 'OWNER'" type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
               </li>
             </ul>
           </section>
@@ -326,7 +330,7 @@ const editListForm = reactive<{ title: string; description: string; type: ListTy
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const editingItemId = ref<string | null>(null);
 const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
-const shareForm = reactive({ username: '' });
+const shareForm = reactive<{ username: string; permission: 'READ' | 'CONTRIBUTE' }>({ username: '', permission: 'READ' });
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const editListRules = computed(() => listFormRulesForType(editListForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
@@ -557,8 +561,9 @@ async function handleMarkNotificationRead(notificationId: string) {
 async function handleShareList() {
   if (!selectedList.value) return;
   await run(async () => {
-    const share = await shareListWithUser(selectedList.value!.id, { username: shareForm.username });
+    const share = await shareListWithUser(selectedList.value!.id, { username: shareForm.username, permission: shareForm.permission });
     shareForm.username = '';
+    shareForm.permission = 'READ';
     shares.value = [share, ...shares.value.filter((existing) => existing.userId !== share.userId)];
   });
 }

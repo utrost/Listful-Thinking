@@ -6,6 +6,7 @@ import app.listful.domain.ListEntity;
 import app.listful.domain.ListShare;
 import app.listful.domain.ListShareId;
 import app.listful.domain.User;
+import app.listful.domain.enums.ListSharePermission;
 import app.listful.domain.repository.ListShareRepository;
 import app.listful.domain.repository.UserRepository;
 import app.listful.lists.ListAccessService;
@@ -44,7 +45,7 @@ public class ListSharingService {
         if (sharedUser.getId().equals(actor.getId())) {
             throw new ValidationFailedException("Owners already have access to their lists.");
         }
-        return toResponse(listShareRepository.save(new ListShare(list, sharedUser, Instant.now())));
+        return toResponse(listShareRepository.save(new ListShare(list, sharedUser, Instant.now(), permissionFor(request))));
     }
 
     @Transactional
@@ -64,7 +65,19 @@ public class ListSharingService {
             share.getList().getId(),
             share.getUser().getId(),
             share.getUser().getUsername(),
+            share.getPermission().name(),
             share.getCreatedAt().toString()
         );
+    }
+
+    private ListSharePermission permissionFor(ShareListRequest request) {
+        if (request.permission() == null || request.permission().isBlank()) {
+            return ListSharePermission.READ;
+        }
+        try {
+            return ListSharePermission.valueOf(request.permission());
+        } catch (IllegalArgumentException ex) {
+            throw new ValidationFailedException("Unsupported share permission.");
+        }
     }
 }

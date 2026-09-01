@@ -84,6 +84,7 @@ export interface ListEntry {
   publicList: boolean;
   shareToken: string | null;
   targetDate: string | null;
+  access: 'OWNER' | 'READ' | 'CONTRIBUTE';
   createdAt: string;
 }
 
@@ -129,11 +130,13 @@ export interface ListShareEntry {
   listId: string;
   userId: string;
   username: string;
+  permission: 'READ' | 'CONTRIBUTE';
   createdAt: string;
 }
 
 export interface ShareListRequest {
   username: string;
+  permission?: 'READ' | 'CONTRIBUTE';
 }
 
 export interface PublicShareToken {

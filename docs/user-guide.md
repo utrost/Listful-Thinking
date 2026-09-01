@@ -19,7 +19,7 @@ A user can:
 - See lists that other users explicitly shared with them.
 - Create public guest links for their own lists.
 - Revoke public guest links for their own lists.
-- Share their own lists read-only with another registered user.
+- Share their own lists read-only or contributor-enabled with another registered user.
 - Revoke internal shares they created.
 - Receive in-app notifications for reminders.
 - Receive email reminders when SMTP is configured.
@@ -247,17 +247,21 @@ Deleting a list is destructive. The UI now asks for a second confirmation step b
 
 A list owner can share a list with another local user by username.
 
-The shared user can:
+The shared user can always:
 
 - See the shared list.
 - Read the list's items.
+
+If the owner grants `CONTRIBUTE` permission, the shared user can also:
+
+- Add items.
+- Edit items.
+- Mark supported items done or reopen them.
 
 The shared user cannot, in the current MVP:
 
 - Edit the list.
 - Delete the list.
-- Add items.
-- Edit items.
 - Delete items.
 - Manage shares.
 - Generate or revoke public guest links.

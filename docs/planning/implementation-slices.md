@@ -396,7 +396,7 @@ Tests:
 
 ### Slice 18: Shared contributor permissions
 
-Status: proposed.
+Status: complete for first contributor-permission slice.
 
 User outcome:
 

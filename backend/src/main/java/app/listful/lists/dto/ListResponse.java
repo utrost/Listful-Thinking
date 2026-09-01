@@ -8,6 +8,7 @@ public record ListResponse(
     boolean publicList,
     String shareToken,
     String targetDate,
+    String access,
     String createdAt
 ) {
 }

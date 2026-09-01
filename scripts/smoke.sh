@@ -131,11 +131,23 @@ list_id="$(printf '%s' "$list_json" | json_field id)"
 curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
   -d '{"title":"Birthday 2027","description":"Updated gift ideas","type":"WISH"}' \
   "$base_url/api/v1/lists/$list_id" | assert_json 'data["title"] == "Birthday 2027" and data["description"] == "Updated gift ideas"'
+curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"username":"martha","permission":"CONTRIBUTE"}' \
+  "$base_url/api/v1/lists/$list_id/shares" | assert_json 'data["username"] == "martha" and data["permission"] == "CONTRIBUTE"'
+curl_json -b "$user_cookie" "$base_url/api/v1/lists" \
+  | assert_json 'any(item["id"] == "'"$list_id"'" and item["access"] == "CONTRIBUTE" for item in data)'
 
 item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"name":"Book","url":"https://example.test/book","price":19.99}' \
   "$base_url/api/v1/lists/$list_id/items")"
 item_id="$(printf '%s' "$item_json" | json_field id)"
+contributor_item_json="$(curl_json -b "$user_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Contributor idea"}' \
+  "$base_url/api/v1/lists/$list_id/items")"
+contributor_item_id="$(printf '%s' "$contributor_item_json" | json_field id)"
+curl_json -b "$user_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"Updated contributor idea","status":"OPEN"}' \
+  "$base_url/api/v1/items/$contributor_item_id" | assert_json 'data["name"] == "Updated contributor idea"'
 
 todo_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Next actions","description":"One-off reminders","type":"TODO"}' \
@@ -167,7 +179,7 @@ share_json="$(curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/lists/$list
 token="$(printf '%s' "$share_json" | json_field shareToken)"
 
 curl_json "$base_url/api/v1/share/$token" \
-  | assert_json 'data["title"] == "Birthday 2027" and len(data["items"]) == 1 and data["items"][0]["status"] == "OPEN"'
+  | assert_json 'data["title"] == "Birthday 2027" and len(data["items"]) == 2 and any(item["status"] == "OPEN" for item in data["items"])'
 
 curl_json -H 'Content-Type: application/json' \
   -d '{"guestName":"Annette"}' \

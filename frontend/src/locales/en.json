@@ -55,6 +55,8 @@
   "sharing": {
     "title": "Sharing",
     "username": "Username to share with",
+    "readOnly": "Read-only",
+    "contribute": "Can contribute",
     "share": "Share read-only",
     "revoke": "Revoke",
     "createPublic": "Create public link",

@@ -178,14 +178,14 @@ describe('auth API client', () => {
     } as Response);
 
     await getListShares('l1');
-    await shareListWithUser('l1', { username: 'shared' });
+    await shareListWithUser('l1', { username: 'shared', permission: 'CONTRIBUTE' });
     await revokeListShare('l1', 'shared');
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/lists/l1/shares', expect.objectContaining({ credentials: 'include' }));
     expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/v1/lists/l1/shares', expect.objectContaining({
       method: 'POST',
       credentials: 'include',
-      body: JSON.stringify({ username: 'shared' })
+      body: JSON.stringify({ username: 'shared', permission: 'CONTRIBUTE' })
     }));
     expect(fetchMock).toHaveBeenNthCalledWith(3, '/api/v1/lists/l1/shares/shared', expect.objectContaining({
       method: 'DELETE',

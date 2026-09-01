@@ -60,16 +60,24 @@ class InternalSharingTests {
                 .content("{\"username\":\"shared\"}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.username").value("shared"))
+            .andExpect(jsonPath("$.permission").value("READ"))
             .andExpect(jsonPath("$.listId").value(listId));
 
         mockMvc.perform(get("/api/v1/lists/{listId}/shares", listId).session(owner))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$", hasSize(1)))
-            .andExpect(jsonPath("$[0].username").value("shared"));
+            .andExpect(jsonPath("$[0].username").value("shared"))
+            .andExpect(jsonPath("$[0].permission").value("READ"));
 
         mockMvc.perform(get("/api/v1/lists/{id}", listId).session(shared))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.title").value("Shared birthday"));
+
+        mockMvc.perform(get("/api/v1/lists").session(shared))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].id").value(listId))
+            .andExpect(jsonPath("$[0].access").value("READ"));
 
         mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(shared))
             .andExpect(status().isOk())
@@ -91,6 +99,55 @@ class InternalSharingTests {
 
         mockMvc.perform(get("/api/v1/lists/{id}", listId).session(shared))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void ownerCanGrantContributorPermissionForSharedItemWork() throws Exception {
+        MockHttpSession owner = register("owner");
+        MockHttpSession contributor = register("contributor");
+        register("reader");
+        String listId = createWishList(owner, "Household tasks");
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/shares", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"username\":\"contributor\",\"permission\":\"CONTRIBUTE\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.username").value("contributor"))
+            .andExpect(jsonPath("$.permission").value("CONTRIBUTE"));
+
+        mockMvc.perform(get("/api/v1/lists").session(contributor))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].id").value(listId))
+            .andExpect(jsonPath("$[0].access").value("CONTRIBUTE"));
+
+        MvcResult created = mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Bring cake\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Bring cake"))
+            .andReturn();
+        String itemId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Bring chocolate cake\",\"status\":\"OPEN\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.name").value("Bring chocolate cake"));
+
+        mockMvc.perform(put("/api/v1/lists/{id}", listId).session(contributor)
+                .contentType("application/json")
+                .content("{\"title\":\"Changed\",\"type\":\"WISH\"}"))
+            .andExpect(status().isNotFound());
+
+        mockMvc.perform(delete("/api/v1/items/{itemId}", itemId).session(contributor))
+            .andExpect(status().isNotFound());
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/shares", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"username\":\"reader\",\"permission\":\"READ\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.permission").value("READ"));
     }
 
     @Test

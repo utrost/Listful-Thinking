@@ -24,8 +24,8 @@ public class ListService {
 
     @Transactional(readOnly = true)
     public List<ListResponse> findOwnedLists(User actor) {
-        return listRepository.findByUserId(actor.getId()).stream()
-            .map(this::toResponse)
+        return listRepository.findAccessibleByUserId(actor.getId()).stream()
+            .map(list -> toResponse(actor, list))
             .toList();
     }
 
@@ -34,12 +34,12 @@ public class ListService {
         validateListType(request);
         ListEntity list = new ListEntity(actor, request.title(), request.description(), request.type(), Instant.now());
         list.update(request.title(), request.description(), request.type(), request.targetDate());
-        return toResponse(listRepository.save(list));
+        return toResponse(actor, listRepository.save(list));
     }
 
     @Transactional(readOnly = true)
     public ListResponse getOwned(User actor, String listId) {
-        return toResponse(listAccessService.requireReadableList(actor, listId));
+        return toResponse(actor, listAccessService.requireReadableList(actor, listId));
     }
 
     @Transactional
@@ -47,7 +47,7 @@ public class ListService {
         validateListType(request);
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
         list.update(request.title(), request.description(), request.type(), request.targetDate());
-        return toResponse(list);
+        return toResponse(actor, list);
     }
 
     @Transactional
@@ -66,6 +66,10 @@ public class ListService {
     }
 
     public ListResponse toResponse(ListEntity list) {
+        return toResponse(list.getUser(), list);
+    }
+
+    public ListResponse toResponse(User actor, ListEntity list) {
         return new ListResponse(
             list.getId(),
             list.getTitle(),
@@ -74,6 +78,7 @@ public class ListService {
             list.isPublicList(),
             list.getShareToken(),
             list.getTargetDate() == null ? null : list.getTargetDate().toString(),
+            listAccessService.accessMode(actor, list),
             list.getCreatedAt().toString()
         );
     }

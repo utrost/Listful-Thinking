@@ -1,0 +1,1 @@
+ALTER TABLE list_shares ADD COLUMN permission TEXT NOT NULL DEFAULT 'READ' CHECK (permission IN ('READ', 'CONTRIBUTE'));

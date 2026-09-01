@@ -108,11 +108,11 @@ Authenticated user response:
 
 ## Lists
 
-All list endpoints require an authenticated registered user. `GET /lists/{id}` allows the owner or an internally shared read-only user. Mutating list endpoints remain owner-only.
+All list endpoints require an authenticated registered user. `GET /lists/{id}` allows the owner or an internally shared user. Mutating list metadata endpoints remain owner-only.
 
 ### `GET /api/v1/lists`
 
-Returns lists owned by the authenticated user only.
+Returns lists owned by the authenticated user plus lists explicitly shared with them.
 
 ### `POST /api/v1/lists`
 
@@ -145,12 +145,12 @@ Deletes owned list, or returns `404` when not owned.
 List response:
 
 ```json
-{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"targetDate":null,"createdAt":"2026-08-31T17:00:00Z"}
+{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"targetDate":null,"access":"OWNER","createdAt":"2026-08-31T17:00:00Z"}
 ```
 
 ## Items
 
-All item endpoints require authenticated access to the parent list. Read access allows the owner or an internally shared read-only user. Item create/update/delete remain owner-only.
+All item endpoints require authenticated access to the parent list. Read access allows the owner or an internally shared user. Item create/update allow owners and `CONTRIBUTE` shares. Item delete remains owner-only.
 
 ### `GET /api/v1/lists/{id}/items`
 
@@ -158,7 +158,7 @@ Returns items for an owned list, or `404` when the list is not owned.
 
 ### `POST /api/v1/lists/{id}/items`
 
-Creates an item on an owned list.
+Creates an item on an owned list or a list shared with `CONTRIBUTE` permission.
 
 Request:
 
@@ -186,7 +186,7 @@ Type validation:
 
 ### `PUT /api/v1/items/{id}`
 
-Updates an item only when its parent list is owned by the authenticated user. Returns `404` for missing or non-owned items.
+Updates an item when its parent list is owned by the authenticated user or shared with `CONTRIBUTE` permission. Returns `404` for missing or inaccessible items.
 
 ### `DELETE /api/v1/items/{id}`
 
@@ -200,24 +200,24 @@ Item response:
 
 ## Internal sharing
 
-Internal sharing is read-only for MVP. Share management endpoints require the list owner.
+Internal sharing supports explicit `READ` and `CONTRIBUTE` permissions. Share management endpoints require the list owner.
 
 ### `GET /api/v1/lists/{id}/shares`
 
-Returns users who can read the owned list.
+Returns users who can access the owned list and their permission.
 
 ### `POST /api/v1/lists/{id}/shares`
 
 Request:
 
 ```json
-{"username":"shared-user"}
+{"username":"shared-user","permission":"CONTRIBUTE"}
 ```
 
 Response: `201 Created` with share.
 
 ```json
-{"listId":"uuid","userId":"uuid","username":"shared-user","createdAt":"2026-08-31T17:00:00Z"}
+{"listId":"uuid","userId":"uuid","username":"shared-user","permission":"CONTRIBUTE","createdAt":"2026-08-31T17:00:00Z"}
 ```
 
 ### `DELETE /api/v1/lists/{id}/shares/{username}`

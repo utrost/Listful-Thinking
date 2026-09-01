@@ -21,23 +21,27 @@ Cannot:
 
 ### Internal shared user
 
-MVP can:
+`READ` shares can:
 
 - View explicitly shared list and items.
 
-MVP cannot:
+`CONTRIBUTE` shares can additionally:
+
+- Add items.
+- Edit items.
+- Mark supported items done or reopen them.
+
+Shared users cannot:
 
 - Edit list metadata.
 - Delete list.
-- Add items.
-- Edit items.
 - Delete items.
 - Manage shares.
 - Generate/revoke public token.
 
-Future extension point:
+Implemented permission model:
 
-- `list_shares` can later gain a `permission` column such as `READ`, `CONTRIBUTE`, `MANAGE_ITEMS`.
+- `list_shares.permission` stores `READ` or `CONTRIBUTE`; missing historical rows default to `READ`.
 
 ### Guest via public token
 
@@ -80,7 +84,7 @@ Future extension point:
 
 - Owners manage internal shares with `GET/POST/DELETE /api/v1/lists/{id}/shares` endpoints.
 - Shared users can read the shared list detail and item collection.
-- Shared users are intentionally read-only for MVP: list update/delete, item create/update/delete, and share management still require ownership.
+- `CONTRIBUTE` shared users can add and edit items. List update/delete, item delete, public-link management, and share management still require ownership.
 - Non-owners and non-shared users receive `404` for private resources to avoid leaking existence.
 
 ## Implemented public sharing API behavior

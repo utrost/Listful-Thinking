@@ -55,6 +55,8 @@
   "sharing": {
     "title": "Teilen",
     "username": "Benutzername zum Teilen",
+    "readOnly": "Nur lesen",
+    "contribute": "Darf beitragen",
     "share": "Lesend teilen",
     "revoke": "Entziehen",
     "createPublic": "Öffentlichen Link erstellen",
