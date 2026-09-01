@@ -75,6 +75,18 @@ class ListControllerTests {
     }
 
     @Test
+    void ownerCanCreateTodoListWithoutListTargetDate() throws Exception {
+        MockHttpSession owner = register("owner");
+
+        String listId = createList(owner, "Next actions", "Things to do", "TODO");
+
+        mockMvc.perform(get("/api/v1/lists/{id}", listId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Next actions"))
+            .andExpect(jsonPath("$.type").value("TODO"));
+    }
+
+    @Test
     void usersCannotSeeUpdateOrDeleteEachOthersLists() throws Exception {
         MockHttpSession owner = register("owner");
         MockHttpSession other = register("other");

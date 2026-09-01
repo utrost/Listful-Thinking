@@ -98,6 +98,7 @@
           <input v-model="listForm.title" :placeholder="t('lists.newTitle')" required />
           <select v-model="listForm.type">
             <option value="WISH">WISH</option>
+            <option value="TODO">TODO</option>
             <option value="CHORE">CHORE</option>
             <option value="EVENT">EVENT</option>
           </select>

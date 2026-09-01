@@ -49,7 +49,7 @@ export interface AdminUserEntry {
   createdAt: string;
 }
 
-export type ListType = 'WISH' | 'CHORE' | 'EVENT';
+export type ListType = 'WISH' | 'TODO' | 'CHORE' | 'EVENT';
 
 export interface ListEntry {
   id: string;

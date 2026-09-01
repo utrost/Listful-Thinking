@@ -93,6 +93,22 @@ class ReminderServiceTests {
 
         assertThat(notificationRepository.findByUserIdAndReadAtIsNull(owner.getId())).hasSize(1);
     }
+
+    @Test
+    void todoListDueDateCreatesInAppNotification() {
+        User owner = userRepository.save(new User("owner", "owner@example.test", "hash", UserRole.ADMIN, NOW.minusSeconds(3600)));
+        ListEntity todos = listRepository.save(new ListEntity(owner, "Todo", null, ListType.TODO, NOW.minusSeconds(3000)));
+        Item item = new Item(todos, "Call optician", NOW.minusSeconds(2000));
+        item.update("Call optician", null, null, null, null, NOW.plusSeconds(5400), null);
+        itemRepository.save(item);
+
+        reminderService.processDueReminders(NOW);
+
+        List<Notification> notifications = notificationRepository.findByUserIdAndReadAtIsNull(owner.getId());
+        assertThat(notifications).hasSize(1);
+        assertThat(notifications.get(0).getMessageArgs()).contains(item.getId(), "Call optician", "2027-01-01");
+    }
+
     @Test
     void smtpConfiguredSendsEmailInsteadOfCreatingInAppNotification() {
         TestPropertyValues.of("spring.mail.host=smtp.example.test").applyTo(environment);

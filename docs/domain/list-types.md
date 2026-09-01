@@ -39,6 +39,31 @@ MVP rules:
 - Guests can claim `OPEN` wishlist items.
 - Owner controls `PURCHASED` status.
 
+## TODO
+
+Purpose:
+
+- One-off personal tasks and follow-ups.
+- Lightweight reminders for things that should happen at a date/time but are not recurring chores and do not belong to a dated event plan.
+
+Relevant item fields:
+
+- `name`
+- `due_date`
+- `status`
+
+UI behavior:
+
+- Hide price, image, URL, and recurrence fields.
+- Show due date/time so the reminder scanner can notify the owner.
+
+MVP rules:
+
+- Must not set list-level `target_date`; use item `due_date` instead.
+- Shopping fields (`url`, `image_url`, `price`) are rejected by the API for todo items.
+- Recurrence rules are rejected by the API for todo items; recurring work belongs in `CHORE`.
+- Todo items with a due date participate in the same notification scan as event/chore items.
+
 ## CHORE
 
 Purpose:

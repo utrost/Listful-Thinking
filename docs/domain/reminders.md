@@ -6,7 +6,7 @@ This documents the implemented MVP behavior, not future calendar integrations.
 
 Spring scheduling is enabled. `ReminderService` runs once per day at `06:15` container-local time via `@Scheduled(cron = "0 15 6 * * *")`.
 
-The scan checks items with:
+The scan checks TODO, CHORE, and EVENT items with:
 
 - `dueDate` present,
 - due date from `now` inclusive to `now + 24 hours` exclusive,

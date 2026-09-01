@@ -25,7 +25,7 @@ export function itemFormFieldsForListType(type: ListType): ItemFormFields {
     showUrl: type === 'WISH',
     showImageUrl: type === 'WISH',
     showPrice: type === 'WISH',
-    showDueDate: type === 'CHORE' || type === 'EVENT',
+    showDueDate: type === 'TODO' || type === 'CHORE' || type === 'EVENT',
     showRecurrenceRule: type === 'CHORE'
   };
 }

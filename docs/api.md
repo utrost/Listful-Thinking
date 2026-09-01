@@ -127,7 +127,7 @@ Response: `201 Created` with list.
 Type validation:
 
 - `EVENT` lists require `targetDate`.
-- `WISH` and `CHORE` lists reject `targetDate`; due dates live on their items.
+- `WISH`, `TODO`, and `CHORE` lists reject `targetDate`; due dates live on their items.
 - Type validation failures return `400 Bad Request` with `validation_failed`.
 
 ### `GET /api/v1/lists/{id}`
@@ -179,6 +179,7 @@ For `WISH` lists, a request with `url` and no `name` is accepted. The API return
 Type validation:
 
 - `WISH` items allow shopping fields: `url`, `description`, `imageUrl`, and `price`.
+- `TODO` items reject shopping fields and recurrence rules, and allow `dueDate` for reminders.
 - `CHORE` items reject shopping fields and allow `dueDate` plus `recurrenceRule`.
 - `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
 

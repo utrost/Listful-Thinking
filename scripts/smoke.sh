@@ -126,6 +126,14 @@ item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   "$base_url/api/v1/lists/$list_id/items")"
 item_id="$(printf '%s' "$item_json" | json_field id)"
 
+todo_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"title":"Next actions","description":"One-off reminders","type":"TODO"}' \
+  "$base_url/api/v1/lists")"
+todo_id="$(printf '%s' "$todo_json" | json_field id)"
+curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Call optician","dueDate":"2030-01-01T09:00:00Z"}' \
+  "$base_url/api/v1/lists/$todo_id/items" | assert_json 'data["name"] == "Call optician" and data["dueDate"] == "2030-01-01T09:00:00Z"'
+
 share_json="$(curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/lists/$list_id/public-share")"
 token="$(printf '%s' "$share_json" | json_field shareToken)"
 

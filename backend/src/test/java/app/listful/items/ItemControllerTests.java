@@ -112,6 +112,37 @@ class ItemControllerTests {
     }
 
     @Test
+    void todoItemsAllowDueDateForReminderNotificationsButRejectShoppingFieldsAndRecurrence() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createList(owner, "Next actions", "TODO");
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Call optician","dueDate":"2027-01-01T09:30:00Z"}
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("Call optician"))
+            .andExpect(jsonPath("$.dueDate").value("2027-01-01T09:30:00Z"));
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Buy thing","url":"https://shop.test/thing"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Repeat thing","dueDate":"2027-01-01T09:30:00Z","recurrenceRule":"FREQ=WEEKLY"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
+    @Test
     void creatingWishItemWithOnlyUrlCreatesPlaceholderAndEnrichesMetadataAsynchronously() throws Exception {
         MockHttpSession owner = register("owner");
         String listId = createList(owner, "Birthday");
@@ -231,9 +262,13 @@ class ItemControllerTests {
     }
 
     private String createList(MockHttpSession session, String title) throws Exception {
+        return createList(session, title, "WISH");
+    }
+
+    private String createList(MockHttpSession session, String title, String type) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/v1/lists").session(session)
                 .contentType("application/json")
-                .content("{\"title\":\"%s\",\"description\":\"\",\"type\":\"WISH\"}".formatted(title)))
+                .content("{\"title\":\"%s\",\"description\":\"\",\"type\":\"%s\"}".formatted(title, type)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

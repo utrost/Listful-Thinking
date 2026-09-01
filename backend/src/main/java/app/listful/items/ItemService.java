@@ -81,7 +81,7 @@ public class ItemService {
         if (listType != ListType.WISH && hasShoppingFields(request)) {
             throw new ValidationFailedException("Shopping fields are only allowed on wish lists.");
         }
-        if (listType == ListType.EVENT && hasText(request.recurrenceRule())) {
+        if (listType != ListType.CHORE && hasText(request.recurrenceRule())) {
             throw new ValidationFailedException("Recurrence rules are only allowed on chore items.");
         }
     }
