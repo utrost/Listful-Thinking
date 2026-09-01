@@ -114,6 +114,7 @@
 
         <form class="inline-form" @submit.prevent="handleCreateList">
           <input v-model="listForm.title" :placeholder="t('lists.newTitle')" required />
+          <input v-model="listForm.description" :placeholder="t('lists.description')" />
           <select v-model="listForm.type">
             <option value="WISH">WISH</option>
             <option value="TODO">TODO</option>
@@ -143,10 +144,40 @@
 
           <section v-if="selectedList" class="panel detail-panel">
             <div class="section-header">
-              <h3>{{ selectedList.title }}</h3>
-              <button type="button" class="danger" @click="handleDeleteList(selectedList.id)">{{ t('lists.delete') }}</button>
+              <div>
+                <h3>{{ selectedList.title }}</h3>
+                <small>{{ selectedList.type }}<template v-if="selectedList.targetDate"> · {{ selectedList.targetDate }}</template></small>
+              </div>
+              <div class="button-row">
+                <button type="button" class="secondary subtle" @click="handleStartEditList">{{ t('lists.edit') }}</button>
+                <button v-if="pendingDeleteListId !== selectedList.id" type="button" class="danger" @click="handleRequestDeleteList(selectedList.id)">{{ t('lists.delete') }}</button>
+                <template v-else>
+                  <button type="button" class="danger" @click="handleConfirmDeleteList(selectedList.id)">{{ t('lists.deleteConfirm') }}</button>
+                  <button type="button" class="secondary subtle" @click="pendingDeleteListId = null">{{ t('lists.deleteCancel') }}</button>
+                </template>
+              </div>
             </div>
-            <p>{{ selectedList.description }}</p>
+            <form v-if="editingList" class="inline-form edit-list-form" @submit.prevent="handleSaveEditedList">
+              <input v-model="editListForm.title" :placeholder="t('lists.newTitle')" required />
+              <input v-model="editListForm.description" :placeholder="t('lists.description')" />
+              <select v-model="editListForm.type">
+                <option value="WISH">WISH</option>
+                <option value="TODO">TODO</option>
+                <option value="GROCERY">GROCERY</option>
+                <option value="CHORE">CHORE</option>
+                <option value="EVENT">EVENT</option>
+              </select>
+              <input
+                v-if="editListRules.showTargetDate"
+                v-model="editListForm.targetDate"
+                type="datetime-local"
+                :required="editListRules.requireTargetDate"
+                :placeholder="t('lists.targetDate')"
+              />
+              <button type="submit">{{ t('lists.save') }}</button>
+              <button type="button" class="secondary subtle" @click="handleCancelEditList">{{ t('lists.cancel') }}</button>
+            </form>
+            <p v-else>{{ selectedList.description }}</p>
 
             <section class="share-panel">
               <h4>{{ t('sharing.title') }}</h4>
@@ -249,6 +280,7 @@ import {
   revokePublicShare,
   scrapeUrl,
   shareListWithUser,
+  updateList,
   updateItem,
   updateAdminSettings,
   updateAdminUser,
@@ -287,12 +319,16 @@ const loginForm = reactive({ username: '', password: '' });
 const emailAuthForm = reactive({ email: '' });
 const resetPasswordForm = reactive({ password: '' });
 const adminUserForm = reactive<{ username: string; email: string; password: string; role: 'ADMIN' | 'USER' }>({ username: '', email: '', password: '', role: 'USER' });
-const listForm = reactive<{ title: string; type: ListType; targetDate: string }>({ title: '', type: 'WISH', targetDate: '' });
+const listForm = reactive<{ title: string; description: string; type: ListType; targetDate: string }>({ title: '', description: '', type: 'WISH', targetDate: '' });
+const editingList = ref(false);
+const pendingDeleteListId = ref<string | null>(null);
+const editListForm = reactive<{ title: string; description: string; type: ListType; targetDate: string }>({ title: '', description: '', type: 'WISH', targetDate: '' });
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const editingItemId = ref<string | null>(null);
 const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const shareForm = reactive({ username: '' });
 const newListRules = computed(() => listFormRulesForType(listForm.type));
+const editListRules = computed(() => listFormRulesForType(editListForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
 
 onMounted(async () => {
@@ -387,6 +423,8 @@ async function loadLists() {
 
 async function selectList(list: ListEntry) {
   selectedList.value = list;
+  editingList.value = false;
+  pendingDeleteListId.value = null;
   await loadListDetails();
 }
 
@@ -398,19 +436,57 @@ async function handleCreateList() {
   await run(async () => {
     const created = await createList({
       title: listForm.title,
+      description: listForm.description || undefined,
       type: listForm.type,
       targetDate: listForm.type === 'EVENT' ? toIsoInstant(listForm.targetDate) : undefined
     });
     listForm.title = '';
+    listForm.description = '';
     listForm.targetDate = '';
     lists.value = [created, ...lists.value];
     await selectList(created);
   });
 }
 
-async function handleDeleteList(id: string) {
+function handleStartEditList() {
+  if (!selectedList.value) return;
+  editingList.value = true;
+  pendingDeleteListId.value = null;
+  editListForm.title = selectedList.value.title;
+  editListForm.description = selectedList.value.description ?? '';
+  editListForm.type = selectedList.value.type;
+  editListForm.targetDate = toLocalDateTime(selectedList.value.targetDate);
+}
+
+function handleCancelEditList() {
+  editingList.value = false;
+}
+
+async function handleSaveEditedList() {
+  if (!selectedList.value) return;
+  await run(async () => {
+    const updated = await updateList(selectedList.value!.id, {
+      title: editListForm.title,
+      description: editListForm.description || undefined,
+      type: editListForm.type,
+      targetDate: editListForm.type === 'EVENT' ? toIsoInstant(editListForm.targetDate) : undefined
+    });
+    selectedList.value = updated;
+    lists.value = lists.value.map((list) => list.id === updated.id ? updated : list);
+    editingList.value = false;
+    await loadListDetails();
+  });
+}
+
+function handleRequestDeleteList(id: string) {
+  pendingDeleteListId.value = id;
+}
+
+async function handleConfirmDeleteList(id: string) {
   await run(async () => {
     await deleteList(id);
+    pendingDeleteListId.value = null;
+    editingList.value = false;
     await loadLists();
   });
 }

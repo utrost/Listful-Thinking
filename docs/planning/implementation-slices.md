@@ -361,11 +361,11 @@ Tests:
 
 ### Slice 17: List editing and cleanup UX
 
-Status: proposed.
+Status: complete for first list-editing/cleanup slice.
 
 User outcome:
 
-- Users can correct list metadata and safely delete/archive lists.
+- Users can correct list metadata and safely delete lists after confirmation.
 
 Product gaps covered:
 
@@ -382,7 +382,7 @@ Backend:
 Frontend:
 
 - Add edit-list form in list detail.
-- Add archive/delete confirmation that explains effects on shares/public links.
+- Add delete confirmation that prevents one-click destructive cleanup.
 - Surface public/private/share state clearly.
 
 Docs:

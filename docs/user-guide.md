@@ -226,6 +226,21 @@ For `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists, use **Done** to complete an i
 
 For `WISH` lists, the lifecycle stays gift-specific: guests can claim open items from a public link, and owners can use `PURCHASED` for bought items.
 
+## Working with list metadata
+
+List owners can correct list metadata from the selected list detail panel.
+
+Editable list fields:
+
+- title
+- description
+- type
+- event target date, for `EVENT` lists only
+
+Changing a list type changes which item fields are shown and accepted for future item edits. Use this mainly to correct a wrongly chosen type early; if a list already contains many type-specific items, create a fresh list instead of using type changes as a conversion tool.
+
+Deleting a list is destructive. The UI now asks for a second confirmation step before calling delete. Deleting a list removes its items, internal shares, and public link state with the list.
+
 ## Sharing
 
 ### Internal sharing with registered users

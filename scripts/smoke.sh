@@ -128,6 +128,9 @@ list_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Birthday","description":"Gift ideas","type":"WISH"}' \
   "$base_url/api/v1/lists")"
 list_id="$(printf '%s' "$list_json" | json_field id)"
+curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"title":"Birthday 2027","description":"Updated gift ideas","type":"WISH"}' \
+  "$base_url/api/v1/lists/$list_id" | assert_json 'data["title"] == "Birthday 2027" and data["description"] == "Updated gift ideas"'
 
 item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"name":"Book","url":"https://example.test/book","price":19.99}' \
@@ -164,7 +167,7 @@ share_json="$(curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/lists/$list
 token="$(printf '%s' "$share_json" | json_field shareToken)"
 
 curl_json "$base_url/api/v1/share/$token" \
-  | assert_json 'data["title"] == "Birthday" and len(data["items"]) == 1 and data["items"][0]["status"] == "OPEN"'
+  | assert_json 'data["title"] == "Birthday 2027" and len(data["items"]) == 1 and data["items"][0]["status"] == "OPEN"'
 
 curl_json -H 'Content-Type: application/json' \
   -d '{"guestName":"Annette"}' \

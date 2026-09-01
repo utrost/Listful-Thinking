@@ -25,8 +25,14 @@
   "lists": {
     "title": "Your lists",
     "newTitle": "New list title",
+    "description": "Description",
     "targetDate": "Target date",
     "create": "Create list",
+    "edit": "Edit list",
+    "save": "Save list",
+    "cancel": "Cancel",
+    "deleteConfirm": "Confirm delete",
+    "deleteCancel": "Keep list",
     "delete": "Delete list"
   },
   "items": {
