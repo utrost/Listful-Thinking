@@ -46,6 +46,7 @@ class ScraperControllerTests {
 
     private HttpServer server;
     private volatile String lastUserAgent;
+    private volatile String lastAcceptLanguage;
     private MockHttpSession session;
 
     @BeforeEach
@@ -82,6 +83,8 @@ class ScraperControllerTests {
         org.assertj.core.api.Assertions.assertThat(lastUserAgent)
             .contains("Mozilla")
             .contains("Chrome");
+        org.assertj.core.api.Assertions.assertThat(lastAcceptLanguage)
+            .contains("de-DE");
     }
 
     @Test
@@ -93,6 +96,18 @@ class ScraperControllerTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.title").value("Plotter Paper"))
             .andExpect(jsonPath("$.price").value(12.50));
+    }
+
+    @Test
+    void extractsAmazonProductDetailFallbacksWhenGenericMetadataIsUseless() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape")
+                .session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/amazon\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Knipex Zangenschlüssel 180 mm"))
+            .andExpect(jsonPath("$.imageUrl").value("https://example.test/knipex.jpg"))
+            .andExpect(jsonPath("$.price").value(42.99));
     }
 
     @Test
@@ -110,6 +125,7 @@ class ScraperControllerTests {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         server.createContext("/og", exchange -> {
             lastUserAgent = exchange.getRequestHeaders().getFirst("User-Agent");
+            lastAcceptLanguage = exchange.getRequestHeaders().getFirst("Accept-Language");
             respond(exchange, """
                 <!doctype html><html><head>
                   <meta property=\"og:title\" content=\"Lamy Safari Fountain Pen\">
@@ -125,6 +141,13 @@ class ScraperControllerTests {
               <title>Plotter Paper</title>
               <script type=\"application/ld+json\">{"@type":"Product","name":"Plotter Paper","offers":{"@type":"Offer","price":"12.50"}}</script>
             </head><body><span itemprop=\"price\">99.99</span></body></html>
+            """));
+        server.createContext("/amazon", exchange -> respond(exchange, """
+            <!doctype html><html><head><title>Amazon.de</title></head><body>
+              <span id=\"productTitle\"> Knipex Zangenschlüssel 180 mm </span>
+              <img id=\"landingImage\" src=\"https://example.test/knipex.jpg\" />
+              <span class=\"a-price\"><span class=\"a-price-whole\">42<span class=\"a-price-decimal\">,</span></span><span class=\"a-price-fraction\">99</span></span>
+            </body></html>
             """));
         server.start();
     }

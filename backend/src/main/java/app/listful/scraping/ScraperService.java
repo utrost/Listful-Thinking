@@ -11,13 +11,12 @@ import java.net.URISyntaxException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ScraperService {
-    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
-    private static final String ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+    private static final String USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+    private static final String ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
     private final ObjectMapper objectMapper;
 
     public ScraperService(ObjectMapper objectMapper) {
@@ -30,9 +29,19 @@ public class ScraperService {
             Document document = Jsoup.connect(uri.toString())
                 .userAgent(USER_AGENT)
                 .header("Accept", ACCEPT)
-                .header("Accept-Language", LocaleContextHolder.getLocale().toLanguageTag())
+                .header("Accept-Language", "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7")
+                .header("Cache-Control", "max-age=0")
+                .header("Upgrade-Insecure-Requests", "1")
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "none")
+                .header("Sec-Fetch-User", "?1")
+                .referrer("https://www.amazon.de/")
+                .cookie("i18n-prefs", "EUR")
+                .cookie("lc-acbde", "de_DE")
                 .timeout(8_000)
                 .followRedirects(true)
+                .maxBodySize(0)
                 .get();
             return extract(document);
         } catch (IOException ex) {
@@ -42,14 +51,25 @@ public class ScraperService {
 
     ScrapeResponse extract(Document document) {
         return new ScrapeResponse(
-            firstNonBlank(meta(document, "meta[property=og:title]"), meta(document, "meta[name=twitter:title]"), text(document, "title")),
+            firstNonBlank(
+                meta(document, "meta[property=og:title]"),
+                meta(document, "meta[name=twitter:title]"),
+                text(document, "#productTitle"),
+                nonGenericPageTitle(text(document, "title"))
+            ),
             firstNonBlank(meta(document, "meta[property=og:description]"), meta(document, "meta[name=description]")),
-            absoluteUrl(document, firstNonBlank(meta(document, "meta[property=og:image]"), meta(document, "meta[name=twitter:image]"))),
+            absoluteUrl(document, firstNonBlank(
+                meta(document, "meta[property=og:image]"),
+                meta(document, "meta[name=twitter:image]"),
+                attr(document, "#landingImage", "data-old-hires"),
+                attr(document, "#landingImage", "src")
+            )),
             firstPrice(
                 meta(document, "meta[property=product:price:amount]"),
                 jsonLdOfferPrice(document),
                 attr(document, "[itemprop=price]", "content"),
-                text(document, "[itemprop=price]")
+                text(document, "[itemprop=price]"),
+                amazonVisiblePrice(document)
             )
         );
     }
@@ -87,6 +107,16 @@ public class ScraperService {
         return element == null ? null : blankToNull(element.text());
     }
 
+    private String text(Element root, String selector) {
+        Element element = root.selectFirst(selector);
+        return element == null ? null : blankToNull(element.text());
+    }
+
+    private String ownText(Element root, String selector) {
+        Element element = root.selectFirst(selector);
+        return element == null ? null : blankToNull(element.ownText());
+    }
+
     private String firstNonBlank(String... values) {
         for (String value : values) {
             String normalized = blankToNull(value);
@@ -95,6 +125,17 @@ public class ScraperService {
             }
         }
         return null;
+    }
+
+    private String nonGenericPageTitle(String value) {
+        String title = blankToNull(value);
+        if (title == null) {
+            return null;
+        }
+        if (title.equalsIgnoreCase("Amazon.de") || title.equalsIgnoreCase("Amazon.com")) {
+            return null;
+        }
+        return title;
     }
 
     private String blankToNull(String value) {
@@ -127,6 +168,23 @@ public class ScraperService {
             }
         }
         return null;
+    }
+
+    private String amazonVisiblePrice(Document document) {
+        Element price = document.selectFirst(".a-price");
+        if (price == null) {
+            return null;
+        }
+        String offscreen = text(price, ".a-offscreen");
+        if (offscreen != null) {
+            return offscreen;
+        }
+        String whole = ownText(price, ".a-price-whole");
+        String fraction = ownText(price, ".a-price-fraction");
+        if (whole == null) {
+            return null;
+        }
+        return fraction == null ? whole : whole + "." + fraction;
     }
 
     private BigDecimal parsePrice(String candidate) {

@@ -138,7 +138,7 @@
 
             <form class="inline-form" @submit.prevent="handleCreateItem">
               <input v-model="itemForm.name" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" />
-              <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" />
+              <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" @change="handleScrapeItemUrl" />
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
               <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :placeholder="t('items.imageUrl')" />
               <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
