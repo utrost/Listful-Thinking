@@ -58,6 +58,12 @@
     "title": "Admin",
     "refresh": "Refresh admin panel",
     "registrationEnabled": "Registration enabled",
-    "noEmail": "No email"
+    "noEmail": "No email",
+    "createUser": "Create user",
+    "active": "active",
+    "inactive": "inactive",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "lists": "All lists"
   }
 }

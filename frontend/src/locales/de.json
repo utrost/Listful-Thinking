@@ -58,6 +58,12 @@
     "title": "Administration",
     "refresh": "Adminbereich aktualisieren",
     "registrationEnabled": "Registrierung aktiviert",
-    "noEmail": "Keine E-Mail"
+    "noEmail": "Keine E-Mail",
+    "createUser": "Benutzer erstellen",
+    "active": "aktiv",
+    "inactive": "inaktiv",
+    "activate": "Aktivieren",
+    "deactivate": "Deaktivieren",
+    "lists": "Alle Listen"
   }
 }

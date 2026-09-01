@@ -38,7 +38,7 @@ assert_json() {
   python3 -c 'import json, sys
 expr = sys.argv[1]
 data = json.load(sys.stdin)
-if not eval(expr, {"__builtins__": {"all": all, "len": len}}, {"data": data}):
+if not eval(expr, {"__builtins__": {"all": all, "any": any, "len": len}}, {"data": data}):
     raise SystemExit(f"JSON assertion failed: {expr}; data={data!r}")' "$1"
 }
 
@@ -101,7 +101,15 @@ curl_json -c "$user_cookie" -H 'Content-Type: application/json' \
   "$base_url/api/v1/auth/register" | assert_json 'data["role"] == "USER"'
 
 curl_json -b "$admin_cookie" "$base_url/api/v1/admin/users" \
-  | assert_json 'len(data) == 2 and data[0]["role"] == "ADMIN" and data[1]["role"] == "USER" and all("passwordHash" not in user for user in data)'
+  | assert_json 'len(data) == 2 and data[0]["role"] == "ADMIN" and data[0]["active"] is True and data[1]["role"] == "USER" and all("passwordHash" not in user for user in data)'
+
+created_user_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"username":"bob","email":"bob@example.test","password":"admin set password","role":"USER"}' \
+  "$base_url/api/v1/admin/users")"
+created_user_id="$(printf '%s' "$created_user_json" | json_field id)"
+curl_json -b "$admin_cookie" -X PATCH -H 'Content-Type: application/json' \
+  -d '{"active":false}' \
+  "$base_url/api/v1/admin/users/$created_user_id" | assert_json 'data["username"] == "bob" and data["active"] is False'
 
 curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
   -d '{"registrationEnabled":false}' \
@@ -133,6 +141,9 @@ todo_id="$(printf '%s' "$todo_json" | json_field id)"
 curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"name":"Call optician","dueDate":"2030-01-01T09:00:00Z"}' \
   "$base_url/api/v1/lists/$todo_id/items" | assert_json 'data["name"] == "Call optician" and data["dueDate"] == "2030-01-01T09:00:00Z"'
+
+curl_json -b "$admin_cookie" "$base_url/api/v1/admin/lists" \
+  | assert_json 'any(item["title"] == "Next actions" and item["ownerUsername"] == "admin" for item in data)'
 
 share_json="$(curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/lists/$list_id/public-share")"
 token="$(printf '%s' "$share_json" | json_field shareToken)"

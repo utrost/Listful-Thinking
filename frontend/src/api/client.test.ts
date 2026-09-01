@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, createPublicShare, deleteItem, deleteList, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, createPublicShare, createAdminUser, deleteItem, deleteList, getAdminLists, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, updateAdminSettings, updateAdminUser, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {

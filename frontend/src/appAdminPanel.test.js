@@ -9,6 +9,9 @@ describe('admin workspace shell', () => {
     expect(appVue).toContain("t('admin.title')");
     expect(appVue).toContain('handleLoadAdminPanel');
     expect(appVue).toContain('handleToggleRegistration');
+    expect(appVue).toContain('handleAdminCreateUser');
+    expect(appVue).toContain('handleToggleUserActive');
     expect(appVue).toContain('adminUsers');
+    expect(appVue).toContain('adminLists');
   });
 });

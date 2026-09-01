@@ -86,10 +86,28 @@
             />
             <span>{{ t('admin.registrationEnabled') }}</span>
           </label>
+          <form class="inline-form" @submit.prevent="handleAdminCreateUser">
+            <input v-model="adminUserForm.username" :placeholder="t('auth.username')" required minlength="3" />
+            <input v-model="adminUserForm.email" :placeholder="t('auth.email')" type="email" />
+            <input v-model="adminUserForm.password" :placeholder="t('auth.password')" type="password" required minlength="8" />
+            <select v-model="adminUserForm.role">
+              <option value="USER">USER</option>
+              <option value="ADMIN">ADMIN</option>
+            </select>
+            <button type="submit">{{ t('admin.createUser') }}</button>
+          </form>
           <ul class="admin-user-list">
             <li v-for="user in adminUsers" :key="user.id">
-              <span><strong>{{ user.username }}</strong> · {{ user.role }}</span>
+              <span><strong>{{ user.username }}</strong> · {{ user.role }} · {{ user.active ? t('admin.active') : t('admin.inactive') }}</span>
               <small>{{ user.email ?? t('admin.noEmail') }}</small>
+              <button type="button" class="secondary subtle" @click="handleToggleUserActive(user.id, !user.active)">{{ user.active ? t('admin.deactivate') : t('admin.activate') }}</button>
+            </li>
+          </ul>
+          <h4>{{ t('admin.lists') }}</h4>
+          <ul class="admin-user-list">
+            <li v-for="list in adminLists" :key="list.id">
+              <span><strong>{{ list.title }}</strong> · {{ list.type }}</span>
+              <small>{{ list.ownerUsername }} · {{ list.ownerEmail ?? t('admin.noEmail') }}</small>
             </li>
           </ul>
         </section>
@@ -184,12 +202,14 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   createItem,
+  createAdminUser,
   createList,
   createPublicShare,
   claimPublicItem,
   deleteItem,
   deleteList,
   getAdminSettings,
+  getAdminLists,
   getAdminUsers,
   getCurrentUser,
   getItems,
@@ -210,8 +230,10 @@ import {
   scrapeUrl,
   shareListWithUser,
   updateAdminSettings,
+  updateAdminUser,
   type AuthUser,
   type AdminSettings,
+  type AdminListEntry,
   type AdminUserEntry,
   type ItemEntry,
   type ListEntry,
@@ -231,6 +253,7 @@ const shares = ref<ListShareEntry[]>([]);
 const notifications = ref<NotificationEntry[]>([]);
 const adminSettings = ref<AdminSettings | null>(null);
 const adminUsers = ref<AdminUserEntry[]>([]);
+const adminLists = ref<AdminListEntry[]>([]);
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
 const magicToken = window.location.pathname === '/magic-login' ? new URLSearchParams(window.location.search).get('token') : '';
 const resetToken = window.location.pathname === '/reset-password' ? new URLSearchParams(window.location.search).get('token') : '';
@@ -242,6 +265,7 @@ const registerForm = reactive({ username: '', email: '', password: '' });
 const loginForm = reactive({ username: '', password: '' });
 const emailAuthForm = reactive({ email: '' });
 const resetPasswordForm = reactive({ password: '' });
+const adminUserForm = reactive<{ username: string; email: string; password: string; role: 'ADMIN' | 'USER' }>({ username: '', email: '', password: '', role: 'USER' });
 const listForm = reactive<{ title: string; type: ListType; targetDate: string }>({ title: '', type: 'WISH', targetDate: '' });
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '' });
 const shareForm = reactive({ username: '' });
@@ -329,6 +353,7 @@ async function handleLogout() {
   notifications.value = [];
   adminSettings.value = null;
   adminUsers.value = [];
+  adminLists.value = [];
 }
 
 async function loadLists() {
@@ -385,14 +410,16 @@ async function maybeLoadAdminPanel() {
   } else {
     adminSettings.value = null;
     adminUsers.value = [];
+    adminLists.value = [];
   }
 }
 
 async function handleLoadAdminPanel() {
   await run(async () => {
-    const [settings, users] = await Promise.all([getAdminSettings(), getAdminUsers()]);
+    const [settings, users, allLists] = await Promise.all([getAdminSettings(), getAdminUsers(), getAdminLists()]);
     adminSettings.value = settings;
     adminUsers.value = users;
+    adminLists.value = allLists;
   });
 }
 
@@ -400,6 +427,24 @@ async function handleToggleRegistration(registrationEnabled: boolean) {
   await run(async () => {
     adminSettings.value = await updateAdminSettings({ registrationEnabled });
     adminUsers.value = await getAdminUsers();
+  });
+}
+
+async function handleAdminCreateUser() {
+  await run(async () => {
+    await createAdminUser({ ...adminUserForm, email: adminUserForm.email || undefined });
+    adminUserForm.username = '';
+    adminUserForm.email = '';
+    adminUserForm.password = '';
+    adminUserForm.role = 'USER';
+    await handleLoadAdminPanel();
+  });
+}
+
+async function handleToggleUserActive(id: string, active: boolean) {
+  await run(async () => {
+    const updated = await updateAdminUser(id, { active });
+    adminUsers.value = adminUsers.value.map((user) => user.id === id ? updated : user);
   });
 }
 

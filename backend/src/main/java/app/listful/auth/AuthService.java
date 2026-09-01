@@ -11,6 +11,7 @@ import app.listful.domain.User;
 import app.listful.domain.enums.UserRole;
 import app.listful.domain.repository.AuthTokenRepository;
 import app.listful.domain.repository.UserRepository;
+import app.listful.settings.dto.AdminCreateUserRequest;
 import app.listful.settings.SettingService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -89,8 +90,26 @@ public class AuthService {
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new BadCredentialsException("Invalid username or password");
         }
+        if (!user.isActive()) {
+            throw new BadCredentialsException("Invalid username or password");
+        }
 
         return user;
+    }
+
+    @Transactional
+    public User createUser(AdminCreateUserRequest request) {
+        String username = normalizeUsername(request.username());
+        if (userRepository.existsByUsername(username)) {
+            throw new UsernameAlreadyExistsException();
+        }
+        return userRepository.save(new User(
+            username,
+            normalizeEmail(request.email()),
+            passwordEncoder.encode(request.password()),
+            request.role(),
+            Instant.now()
+        ));
     }
 
     @Transactional
@@ -143,6 +162,9 @@ public class AuthService {
             .orElseThrow(() -> new BadCredentialsException("Invalid token"));
         Instant now = Instant.now();
         if (!token.usableFor(purpose, now)) {
+            throw new BadCredentialsException("Invalid token");
+        }
+        if (!token.getUser().isActive()) {
             throw new BadCredentialsException("Invalid token");
         }
         token.markUsed(now);

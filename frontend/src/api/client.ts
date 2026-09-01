@@ -46,6 +46,31 @@ export interface AdminUserEntry {
   username: string;
   email: string | null;
   role: 'ADMIN' | 'USER';
+  active: boolean;
+  createdAt: string;
+}
+
+export interface AdminCreateUserRequest {
+  username: string;
+  email?: string;
+  password: string;
+  role: 'ADMIN' | 'USER';
+}
+
+export interface AdminUpdateUserRequest {
+  active: boolean;
+}
+
+export interface AdminListEntry {
+  id: string;
+  title: string;
+  description: string | null;
+  type: ListType;
+  publicList: boolean;
+  ownerId: string;
+  ownerUsername: string;
+  ownerEmail: string | null;
+  targetDate: string | null;
   createdAt: string;
 }
 
@@ -257,6 +282,24 @@ export async function getAdminSettings(): Promise<AdminSettings> {
 
 export async function getAdminUsers(): Promise<AdminUserEntry[]> {
   return requestJson<AdminUserEntry[]>('/api/v1/admin/users');
+}
+
+export async function createAdminUser(request: AdminCreateUserRequest): Promise<AdminUserEntry> {
+  return requestJson<AdminUserEntry>('/api/v1/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function updateAdminUser(id: string, request: AdminUpdateUserRequest): Promise<AdminUserEntry> {
+  return requestJson<AdminUserEntry>(`/api/v1/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function getAdminLists(): Promise<AdminListEntry[]> {
+  return requestJson<AdminListEntry[]>('/api/v1/admin/lists');
 }
 
 export async function updateAdminSettings(request: UpdateAdminSettingsRequest): Promise<AdminSettings> {

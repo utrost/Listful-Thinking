@@ -31,6 +31,9 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(nullable = false)
+    private int active;
+
     protected User() {
     }
 
@@ -41,6 +44,7 @@ public class User {
         this.passwordHash = passwordHash;
         this.role = role;
         this.createdAt = createdAt;
+        this.active = 1;
     }
 
     public String getId() { return id; }
@@ -49,5 +53,7 @@ public class User {
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public UserRole getRole() { return role; }
+    public boolean isActive() { return active == 1; }
+    public void setActive(boolean active) { this.active = active ? 1 : 0; }
     public Instant getCreatedAt() { return createdAt; }
 }

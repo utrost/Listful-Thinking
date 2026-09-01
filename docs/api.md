@@ -345,5 +345,35 @@ Requires `ADMIN` role. Returns safe user metadata sorted by creation time; passw
 Response:
 
 ```json
-[{"id":"uuid","username":"uwe","email":"uwe@example.test","role":"ADMIN","createdAt":"2026-08-31T17:00:00Z"}]
+[{"id":"uuid","username":"uwe","email":"uwe@example.test","role":"ADMIN","active":true,"createdAt":"2026-08-31T17:00:00Z"}]
+```
+
+### `POST /api/v1/admin/users`
+
+Requires `ADMIN` role. Creates a user directly, independent of public registration settings.
+
+Request:
+
+```json
+{"username":"martha","email":"martha@example.test","password":"temporary password","role":"USER"}
+```
+
+Response: `201 Created` with safe user metadata. Duplicate usernames return `409 Conflict` with `username_taken`.
+
+### `PATCH /api/v1/admin/users/{id}`
+
+Requires `ADMIN` role. Activates or deactivates a user.
+
+```json
+{"active":false}
+```
+
+Deactivated users cannot log in or consume magic/password-reset links.
+
+### `GET /api/v1/admin/lists`
+
+Requires `ADMIN` role. Returns all lists with owner metadata for support/oversight.
+
+```json
+[{"id":"uuid","title":"Next actions","description":null,"type":"TODO","publicList":false,"ownerId":"uuid","ownerUsername":"uwe","ownerEmail":"uwe@example.test","targetDate":null,"createdAt":"2026-08-31T17:00:00Z"}]
 ```
