@@ -25,6 +25,7 @@
   },
   "items": {
     "newName": "Neuer Eintrag",
+    "description": "Beschreibung",
     "imageUrl": "Bild-URL",
     "price": "Preis",
     "dueDate": "Fällig am",

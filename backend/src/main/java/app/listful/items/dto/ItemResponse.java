@@ -6,6 +6,7 @@ public record ItemResponse(
     String id,
     String listId,
     String name,
+    String description,
     String url,
     String imageUrl,
     BigDecimal price,

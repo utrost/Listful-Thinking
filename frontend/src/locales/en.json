@@ -25,6 +25,7 @@
   },
   "items": {
     "newName": "New item name",
+    "description": "Description",
     "imageUrl": "Image URL",
     "price": "Price",
     "dueDate": "Due date",

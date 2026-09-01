@@ -102,6 +102,7 @@ public class PublicShareService {
         return new PublicItemResponse(
             item.getId(),
             item.getName(),
+            item.getDescription(),
             item.getUrl(),
             item.getImageUrl(),
             item.getPrice(),

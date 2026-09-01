@@ -26,7 +26,7 @@ public class ItemEnrichmentService {
 
     @Async
     @Transactional
-    public void enrichUrlOnlyItem(String itemId, String url) {
+    public void enrichUrlItem(String itemId, String url) {
         ScrapeResponse metadata;
         try {
             metadata = scraperService.scrape(url);
@@ -44,6 +44,9 @@ public class ItemEnrichmentService {
         }
         if (hasText(metadata.title()) && PLACEHOLDER_NAME.equals(item.getName())) {
             item.setName(metadata.title());
+        }
+        if (hasText(metadata.description()) && !hasText(item.getDescription())) {
+            item.setDescription(metadata.description());
         }
         if (hasText(metadata.imageUrl()) && !hasText(item.getImageUrl())) {
             item.setImageUrl(metadata.imageUrl());

@@ -32,6 +32,8 @@ public class Item {
     @Column(name = "image_url")
     private String imageUrl;
 
+    private String description;
+
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
@@ -67,7 +69,12 @@ public class Item {
     }
 
     public void update(String name, String url, String imageUrl, BigDecimal price, ItemStatus status, Instant dueDate, String recurrenceRule) {
+        update(name, null, url, imageUrl, price, status, dueDate, recurrenceRule);
+    }
+
+    public void update(String name, String description, String url, String imageUrl, BigDecimal price, ItemStatus status, Instant dueDate, String recurrenceRule) {
         this.name = name;
+        this.description = description;
         this.url = url;
         this.imageUrl = imageUrl;
         this.price = price;
@@ -79,6 +86,8 @@ public class Item {
     public String getId() { return id; }
     public ListEntity getList() { return list; }
     public String getName() { return name; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
     public String getUrl() { return url; }
     public void setUrl(String url) { this.url = url; }
     public String getImageUrl() { return imageUrl; }

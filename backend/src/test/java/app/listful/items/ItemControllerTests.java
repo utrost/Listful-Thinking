@@ -142,8 +142,37 @@ class ItemControllerTests {
         mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(owner))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].name").value("Fetched camera"))
+            .andExpect(jsonPath("$[0].description").value("Fetched description"))
             .andExpect(jsonPath("$[0].imageUrl").value("https://shop.test/camera.jpg"))
             .andExpect(jsonPath("$[0].price").value(49.95));
+    }
+
+    @Test
+    void wishItemWithNameAndUrlFetchesBlankMetadataButPreservesUserFields() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createList(owner, "Birthday");
+        doAnswer(invocation -> new ScrapeResponse("Fetched title", "Fetched description", "https://shop.test/fetched.jpg", new BigDecimal("19.95")))
+            .when(scraperService).scrape(eq("https://shop.test/named"));
+
+        MvcResult result = mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"User title","description":"User description","url":"https://shop.test/named","imageUrl":"https://shop.test/user.jpg"}
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.name").value("User title"))
+            .andExpect(jsonPath("$.description").value("User description"))
+            .andExpect(jsonPath("$.imageUrl").value("https://shop.test/user.jpg"))
+            .andReturn();
+        String itemId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+
+        awaitItemPrice(itemId, new BigDecimal("19.95"));
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].name").value("User title"))
+            .andExpect(jsonPath("$[0].description").value("User description"))
+            .andExpect(jsonPath("$[0].imageUrl").value("https://shop.test/user.jpg"))
+            .andExpect(jsonPath("$[0].price").value(19.95));
     }
 
     @Test
@@ -178,6 +207,18 @@ class ItemControllerTests {
             Thread.sleep(50);
         }
         throw new AssertionError("item was not enriched within timeout");
+    }
+
+    private void awaitItemPrice(String itemId, BigDecimal expectedPrice) throws InterruptedException {
+        long deadline = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+        while (System.nanoTime() < deadline) {
+            BigDecimal currentPrice = itemRepository.findById(itemId).orElseThrow().getPrice();
+            if (currentPrice != null && expectedPrice.compareTo(currentPrice) == 0) {
+                return;
+            }
+            Thread.sleep(50);
+        }
+        throw new AssertionError("item price was not enriched within timeout");
     }
 
     private String createItem(MockHttpSession session, String listId, String name) throws Exception {

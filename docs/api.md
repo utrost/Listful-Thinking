@@ -123,7 +123,7 @@ Creates an item on an owned list.
 Request:
 
 ```json
-{"name":"Camera strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null}
+{"name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null}
 ```
 
 Response: `201 Created` with item.
@@ -134,11 +134,11 @@ URL-only wishlist creation:
 {"url":"https://example.test/product"}
 ```
 
-For `WISH` lists, a request with `url` and no `name` is accepted. The API returns the item immediately with the placeholder name `Loading metadata…`, then starts asynchronous scraping. On success, the item name/image/price are filled from scraped metadata. On scrape failure, the placeholder item remains so the user's pasted URL is not lost.
+For `WISH` lists, a request with `url` and no `name` is accepted. The API returns the item immediately with the placeholder name `Loading metadata…`, then starts asynchronous scraping. For wish items with a URL, missing metadata fields are filled from scraped title/description/image/price without overwriting user-entered values. On scrape failure, the item remains so the user's pasted URL is not lost.
 
 Type validation:
 
-- `WISH` items allow shopping fields: `url`, `imageUrl`, and `price`.
+- `WISH` items allow shopping fields: `url`, `description`, `imageUrl`, and `price`.
 - `CHORE` items reject shopping fields and allow `dueDate` plus `recurrenceRule`.
 - `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
 
@@ -153,7 +153,7 @@ Deletes an item only when its parent list is owned by the authenticated user. Re
 Item response:
 
 ```json
-{"id":"uuid","listId":"uuid","name":"Camera strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"reservedByGuest":null}
+{"id":"uuid","listId":"uuid","name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"reservedByGuest":null}
 ```
 
 ## Internal sharing

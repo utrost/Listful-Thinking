@@ -21,6 +21,7 @@ Validation:
 Relevant item fields:
 
 - `name`
+- `description`
 - `url`
 - `image_url`
 - `price`
@@ -29,8 +30,8 @@ Relevant item fields:
 
 UI behavior:
 
-- Show URL, image, price, and status.
-- Allow URL-only item creation.
+- Show description, URL, image, price, and status.
+- Allow URL-only item creation and metadata-prefilled item forms; users can edit fetched values before saving.
 - Public guest page supports claiming.
 
 MVP rules:

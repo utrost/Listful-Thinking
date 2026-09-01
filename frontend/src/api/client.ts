@@ -62,6 +62,7 @@ export interface ItemEntry {
   id: string;
   listId: string;
   name: string;
+  description: string | null;
   url: string | null;
   imageUrl: string | null;
   price: number | null;
@@ -73,6 +74,7 @@ export interface ItemEntry {
 
 export interface ItemRequest {
   name?: string;
+  description?: string;
   url?: string;
   imageUrl?: string;
   price?: number;
@@ -102,6 +104,7 @@ export interface PublicShareToken {
 export interface PublicItemEntry {
   id: string;
   name: string;
+  description: string | null;
   url: string | null;
   imageUrl: string | null;
   price: number | null;

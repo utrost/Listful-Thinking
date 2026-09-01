@@ -27,7 +27,8 @@ button.danger {
 }
 
 input,
-select {
+select,
+textarea {
   min-width: 0;
   border: 1px solid #d7c9b2;
   border-radius: 14px;
@@ -35,6 +36,11 @@ select {
   background: #fffdf8;
   color: #231f20;
   font: inherit;
+}
+
+textarea {
+  min-height: 5rem;
+  resize: vertical;
 }
 
 label {
@@ -161,6 +167,19 @@ small,
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.item-image {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+  border: 1px solid #e1d5c1;
+  border-radius: 14px;
+  background: #f6f1e8;
+}
+
+.item-image.preview {
+  justify-self: start;
 }
 
 .share-panel {

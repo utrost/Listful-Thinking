@@ -42,10 +42,10 @@ public class ItemService {
         validateForListType(list, request);
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
-        item.update(itemName, request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
+        item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
         Item saved = itemRepository.save(item);
-        if (shouldEnrichUrlOnlyItem(list, request)) {
-            itemEnrichmentService.enrichUrlOnlyItem(saved.getId(), request.url().trim());
+        if (shouldEnrichWishUrlItem(list, request)) {
+            itemEnrichmentService.enrichUrlItem(saved.getId(), request.url().trim());
         }
         return toResponse(saved);
     }
@@ -54,7 +54,7 @@ public class ItemService {
     public ItemResponse update(User actor, String itemId, ItemRequest request) {
         Item item = requireOwnedItem(actor, itemId);
         validateForListType(item.getList(), request);
-        item.update(request.name(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
+        item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule());
         return toResponse(item);
     }
 
@@ -90,8 +90,13 @@ public class ItemService {
         return hasText(request.name()) ? request.name().trim() : ItemEnrichmentService.PLACEHOLDER_NAME;
     }
 
-    private boolean shouldEnrichUrlOnlyItem(ListEntity list, ItemRequest request) {
-        return isWishUrlOnlyCandidate(list, request);
+    private boolean shouldEnrichWishUrlItem(ListEntity list, ItemRequest request) {
+        return list.getType() == ListType.WISH
+            && hasText(request.url())
+            && (!hasText(request.name())
+                || !hasText(request.description())
+                || !hasText(request.imageUrl())
+                || request.price() == null);
     }
 
     private boolean isWishUrlOnlyCandidate(ListEntity list, ItemRequest request) {
@@ -113,6 +118,7 @@ public class ItemService {
             item.getId(),
             item.getList().getId(),
             item.getName(),
+            item.getDescription(),
             item.getUrl(),
             item.getImageUrl(),
             item.getPrice(),

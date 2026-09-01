@@ -17,8 +17,10 @@
         <p v-if="publicList?.description">{{ publicList.description }}</p>
         <ul class="item-list">
           <li v-for="item in publicList?.items ?? []" :key="item.id">
+            <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
             <span>
               <strong>{{ item.name }}</strong>
+              <small v-if="item.description">{{ item.description }}</small>
               <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
             </span>
             <form v-if="item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
@@ -140,7 +142,9 @@
               <input v-model="itemForm.name" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" />
               <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" @change="handleScrapeItemUrl" />
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
+              <textarea v-if="currentItemFields.showUrl" v-model="itemForm.description" :placeholder="t('items.description')"></textarea>
               <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :placeholder="t('items.imageUrl')" />
+              <img v-if="itemForm.imageUrl" class="item-image preview" :src="itemForm.imageUrl" :alt="itemForm.name || t('items.newName')" />
               <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
               <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
               <input v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule" placeholder="FREQ=WEEKLY" />
@@ -149,8 +153,10 @@
 
             <ul class="item-list">
               <li v-for="item in items" :key="item.id">
+                <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
                 <span>
                   <strong>{{ item.name }}</strong>
+                  <small v-if="item.description">{{ item.description }}</small>
                   <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
                 </span>
                 <button type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
@@ -219,7 +225,7 @@ const message = ref('');
 const registerForm = reactive({ username: '', email: '', password: '' });
 const loginForm = reactive({ username: '', password: '' });
 const listForm = reactive<{ title: string; type: ListType; targetDate: string }>({ title: '', type: 'WISH', targetDate: '' });
-const itemForm = reactive({ name: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '' });
+const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '' });
 const shareForm = reactive({ username: '' });
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
@@ -408,6 +414,9 @@ async function handleScrapeItemUrl() {
     if (!itemForm.name && scraped.title) {
       itemForm.name = scraped.title;
     }
+    if (!itemForm.description && scraped.description) {
+      itemForm.description = scraped.description;
+    }
     if (scraped.imageUrl) {
       itemForm.imageUrl = scraped.imageUrl;
     }
@@ -423,6 +432,7 @@ async function handleCreateItem() {
     const fields = currentItemFields.value;
     const created = await createItem(selectedList.value!.id, {
       name: itemForm.name || undefined,
+      description: itemForm.description || undefined,
       url: fields.showUrl ? itemForm.url || undefined : undefined,
       imageUrl: fields.showImageUrl ? itemForm.imageUrl || undefined : undefined,
       price: fields.showPrice ? itemForm.price : undefined,
@@ -459,6 +469,7 @@ function toIsoInstant(localDateTime: string): string | undefined {
 
 function resetItemForm() {
   itemForm.name = '';
+  itemForm.description = '';
   itemForm.url = '';
   itemForm.imageUrl = '';
   itemForm.price = undefined;

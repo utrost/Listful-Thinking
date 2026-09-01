@@ -7,6 +7,7 @@ import java.time.Instant;
 
 public record ItemRequest(
     @Size(max = 255) String name,
+    @Size(max = 2000) String description,
     @Size(max = 2000) String url,
     @Size(max = 2000) String imageUrl,
     BigDecimal price,
