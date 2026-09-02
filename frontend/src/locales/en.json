@@ -48,6 +48,7 @@
     "previewUrl": "Preview URL",
     "search": "Search items",
     "searchPlaceholder": "Name, notes, category, or URL",
+    "reviewControlsLabel": "Item review controls",
     "filter": "Filter",
     "sort": "Sort",
     "filters": {

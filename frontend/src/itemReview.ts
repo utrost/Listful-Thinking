@@ -1,4 +1,4 @@
-import type { ItemEntry } from './api/client';
+import type { ItemEntry, ListEntry } from './api/client';
 
 export type ItemStatusFilter = 'ALL' | 'OPEN' | 'COMPLETED' | 'CLAIMED' | 'PURCHASED' | 'OVERDUE' | 'UPCOMING';
 export type ItemSortBy = 'created' | 'dueDate' | 'category' | 'status';
@@ -9,6 +9,26 @@ export type ItemReviewState = {
   sortBy: ItemSortBy;
   now?: Date;
 };
+
+export function defaultItemReviewState(): ItemReviewState {
+  return {
+    query: '',
+    statusFilter: 'ALL',
+    sortBy: 'created'
+  };
+}
+
+export function reviewDisplayedItems(
+  items: ItemEntry[],
+  selectedList: ListEntry | null,
+  hideCompletedGroceries: boolean,
+  state: ItemReviewState
+): ItemEntry[] {
+  const reviewableItems = selectedList?.type === 'GROCERY' && hideCompletedGroceries
+    ? items.filter((item) => item.status !== 'DONE')
+    : items;
+  return reviewItems(reviewableItems, state);
+}
 
 export function reviewItems(items: ItemEntry[], state: ItemReviewState): ItemEntry[] {
   const query = state.query.trim().toLowerCase();

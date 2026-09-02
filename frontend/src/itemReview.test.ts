@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { reviewItems, type ItemReviewState } from './itemReview';
-import type { ItemEntry } from './api/client';
+import { defaultItemReviewState, reviewDisplayedItems, reviewItems, type ItemReviewState } from './itemReview';
+import type { ItemEntry, ListEntry } from './api/client';
 
 const baseItem = (overrides: Partial<ItemEntry>): ItemEntry => ({
   id: overrides.id ?? 'item',
@@ -25,6 +25,18 @@ const state = (overrides: Partial<ItemReviewState> = {}): ItemReviewState => ({
   sortBy: 'created',
   now: new Date('2027-01-10T00:00:00Z'),
   ...overrides
+});
+
+const list = (type: ListEntry['type']): ListEntry => ({
+  id: `list-${type}`,
+  title: type,
+  description: null,
+  type,
+  publicList: false,
+  shareToken: null,
+  targetDate: null,
+  access: 'OWNER',
+  createdAt: '2027-01-01T00:00:00Z'
 });
 
 describe('item review helpers', () => {
@@ -69,5 +81,34 @@ describe('item review helpers', () => {
     expect(reviewItems(items, state({ sortBy: 'category' })).map((item) => item.id)).toEqual(['c', 'a', 'b']);
     expect(reviewItems(items, state({ sortBy: 'status' })).map((item) => item.id)).toEqual(['c', 'b', 'a']);
     expect(reviewItems(items, state({ sortBy: 'created' })).map((item) => item.id)).toEqual(['b', 'a', 'c']);
+  });
+
+  it('uses injected time so overdue and upcoming views can react while the page stays open', () => {
+    const item = baseItem({ id: 'soon', status: 'OPEN', dueDate: '2027-01-10T12:00:00Z' });
+
+    expect(reviewItems([item], state({ statusFilter: 'UPCOMING', now: new Date('2027-01-10T11:59:00Z') })).map((entry) => entry.id)).toEqual(['soon']);
+    expect(reviewItems([item], state({ statusFilter: 'OVERDUE', now: new Date('2027-01-10T12:01:00Z') })).map((entry) => entry.id)).toEqual(['soon']);
+  });
+
+  it('combines grocery hide-completed with review filtering before grouping or rendering', () => {
+    const items = [
+      baseItem({ id: 'open-produce', name: 'Apples', category: 'Produce', status: 'OPEN' }),
+      baseItem({ id: 'done-produce', name: 'Bananas', category: 'Produce', status: 'DONE' }),
+      baseItem({ id: 'open-bakery', name: 'Bread', category: 'Bakery', status: 'OPEN' })
+    ];
+
+    expect(reviewDisplayedItems(items, list('GROCERY'), true, state({ query: 'produce' })).map((item) => item.id)).toEqual(['open-produce']);
+  });
+
+  it('keeps non-grocery completed items visible unless the review filter removes them', () => {
+    const items = [baseItem({ id: 'done-task', status: 'DONE' })];
+
+    expect(reviewDisplayedItems(items, list('TODO'), true, state()).map((item) => item.id)).toEqual(['done-task']);
+    expect(reviewDisplayedItems(items, list('TODO'), true, state({ statusFilter: 'OPEN' }))).toEqual([]);
+  });
+
+  it('provides a fresh default review state for list switches', () => {
+    expect(defaultItemReviewState()).toEqual({ query: '', statusFilter: 'ALL', sortBy: 'created' });
+    expect(defaultItemReviewState()).not.toBe(defaultItemReviewState());
   });
 });

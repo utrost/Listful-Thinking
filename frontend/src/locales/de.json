@@ -48,6 +48,7 @@
     "previewUrl": "URL-Vorschau",
     "search": "Einträge suchen",
     "searchPlaceholder": "Name, Notizen, Kategorie oder URL",
+    "reviewControlsLabel": "Eintragsprüfung",
     "filter": "Filter",
     "sort": "Sortierung",
     "filters": {

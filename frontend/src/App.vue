@@ -228,7 +228,7 @@
               <button v-if="selectedList.access === 'OWNER'" type="button" class="danger subtle" @click="handleClearCompletedGroceries">{{ t('items.clearCompleted') }}</button>
             </div>
 
-            <section class="item-review-controls" aria-label="Item review controls">
+            <section class="item-review-controls" :aria-label="t('items.reviewControlsLabel')">
               <label>{{ t('items.search') }}<input v-model="itemReviewForm.query" type="search" :placeholder="t('items.searchPlaceholder')" /></label>
               <label>{{ t('items.filter') }}
                 <select v-model="itemReviewForm.statusFilter">
@@ -317,7 +317,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   createItem,
@@ -368,7 +368,7 @@ import {
   type PublicListEntry
 } from './api/client';
 import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
-import { reviewItems, type ItemReviewState } from './itemReview';
+import { defaultItemReviewState, reviewDisplayedItems, type ItemReviewState } from './itemReview';
 
 const { t } = useI18n();
 const currentUser = ref<AuthUser | null>(null);
@@ -400,7 +400,8 @@ const editListForm = reactive<{ title: string; description: string; type: ListTy
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const editingItemId = ref<string | null>(null);
 const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
-const itemReviewForm = reactive<ItemReviewState>({ query: '', statusFilter: 'ALL', sortBy: 'created' });
+const itemReviewForm = reactive<ItemReviewState>(defaultItemReviewState());
+const itemReviewNow = ref(new Date());
 const recurrenceOptions = computed(() => [
   { value: '', label: t('items.noRepeat') },
   { value: 'FREQ=DAILY', label: t('items.daily') },
@@ -411,12 +412,12 @@ const shareForm = reactive<{ username: string; permission: 'READ' | 'CONTRIBUTE'
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const editListRules = computed(() => listFormRulesForType(editListForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
-const displayedItems = computed(() => {
-  const reviewableItems = selectedList.value?.type === 'GROCERY' && hideCompletedGroceries.value
-    ? items.value.filter((item) => item.status !== 'DONE')
-    : items.value;
-  return reviewItems(reviewableItems, itemReviewForm);
-});
+const displayedItems = computed(() => reviewDisplayedItems(
+  items.value,
+  selectedList.value,
+  hideCompletedGroceries.value,
+  { ...itemReviewForm, now: itemReviewNow.value }
+));
 const groceryGroups = computed(() => {
   const grouped = new Map<string, ItemEntry[]>();
   for (const item of displayedItems.value) {
@@ -425,8 +426,15 @@ const groceryGroups = computed(() => {
   }
   return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
 });
+let itemReviewNowInterval: number | undefined;
+
+function updateItemReviewNow() {
+  itemReviewNow.value = new Date();
+}
 
 onMounted(async () => {
+  updateItemReviewNow();
+  itemReviewNowInterval = window.setInterval(updateItemReviewNow, 60_000);
   if (publicToken) {
     await run(async () => {
       publicList.value = await getPublicShare(publicToken);
@@ -451,6 +459,12 @@ onMounted(async () => {
     await maybeLoadAdminPanel();
   } catch {
     currentUser.value = null;
+  }
+});
+
+onUnmounted(() => {
+  if (itemReviewNowInterval !== undefined) {
+    window.clearInterval(itemReviewNowInterval);
   }
 });
 
@@ -513,6 +527,8 @@ async function handleLogout() {
 async function loadLists() {
   lists.value = await getLists();
   selectedList.value = lists.value[0] ?? null;
+  resetItemReviewForm();
+  updateItemReviewNow();
   await loadListDetails();
 }
 
@@ -520,7 +536,13 @@ async function selectList(list: ListEntry) {
   selectedList.value = list;
   editingList.value = false;
   pendingDeleteListId.value = null;
+  resetItemReviewForm();
+  updateItemReviewNow();
   await loadListDetails();
+}
+
+function resetItemReviewForm() {
+  Object.assign(itemReviewForm, defaultItemReviewState());
 }
 
 async function loadListDetails() {
