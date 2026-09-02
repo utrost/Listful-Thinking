@@ -574,7 +574,7 @@ Tests:
 
 ### Slice 23: Search, filter, sort, and review tools
 
-Status: proposed.
+Status: complete for first client-side item review slice.
 
 User outcome:
 
@@ -592,9 +592,9 @@ Backend:
 
 Frontend:
 
-- Add item search within a list.
-- Add filters for open/completed/claimed/purchased/overdue/upcoming.
-- Add sorting by due date, category, status, and created time where relevant.
+- Added item search within a list.
+- Added filters for open/completed/claimed/purchased/overdue/upcoming.
+- Added sorting by due date, category, status, and created order.
 - Add pinned/archived list affordances if available.
 
 Docs:

@@ -211,6 +211,15 @@ small,
   justify-content: space-between;
 }
 
+.item-review-controls {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) repeat(2, minmax(10rem, auto));
+  gap: 0.7rem;
+  align-items: end;
+  border-top: 1px solid #e1d5c1;
+  padding-top: 1rem;
+}
+
 .button-row,
 .claim-form {
   display: flex;
@@ -257,7 +266,8 @@ button.subtle {
     display: grid;
   }
 
-  .inline-form {
+  .inline-form,
+  .item-review-controls {
     grid-template-columns: 1fr;
   }
 }

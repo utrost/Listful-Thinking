@@ -238,6 +238,14 @@ Status meaning:
 
 List owners can edit their own items after creation. The edit form shows the same type-specific fields as the create form, so grocery items expose quantity/category, wish items expose URL/image/price, and dated items expose due-date controls.
 
+Use the item review controls on a selected list to keep longer lists navigable:
+
+- Search matches item name, notes/description, category, and URL.
+- Filters show all, open, completed, claimed, purchased, overdue, or upcoming items.
+- Sorting can keep the current created order or order by due date, category, or status.
+
+Review controls are client-side in the current slice: they work on the items already loaded for the selected list and do not expose other users' private lists.
+
 For `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists, use **Done** to complete an item and **Reopen** to move one-off completed items back to `OPEN`. Done items do not create due-date reminders. Recurring chores are special: **Done** records a completion and immediately advances the due date, so the item stays `OPEN` for its next occurrence.
 
 For `WISH` lists, the lifecycle stays gift-specific: guests can claim open items from a public link, and owners can use `PURCHASED` for bought items.
@@ -413,10 +421,9 @@ The inventory is not a private item-content browser.
 
 ## Current limitations
 
-- Internal sharing is read-only.
 - Public claiming is only for wishlist items.
-- Grocery lists support quantity/category and done/reopen, but do not yet have live collaborative check-off or category grouping views.
-- Hide-completed and richer filtering are still future roadmap work.
+- Grocery lists support quantity/category, category grouping, done/reopen, hide-completed, and clear-completed flows, but not offline-first live collaborative shopping.
+- Item review controls are client-side; very large lists may later need backend query parameters.
 - Recurrence rules can be stored for chores, but full automatic recurrence expansion is still a future extension.
 - Email features require SMTP configuration; otherwise the app stays functional with password login and in-app notifications.
 - Admin inventory is metadata-focused and does not include a break-glass private content view.

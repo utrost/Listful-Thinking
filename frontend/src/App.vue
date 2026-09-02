@@ -228,6 +228,29 @@
               <button v-if="selectedList.access === 'OWNER'" type="button" class="danger subtle" @click="handleClearCompletedGroceries">{{ t('items.clearCompleted') }}</button>
             </div>
 
+            <section class="item-review-controls" aria-label="Item review controls">
+              <label>{{ t('items.search') }}<input v-model="itemReviewForm.query" type="search" :placeholder="t('items.searchPlaceholder')" /></label>
+              <label>{{ t('items.filter') }}
+                <select v-model="itemReviewForm.statusFilter">
+                  <option value="ALL">{{ t('items.filters.all') }}</option>
+                  <option value="OPEN">{{ t('items.filters.open') }}</option>
+                  <option value="COMPLETED">{{ t('items.filters.completed') }}</option>
+                  <option value="CLAIMED">{{ t('items.filters.claimed') }}</option>
+                  <option value="PURCHASED">{{ t('items.filters.purchased') }}</option>
+                  <option value="OVERDUE">{{ t('items.filters.overdue') }}</option>
+                  <option value="UPCOMING">{{ t('items.filters.upcoming') }}</option>
+                </select>
+              </label>
+              <label>{{ t('items.sort') }}
+                <select v-model="itemReviewForm.sortBy">
+                  <option value="created">{{ t('items.sorts.created') }}</option>
+                  <option value="dueDate">{{ t('items.sorts.dueDate') }}</option>
+                  <option value="category">{{ t('items.sorts.category') }}</option>
+                  <option value="status">{{ t('items.sorts.status') }}</option>
+                </select>
+              </label>
+            </section>
+
             <template v-if="selectedList.type === 'GROCERY'">
               <section v-for="[category, groupItems] in groceryGroups" :key="category" class="grocery-group">
                 <h4>{{ category }}</h4>
@@ -345,6 +368,7 @@ import {
   type PublicListEntry
 } from './api/client';
 import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
+import { reviewItems, type ItemReviewState } from './itemReview';
 
 const { t } = useI18n();
 const currentUser = ref<AuthUser | null>(null);
@@ -376,6 +400,7 @@ const editListForm = reactive<{ title: string; description: string; type: ListTy
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
 const editingItemId = ref<string | null>(null);
 const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
+const itemReviewForm = reactive<ItemReviewState>({ query: '', statusFilter: 'ALL', sortBy: 'created' });
 const recurrenceOptions = computed(() => [
   { value: '', label: t('items.noRepeat') },
   { value: 'FREQ=DAILY', label: t('items.daily') },
@@ -387,10 +412,10 @@ const newListRules = computed(() => listFormRulesForType(listForm.type));
 const editListRules = computed(() => listFormRulesForType(editListForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
 const displayedItems = computed(() => {
-  if (selectedList.value?.type !== 'GROCERY' || !hideCompletedGroceries.value) {
-    return items.value;
-  }
-  return items.value.filter((item) => item.status !== 'DONE');
+  const reviewableItems = selectedList.value?.type === 'GROCERY' && hideCompletedGroceries.value
+    ? items.value.filter((item) => item.status !== 'DONE')
+    : items.value;
+  return reviewItems(reviewableItems, itemReviewForm);
 });
 const groceryGroups = computed(() => {
   const grouped = new Map<string, ItemEntry[]>();

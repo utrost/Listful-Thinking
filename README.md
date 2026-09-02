@@ -4,7 +4,7 @@ Self-hosted, multi-tenant list management for wishlists, to-do lists, grocery li
 
 ## Status
 
-Current MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public wishlist sharing, list duplication, URL metadata scraping, date/time reminders for actionable list types, grocery list quantity/category fields, admin settings/user listing, and the single-container Docker build path.
+Current MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public wishlist sharing, list duplication, item search/filter/sort review controls, URL metadata scraping, date/time reminders for actionable list types, grocery list quantity/category fields, admin settings/user listing, and the single-container Docker build path.
 
 ## Quickstart
 

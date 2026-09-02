@@ -46,6 +46,25 @@
     "uncategorized": "Uncategorized",
     "dueDate": "Due date",
     "previewUrl": "Preview URL",
+    "search": "Search items",
+    "searchPlaceholder": "Name, notes, category, or URL",
+    "filter": "Filter",
+    "sort": "Sort",
+    "filters": {
+      "all": "All items",
+      "open": "Open",
+      "completed": "Completed",
+      "claimed": "Claimed",
+      "purchased": "Purchased",
+      "overdue": "Overdue",
+      "upcoming": "Upcoming"
+    },
+    "sorts": {
+      "created": "Created order",
+      "dueDate": "Due date",
+      "category": "Category",
+      "status": "Status"
+    },
     "create": "Add item",
     "hideCompleted": "Hide completed",
     "clearCompleted": "Clear completed",

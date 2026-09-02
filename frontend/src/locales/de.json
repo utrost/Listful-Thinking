@@ -46,6 +46,25 @@
     "uncategorized": "Ohne Kategorie",
     "dueDate": "Fällig am",
     "previewUrl": "URL-Vorschau",
+    "search": "Einträge suchen",
+    "searchPlaceholder": "Name, Notizen, Kategorie oder URL",
+    "filter": "Filter",
+    "sort": "Sortierung",
+    "filters": {
+      "all": "Alle Einträge",
+      "open": "Offen",
+      "completed": "Erledigt",
+      "claimed": "Reserviert",
+      "purchased": "Gekauft",
+      "overdue": "Überfällig",
+      "upcoming": "Anstehend"
+    },
+    "sorts": {
+      "created": "Erstellreihenfolge",
+      "dueDate": "Fälligkeitsdatum",
+      "category": "Kategorie",
+      "status": "Status"
+    },
     "create": "Eintrag hinzufügen",
     "hideCompleted": "Erledigte ausblenden",
     "clearCompleted": "Erledigte löschen",
