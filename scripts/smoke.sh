@@ -149,6 +149,16 @@ curl_json -b "$user_cookie" -X PUT -H 'Content-Type: application/json' \
   -d '{"name":"Updated contributor idea","status":"OPEN"}' \
   "$base_url/api/v1/items/$contributor_item_id" | assert_json 'data["name"] == "Updated contributor idea"'
 
+clone_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"title":"Birthday 2027 copy"}' \
+  "$base_url/api/v1/lists/$list_id/clone")"
+clone_id="$(printf '%s' "$clone_json" | json_field id)"
+printf '%s' "$clone_json" | assert_json 'data["title"] == "Birthday 2027 copy" and data["type"] == "WISH" and data["publicList"] is False and data["shareToken"] is None'
+curl_json -b "$admin_cookie" "$base_url/api/v1/lists/$clone_id/items" \
+  | assert_json 'len(data) == 2 and any(item["name"] == "Book" and item["url"] == "https://example.test/book" and item["price"] == 19.99 for item in data) and any(item["name"] == "Updated contributor idea" for item in data)'
+curl_json -b "$admin_cookie" "$base_url/api/v1/lists/$clone_id/shares" \
+  | assert_json 'len(data) == 0'
+
 todo_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Next actions","description":"One-off reminders","type":"TODO"}' \
   "$base_url/api/v1/lists")"
@@ -215,4 +225,4 @@ curl_json -H 'Content-Type: application/json' \
 sqlite_path="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'test -f /app/data/listful-thinking.sqlite && echo present')"
 [ "$sqlite_path" = "present" ] || { echo "SQLite database missing in /app/data" >&2; exit 1; }
 
-echo "Smoke OK: health, non-root runtime, admin/users/settings, list/item/chore recurrence/grocery clear-completed/public claim, SQLite volume"
+echo "Smoke OK: health, non-root runtime, admin/users/settings, list clone, list/item/chore recurrence/grocery clear-completed/public claim, SQLite volume"

@@ -1,6 +1,7 @@
 package app.listful.lists;
 
 import app.listful.domain.User;
+import app.listful.lists.dto.CloneListRequest;
 import app.listful.lists.dto.ListRequest;
 import app.listful.lists.dto.ListResponse;
 import jakarta.validation.Valid;
@@ -44,6 +45,11 @@ public class ListController {
     @PutMapping("/{id}")
     public ListResponse update(@PathVariable String id, @Valid @RequestBody ListRequest request, Authentication authentication) {
         return listService.update(currentUser(authentication), id, request);
+    }
+
+    @PostMapping("/{id}/clone")
+    public ResponseEntity<ListResponse> cloneList(@PathVariable String id, @Valid @RequestBody CloneListRequest request, Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(listService.cloneList(currentUser(authentication), id, request));
     }
 
     @DeleteMapping("/{id}")

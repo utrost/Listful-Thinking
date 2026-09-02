@@ -1,10 +1,13 @@
 package app.listful.lists;
 
 import app.listful.api.ValidationFailedException;
+import app.listful.domain.Item;
 import app.listful.domain.ListEntity;
 import app.listful.domain.User;
 import app.listful.domain.enums.ListType;
+import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
+import app.listful.lists.dto.CloneListRequest;
 import app.listful.lists.dto.ListRequest;
 import app.listful.lists.dto.ListResponse;
 import java.time.Instant;
@@ -15,10 +18,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ListService {
     private final ListRepository listRepository;
+    private final ItemRepository itemRepository;
     private final ListAccessService listAccessService;
 
-    public ListService(ListRepository listRepository, ListAccessService listAccessService) {
+    public ListService(ListRepository listRepository, ItemRepository itemRepository, ListAccessService listAccessService) {
         this.listRepository = listRepository;
+        this.itemRepository = itemRepository;
         this.listAccessService = listAccessService;
     }
 
@@ -51,6 +56,35 @@ public class ListService {
     }
 
     @Transactional
+    public ListResponse cloneList(User actor, String listId, CloneListRequest request) {
+        ListEntity source = listAccessService.requireOwnedList(actor, listId);
+        String title = hasText(request.title()) ? request.title().trim() : source.getTitle() + " copy";
+        ListEntity clone = new ListEntity(actor, title, source.getDescription(), source.getType(), Instant.now());
+        clone.update(title, source.getDescription(), source.getType(), source.getTargetDate());
+        ListEntity savedClone = listRepository.save(clone);
+
+        for (Item sourceItem : itemRepository.findByListId(source.getId())) {
+            Item copied = new Item(savedClone, sourceItem.getName(), Instant.now());
+            copied.update(
+                sourceItem.getName(),
+                sourceItem.getDescription(),
+                sourceItem.getUrl(),
+                sourceItem.getImageUrl(),
+                sourceItem.getPrice(),
+                sourceItem.getStatus(),
+                sourceItem.getDueDate(),
+                sourceItem.getRecurrenceRule(),
+                sourceItem.getQuantity(),
+                sourceItem.getCategory()
+            );
+            copied.setLastCompletedAt(sourceItem.getLastCompletedAt());
+            itemRepository.save(copied);
+        }
+
+        return toResponse(actor, savedClone);
+    }
+
+    @Transactional
     public void delete(User actor, String listId) {
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
         listRepository.delete(list);
@@ -63,6 +97,10 @@ public class ListService {
         if (request.type() != ListType.EVENT && request.targetDate() != null) {
             throw new ValidationFailedException("Only event lists can have a target date.");
         }
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     public ListResponse toResponse(ListEntity list) {

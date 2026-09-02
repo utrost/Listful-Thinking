@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, createPublicShare, createAdminUser, clearCompletedItems, deleteItem, deleteList, getAdminLists, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, skipChoreItem, postponeChoreItem, updateAdminSettings, updateAdminUser, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, cloneList, createPublicShare, createAdminUser, clearCompletedItems, deleteItem, deleteList, getAdminLists, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, skipChoreItem, postponeChoreItem, updateAdminSettings, updateAdminUser, updateItem, updateList, claimPublicItem } from './client';
 
 describe('auth API client', () => {
   afterEach(() => {
@@ -110,6 +110,7 @@ describe('auth API client', () => {
     await getList('l1');
     await createList({ title: 'Birthday', description: 'Gift ideas', type: 'WISH' });
     await updateList('l1', { title: 'Birthday 2027', type: 'EVENT', targetDate: '2027-01-01T00:00:00Z' });
+    await cloneList('l1', { title: 'Birthday copy' });
     await deleteList('l1');
 
     expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/v1/lists', expect.objectContaining({ credentials: 'include' }));
@@ -123,7 +124,12 @@ describe('auth API client', () => {
       method: 'PUT',
       credentials: 'include'
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(5, '/api/v1/lists/l1', expect.objectContaining({
+    expect(fetchMock).toHaveBeenNthCalledWith(5, '/api/v1/lists/l1/clone', expect.objectContaining({
+      method: 'POST',
+      credentials: 'include',
+      body: JSON.stringify({ title: 'Birthday copy' })
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(6, '/api/v1/lists/l1', expect.objectContaining({
       method: 'DELETE',
       credentials: 'include'
     }));

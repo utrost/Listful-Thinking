@@ -8,9 +8,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
+import app.listful.domain.repository.ListShareRepository;
 import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +35,14 @@ class ListControllerTests {
     @Autowired MockMvc mockMvc;
     @Autowired UserRepository userRepository;
     @Autowired ListRepository listRepository;
+    @Autowired ItemRepository itemRepository;
+    @Autowired ListShareRepository listShareRepository;
     @Autowired SettingRepository settingRepository;
 
     @BeforeEach
     void cleanDatabase() {
+        itemRepository.deleteAll();
+        listShareRepository.deleteAll();
         listRepository.deleteAll();
         userRepository.deleteAll();
         settingRepository.deleteAll();
@@ -110,14 +117,89 @@ class ListControllerTests {
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void ownerCanCloneAListWithItemsButWithoutPublicTokenOrInternalShares() throws Exception {
+        MockHttpSession owner = register("owner");
+        register("helper");
+        String sourceListId = createList(owner, "Birthday", "Gift ideas", "WISH");
+        String sourceItemId = createDetailedItem(owner, sourceListId);
+
+        mockMvc.perform(post("/api/v1/lists/{id}/public-share", sourceListId).session(owner))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.shareToken").isNotEmpty());
+        mockMvc.perform(post("/api/v1/lists/{id}/shares", sourceListId).session(owner)
+                .contentType("application/json")
+                .content("{\"username\":\"helper\",\"permission\":\"CONTRIBUTE\"}"))
+            .andExpect(status().isCreated());
+
+        MvcResult cloneResult = mockMvc.perform(post("/api/v1/lists/{id}/clone", sourceListId).session(owner)
+                .contentType("application/json")
+                .content("{\"title\":\"Trip copy\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.title").value("Trip copy"))
+            .andExpect(jsonPath("$.description").value("Gift ideas"))
+            .andExpect(jsonPath("$.type").value("WISH"))
+            .andExpect(jsonPath("$.targetDate").doesNotExist())
+            .andExpect(jsonPath("$.publicList").value(false))
+            .andExpect(jsonPath("$.shareToken").doesNotExist())
+            .andReturn();
+        String cloneListId = JsonPath.read(cloneResult.getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", cloneListId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].id").value(org.hamcrest.Matchers.not(sourceItemId)))
+            .andExpect(jsonPath("$[0].name").value("Camera"))
+            .andExpect(jsonPath("$[0].description").value("Bring a camera"))
+            .andExpect(jsonPath("$[0].url").value("https://shop.test/camera"))
+            .andExpect(jsonPath("$[0].imageUrl").value("https://shop.test/camera.jpg"))
+            .andExpect(jsonPath("$[0].price").value(29.95))
+            .andExpect(jsonPath("$[0].status").value("PURCHASED"))
+            .andExpect(jsonPath("$[0].dueDate").doesNotExist())
+            .andExpect(jsonPath("$[0].quantity").doesNotExist())
+            .andExpect(jsonPath("$[0].category").doesNotExist());
+
+        mockMvc.perform(get("/api/v1/lists/{id}/shares", cloneListId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void nonOwnersCannotCloneListsByGuessingIds() throws Exception {
+        MockHttpSession owner = register("owner");
+        MockHttpSession other = register("other");
+        String sourceListId = createList(owner, "Private", "Mine", "WISH");
+
+        mockMvc.perform(post("/api/v1/lists/{id}/clone", sourceListId).session(other)
+                .contentType("application/json")
+                .content("{\"title\":\"Stolen copy\"}"))
+            .andExpect(status().isNotFound());
+    }
+
     private String createList(MockHttpSession session, String title, String description, String type) throws Exception {
+        return createList(session, title, description, type, null);
+    }
+
+    private String createList(MockHttpSession session, String title, String description, String type, String targetDate) throws Exception {
+        String targetJson = targetDate == null ? "" : ",\"targetDate\":\"%s\"".formatted(targetDate);
         MvcResult result = mockMvc.perform(post("/api/v1/lists").session(session)
                 .contentType("application/json")
-                .content("{\"title\":\"%s\",\"description\":\"%s\",\"type\":\"%s\"}"
-                    .formatted(title, description, type)))
+                .content("{\"title\":\"%s\",\"description\":\"%s\",\"type\":\"%s\"%s}"
+                    .formatted(title, description, type, targetJson)))
             .andExpect(status().isCreated())
             .andReturn();
-        return com.jayway.jsonpath.JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private String createDetailedItem(MockHttpSession session, String listId) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(session)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Camera","description":"Bring a camera","url":"https://shop.test/camera","imageUrl":"https://shop.test/camera.jpg","price":29.95,"status":"PURCHASED"}
+                    """))
+            .andExpect(status().isCreated())
+            .andReturn();
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
     }
 
     private MockHttpSession register(String username) throws Exception {

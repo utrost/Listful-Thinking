@@ -4,7 +4,7 @@ Self-hosted, multi-tenant list management for wishlists, to-do lists, grocery li
 
 ## Status
 
-Current MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public wishlist sharing, URL metadata scraping, date/time reminders for actionable list types, grocery list quantity/category fields, admin settings/user listing, and the single-container Docker build path.
+Current MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public wishlist sharing, list duplication, URL metadata scraping, date/time reminders for actionable list types, grocery list quantity/category fields, admin settings/user listing, and the single-container Docker build path.
 
 ## Quickstart
 
@@ -20,7 +20,7 @@ To run an automated container smoke test instead:
 scripts/smoke.sh
 ```
 
-The smoke script builds with Docker Compose, starts an isolated stack, verifies non-root runtime and the SQLite volume, then exercises auth, admin settings/users, list/item creation, public sharing, and guest claiming.
+The smoke script builds with Docker Compose, starts an isolated stack, verifies non-root runtime and the SQLite volume, then exercises auth, admin settings/users, list duplication, item creation, public sharing, and guest claiming.
 
 The app uses one persistent volume mount:
 

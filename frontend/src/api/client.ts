@@ -95,6 +95,10 @@ export interface ListRequest {
   targetDate?: string;
 }
 
+export interface CloneListRequest {
+  title?: string;
+}
+
 export type ItemStatus = 'OPEN' | 'CLAIMED' | 'PURCHASED' | 'DONE';
 
 export interface ItemEntry {
@@ -341,6 +345,13 @@ export async function createList(request: ListRequest): Promise<ListEntry> {
 export async function updateList(id: string, request: ListRequest): Promise<ListEntry> {
   return requestJson<ListEntry>(`/api/v1/lists/${id}`, {
     method: 'PUT',
+    body: JSON.stringify(request)
+  });
+}
+
+export async function cloneList(id: string, request: CloneListRequest = {}): Promise<ListEntry> {
+  return requestJson<ListEntry>(`/api/v1/lists/${id}/clone`, {
+    method: 'POST',
     body: JSON.stringify(request)
   });
 }

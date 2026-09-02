@@ -29,6 +29,7 @@
     "targetDate": "Zieldatum",
     "create": "Liste erstellen",
     "edit": "Liste bearbeiten",
+    "duplicate": "Liste duplizieren",
     "save": "Liste speichern",
     "cancel": "Abbrechen",
     "deleteConfirm": "Löschen bestätigen",

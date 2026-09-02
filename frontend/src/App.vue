@@ -150,6 +150,7 @@
               </div>
               <div class="button-row">
                 <button v-if="selectedList.access === 'OWNER'" type="button" class="secondary subtle" @click="handleStartEditList">{{ t('lists.edit') }}</button>
+                <button v-if="selectedList.access === 'OWNER'" type="button" class="secondary subtle" @click="handleCloneList">{{ t('lists.duplicate') }}</button>
                 <button v-if="selectedList.access === 'OWNER' && pendingDeleteListId !== selectedList.id" type="button" class="danger" @click="handleRequestDeleteList(selectedList.id)">{{ t('lists.delete') }}</button>
                 <template v-else-if="selectedList.access === 'OWNER'">
                   <button type="button" class="danger" @click="handleConfirmDeleteList(selectedList.id)">{{ t('lists.deleteConfirm') }}</button>
@@ -298,6 +299,7 @@ import { useI18n } from 'vue-i18n';
 import {
   createItem,
   createAdminUser,
+  cloneList,
   createList,
   createPublicShare,
   claimPublicItem,
@@ -543,6 +545,15 @@ async function handleSaveEditedList() {
     lists.value = lists.value.map((list) => list.id === updated.id ? updated : list);
     editingList.value = false;
     await loadListDetails();
+  });
+}
+
+async function handleCloneList() {
+  if (!selectedList.value) return;
+  await run(async () => {
+    const cloned = await cloneList(selectedList.value!.id, { title: `${selectedList.value!.title} copy` });
+    lists.value = [cloned, ...lists.value];
+    await selectList(cloned);
   });
 }
 

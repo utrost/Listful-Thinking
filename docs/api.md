@@ -138,6 +138,20 @@ Returns owned list, or `404` when the list does not exist or belongs to another 
 
 Updates owned list metadata, or returns `404` when not owned.
 
+### `POST /api/v1/lists/{id}/clone`
+
+Creates an owner-only duplicate of a list. The clone copies list metadata and items with fresh list/item IDs, but does not copy public share tokens or internal shares.
+
+Request:
+
+```json
+{"title":"Birthday copy"}
+```
+
+If `title` is omitted or blank, the clone title defaults to `<source title> copy`. Non-owners receive `404`.
+
+Response: `201 Created` with the cloned list.
+
 ### `DELETE /api/v1/lists/{id}`
 
 Deletes owned list, or returns `404` when not owned.

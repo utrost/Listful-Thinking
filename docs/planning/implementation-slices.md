@@ -503,7 +503,7 @@ Tests:
 
 ### Slice 21: Reusable templates and list cloning
 
-Status: proposed.
+Status: complete for first safe list-duplication slice.
 
 User outcome:
 
