@@ -642,7 +642,7 @@ Tests:
 
 ### Slice 25: User troubleshooting and privacy hardening docs
 
-Status: proposed.
+Status: complete.
 
 User outcome:
 
@@ -650,14 +650,14 @@ User outcome:
 
 Product gaps covered:
 
-- The user guide lacks a troubleshooting section and a plain privacy model.
+- The user guide now has a troubleshooting section and a plain privacy model.
 
 Docs:
 
-- Add "Which list type should I choose?" decision tree.
-- Add "What happens when I share?" examples.
-- Add troubleshooting for missing magic-link email, failed URL scraping, invisible shared lists, revoked public links, and reminders.
-- Add privacy model summary: private by default, admin metadata inventory, one-list public links, read-only internal sharing unless permissions are expanded.
+- Added "Which list type should I choose?" decision tree.
+- Added "What happens when I share?" examples for private lists, internal sharing, public links, and admin visibility.
+- Added troubleshooting for missing magic-link email, failed URL scraping, invisible shared lists, revoked public links, and reminders.
+- Added privacy model summary: private by default, admin metadata inventory, one-list public links, read-only/contributor internal sharing.
 
 Tests:
 

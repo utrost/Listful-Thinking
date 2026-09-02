@@ -10,7 +10,7 @@ MVP reminder candidates:
 
 - Items with `due_date` within the next 24 hours.
 - Event lists with `target_date` approaching.
-- Future: recurring chores when a recurrence engine exists.
+- Recurring chores after their simple daily/weekly/monthly next due date is advanced.
 
 ## Scheduler
 

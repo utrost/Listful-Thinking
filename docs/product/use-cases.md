@@ -73,11 +73,11 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 
 **Actor:** registered user
 
-**Goal:** create lists whose fields match the job: wishlists, to-dos, chores, and event planning.
+**Goal:** create lists whose fields match the job: wishlists, to-dos, groceries, chores, and event planning.
 
 **Current flow:**
 
-1. User creates a typed list: `WISH`, `TODO`, `CHORE`, or `EVENT`.
+1. User creates a typed list: `WISH`, `TODO`, `GROCERY`, `CHORE`, or `EVENT`.
 2. User adds items with type-appropriate fields.
 3. User sees owned lists and lists explicitly shared with them.
 4. Other users cannot access private lists by guessing IDs.
@@ -167,24 +167,65 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 - As an event planner, I want item-level due dates so preparation can be spread over time.
 - As a family member, I want access to shared event lists so I can see what still needs doing.
 
-### 9. Internal read-only sharing
+### 9. Internal registered-user sharing
 
 **Actor:** list owner / internal shared user
 
-**Goal:** let trusted local users view a list without granting ownership.
+**Goal:** let trusted local users view or contribute to a list without granting ownership.
 
 **Current flow:**
 
 1. Owner shares a list with another registered user by username.
-2. Recipient sees the shared list in their account.
-3. Recipient has read-only access in the MVP.
-4. Owner can revoke the share.
+2. Owner chooses read-only or contributor permission.
+3. Recipient sees the shared list in their account.
+4. Read-only recipients can view the list and items.
+5. Contributor recipients can add, edit, complete, and reopen items where permitted.
+6. Owner can revoke the share.
 
 **User stories:**
 
 - As a list owner, I want to share a list with a local user so household members can see it in their own login.
+- As a list owner, I want to grant contributor access deliberately when a trusted user should help work the list.
 - As a recipient, I want shared lists visible beside my own lists so I do not need public links inside the household.
 - As a list owner, I want to revoke internal sharing so accidental access can be cleaned up.
+
+### 10. Grocery shop mode
+
+**Actor:** grocery list owner / contributor
+
+**Goal:** use a grocery list in the shop without constantly editing text.
+
+**Current flow:**
+
+1. User creates a `GROCERY` list.
+2. User adds items with optional quantity and category.
+3. The list groups items by category.
+4. User marks items Done/Reopen while shopping.
+5. Owner can hide completed items and clear completed grocery items after a trip.
+
+**User stories:**
+
+- As a shopper, I want items grouped by category so the in-store pass is faster.
+- As a shopper, I want one-tap done/reopen controls so the list works on a phone.
+- As a list owner, I want to clear completed grocery items so the next shopping trip starts cleanly.
+
+### 11. Reusable list duplication
+
+**Actor:** list owner
+
+**Goal:** reuse a known-good list without copying public tokens or internal shares by accident.
+
+**Current flow:**
+
+1. Owner duplicates an existing list.
+2. The app copies list metadata and items with new IDs.
+3. The clone stays owner-isolated and does not copy public tokens or internal shares.
+
+**User stories:**
+
+- As a traveler, I want to duplicate a packing list so I can start from a proven list for each trip.
+- As a household member, I want to duplicate a grocery or event list so recurring real-life plans do not start from a blank page.
+- As a list owner, I want cloned lists to stay private until I deliberately share them.
 
 ## Brainstorm: common adjacent use cases
 
@@ -315,17 +356,19 @@ Promote a brainstormed use case when it satisfies most of these:
 
 These are the most natural next candidates from the brainstorm because they extend current features rather than requiring a new product shape.
 
-1. **Grocery/errand list template** — first slice implemented with quantity/category fields; future work: faster check-off grouping and optional live collaboration.
-2. **Reusable packing/event templates** — clone a known-good list for trips, birthdays, or recurring events.
-3. **Maintenance schedule list** — recurrence plus last-done history for home, bikes, appliances, plants.
-4. **Signup sheet mode for public links** — public guests can claim slots/tasks, not only wishlist items.
+1. **Grocery/errand list polish** — quantity/category fields, grouping, one-tap done/reopen, hide completed, and clear completed exist; future work is staple suggestions and optional live collaboration.
+2. **Reusable packing/event templates** — basic safe list duplication exists; future work is explicit template management and trip-specific/default item handling.
+3. **Maintenance schedule list** — simple daily/weekly/monthly chore recurrence exists; future work is maintenance history, mileage-based reminders, and specialized templates.
+4. **Signup sheet mode for public links** — public guests can claim wishlist items today; future work is claimable non-wishlist slots/tasks.
 5. **Project parts list** — wishlist-like URL enrichment plus task-like status for hobby builds.
 6. **Renewal tracker** — due-date reminders plus cost/cadence metadata.
 
-## Open product questions
+## Product decisions still open
 
-- Should shared registered users remain read-only, or should selected list types allow collaborative editing?
-- Should public links stay wishlist-only, or become a generic “claim/reserve slot” mechanism?
-- Should templates be hard-coded list types, user-created reusable templates, or both?
-- Should reminders be only in-app/email, or eventually integrate with calendars/webhooks/mobile push?
+These are the remaining product choices that need real-world direction before they become implementation slices:
+
+- Should public links stay gift-wishlist-only, or should they become a generic claim/reserve/signup mechanism?
+- Should reusable templates be explicit user-managed templates, hard-coded starter templates, or just duplicate-list workflows for now?
+- Should reminders remain in-app/email, or eventually integrate with calendars, webhooks, or mobile push?
 - Should admin list visibility remain metadata-only, or should admins have a break-glass support view with audit logging?
+- Which adjacent use case should be promoted first: maintenance, project parts, renewal tracking, meal planning, borrowing/inventory, school/care coordination, or decision shortlists?

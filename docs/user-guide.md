@@ -419,11 +419,90 @@ The inventory is not a private item-content browser.
 3. The app reminds the user when the chore is due.
 4. The owner can share the list read-only with another local account.
 
+## Which list type should I choose?
+
+- Use **WISH** when other people may reserve gift ideas from a public link. This is the only current list type with guest claiming.
+- Use **TODO** for one-off personal tasks or follow-ups with optional due dates.
+- Use **GROCERY** for shopping and errands where quantity, category grouping, fast Done/Reopen, Hide completed, and Clear completed matter.
+- Use **CHORE** for household work that can recur daily, weekly, or monthly, or that needs a last-completed record.
+- Use **EVENT** for preparation around a target date, such as a trip, birthday, party, or school deadline.
+
+If you picked the wrong type early, edit the list type from the list detail panel. If the list already has many type-specific items, it is safer to create a new list or duplicate a close existing list and clean it up.
+
+## What happens when I share?
+
+### Private by default
+
+New lists are private to the owner. Other local accounts cannot see them unless the owner creates an internal share or public link.
+
+### Internal registered-user sharing
+
+Internal sharing is for trusted users on the same instance:
+
+- **Read-only** recipients can view the shared list and items but cannot change them.
+- **Contributor** recipients can add, edit, complete, and reopen items where the list type permits it.
+- Only the owner can edit list metadata, delete the list, delete items, manage internal shares, or manage public links.
+- Revoking an internal share removes the recipient's access from their account.
+
+### Public guest links
+
+Public links are for people without accounts:
+
+- A public link exposes one safe list view, not the owner's whole account.
+- Guests do not see owner email addresses, internal user IDs, internal share records, admin data, notifications, or private lists.
+- Current guest claiming is wishlist-only: guests can claim open `WISH` items with their name.
+- Revoking the public link makes the old URL stop working.
+
+### Admin visibility
+
+Admins can see user and list metadata needed to operate the instance. The current admin inventory is not a hidden private item-content browser. A future break-glass support view, if added, should be explicit and audited.
+
+## Troubleshooting
+
+### Magic-link or password-reset email does not arrive
+
+- Check whether the user account has an email address.
+- Check that SMTP is fully configured: host, port, user, and password must all be present.
+- Try username/password login; the app remains usable without email.
+- Ask an admin to verify that the account is active. Deactivated users cannot use magic-login or password-reset tokens.
+- Token links expire after 30 minutes and are one-time use; request a new link if the old one was opened already.
+
+### URL metadata scraping fails or creates a placeholder item
+
+- The item is intentionally kept so the pasted URL is not lost.
+- Some shops block server-side requests or hide metadata from simple HTTP fetches.
+- Edit the item manually if title, description, image, or price are missing.
+- Try a canonical product URL rather than a search, cart, tracking, or redirect URL.
+- If the same shop repeatedly fails, add it to the scraper regression backlog before changing extraction rules.
+
+### A shared list is invisible to another local user
+
+- Confirm the exact username used in the internal share.
+- Confirm the recipient is logged in with that local account, not using a public guest link.
+- Confirm the recipient account is active.
+- Revoke and recreate the share if the permission is wrong.
+- Remember that read-only shares cannot edit items; use `CONTRIBUTE` when collaborative item work is intended.
+
+### A public link stopped working
+
+- Public links stop working after revocation.
+- Creating a new public link creates a new token; old copied URLs remain invalid.
+- Guest claims work only for supported wishlist items in the current app.
+- A claimed item cannot be claimed again; duplicate guest claims return a conflict.
+
+### Reminders do not appear
+
+- Reminder scans cover TODO item due dates, CHORE item due dates, EVENT target dates, and EVENT item due dates.
+- Done items do not trigger due-date reminders.
+- Recurring chores stay open by advancing to their next due date after Done or Skip.
+- If SMTP is complete, reminders can go by email; otherwise in-app notifications are created.
+- The default scan is daily at server-local 08:00, so a reminder may not appear immediately after editing a due date.
+
 ## Current limitations
 
 - Public claiming is only for wishlist items.
 - Grocery lists support quantity/category, category grouping, done/reopen, hide-completed, and clear-completed flows, but not offline-first live collaborative shopping.
 - Item review controls are client-side; very large lists may later need backend query parameters.
-- Recurrence rules can be stored for chores, but full automatic recurrence expansion is still a future extension.
+- Chore recurrence supports the current simple daily/weekly/monthly flows; broader calendar-style recurrence remains a future extension.
 - Email features require SMTP configuration; otherwise the app stays functional with password login and in-app notifications.
 - Admin inventory is metadata-focused and does not include a break-glass private content view.
