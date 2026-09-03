@@ -57,7 +57,11 @@ public class ScraperService {
                 text(document, "#productTitle"),
                 nonGenericPageTitle(text(document, "title"))
             ),
-            firstNonBlank(meta(document, "meta[property=og:description]"), meta(document, "meta[name=description]")),
+            firstNonBlank(
+                productDescription(document),
+                meta(document, "meta[property=og:description]"),
+                meta(document, "meta[name=description]")
+            ),
             absoluteUrl(document, firstNonBlank(
                 meta(document, "meta[property=og:image]"),
                 meta(document, "meta[name=twitter:image]"),
@@ -199,6 +203,10 @@ public class ScraperService {
             return linkedImage;
         }
         return image.attr("src");
+    }
+
+    private String productDescription(Document document) {
+        return text(document, "[itemprop=description], .productView-description, .product-description, .product-detail-description, #productDescription");
     }
 
     private boolean looksLikeImageUrl(String value) {

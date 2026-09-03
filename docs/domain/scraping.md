@@ -76,8 +76,16 @@ Title:
 
 Description:
 
-1. `meta[property=og:description]`
-2. `meta[name=description]`
+1. Product-body descriptions when present:
+   - `[itemprop=description]`
+   - `.productView-description`
+   - `.product-description`
+   - `.product-detail-description`
+   - `#productDescription`
+2. `meta[property=og:description]`
+3. `meta[name=description]`
+
+Product-body descriptions are preferred over generic shop-wide OpenGraph descriptions, because some storefronts expose precise product copy in the body while their social description remains a generic brand blurb.
 
 Image:
 
@@ -104,29 +112,29 @@ Price text is normalized after extraction by removing non-number/currency punctu
 
 ## Observed shop status
 
-These results were manually checked from the current scraper environment while validating the MVP URL grabbing behavior.
+These results were manually checked from the current scraper environment while validating the URL grabbing behavior. Live shop behavior changes over time; keep deterministic regression tests as local fixtures and treat this matrix as dated field evidence.
+
+### 2026-09-03 smoke matrix
 
 Works:
 
-- **Manufactum** — title, description, image, and price extracted.
+- **Manufactum** — title, description, image, and price extracted from OpenGraph/product-price metadata.
   - Example: `https://www.manufactum.de/bolich-aussenleuchte-a13366/`
-- **Fotoimpex** — title, description, price, and product-gallery image extracted after adding gallery fallback.
-  - Example: `https://www.fotoimpex.de/shop/kameras-zubehoer/filmomat-photoplug-verschlusszeiten-tester.html`
-- **IKEA** — title, description, image, and price extracted.
-  - Example: `https://www.ikea.com/de/de/p/myggbett-tuer-fenstersensor-smart-00603864/`
-- **eBay** — title, description, image, and price extracted.
-  - Example: `https://www.ebay.com/itm/188501420812`
-- **MUJI** — title, description, image, and price extracted.
+- **MUJI** — title, product-body description, image, and price extracted. This run found a parser gap: OpenGraph description was a generic shop blurb while `.productView-description` contained the useful product copy. The gap is now covered by a regression fixture.
   - Example: `https://www.muji.eu/products/set-of-5-planted-tree-paper-notebooks-b5-4594`
-- **Tchibo** — title, description, image, and price extracted.
-  - Example: `https://www.tchibo.de/products/164454043257/2-paar-outdoor-socken-mit-merinowolle`
 
-Blocked before usable product HTML reaches the scraper:
+Not parser-actionable in this run:
 
-- **Zalando** — returns `HTTP 403` from Akamai / `x-edge-error: halt`; returned body does not contain product metadata.
-  - Example tested: `https://en.zalando.de/pme-legend-nordrop-tapered-fit-cargo-pants-cargo-trousers-olive-night-pg322e02i-n11.html`
-- **Etsy** — returns `HTTP 403` from DataDome / `x-datadome: protected`; returned body does not contain product metadata.
-  - Example tested: `https://www.etsy.com/de-en/listing/1764649822/5x7-kodak-cut-film-holder`
+- **Fotoimpex** — the previously used `filmomat-photoplug-verschlusszeiten-tester-fuer-analoge-kameras.html` URL redirected to `/?err=404`; returned category/listing HTML had no tested product markers.
+- **IKEA** — the previously used `myggbett-matratzenschoner-weiss-30461668` URL returned the generic products/category page rather than that product detail page; body had no tested article ID/product markers.
+- **Tchibo** — the tested outdoor-socks URL returned `HTTP 404`.
+- **eBay** — returned `HTTP 403` from Akamai before usable product HTML.
+- **Thalia**, **Bauhaus**, **Decathlon**, and **Conrad** — returned Cloudflare/security-check pages before usable product HTML.
+- **Zalando** and **Etsy** — still blocked before usable product HTML reaches the scraper.
+
+### 2026-09-01 historical evidence
+
+Earlier smoke runs had working examples for Fotoimpex, IKEA, eBay, MUJI, and Tchibo, plus blocked Zalando/Etsy cases. Keep the lesson, but re-check live URLs before using old examples as proof of current shop support.
 
 ## Failure policy
 
@@ -138,7 +146,8 @@ Blocked before usable product HTML reaches the scraper:
 
 ## Known limitations and possible next slices
 
-- Some shops block data-center/server-side requests before product HTML is returned. Current examples: Zalando and Etsy.
+- Some shops block data-center/server-side requests before product HTML is returned. Current examples include Cloudflare/security-check pages from Thalia, Bauhaus, Decathlon, and Conrad plus earlier Zalando/Etsy bot-protection responses.
+- Shop URLs age out or redirect to generic/category/404 pages; this is distinct from a parser gap and needs a fresh product URL before selector work.
 - The app does not run a browser automation stack for scraping. It uses server-side Jsoup requests only.
 - No per-shop plugin architecture exists yet; selectors are centralized in `ScraperService`.
 - No metadata confidence score is shown in the UI.

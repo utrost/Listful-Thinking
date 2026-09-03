@@ -123,6 +123,19 @@ class ScraperControllerTests {
     }
 
     @Test
+    void prefersProductDescriptionOverGenericShopDescription() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape")
+                .session(session)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/bigcommerce-product\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Set mit 5 Notizbüchern aus nachhaltigem Papier (B5)"))
+            .andExpect(jsonPath("$.description").value("Unser 5er-Set Notizbücher aus Planted Tree Paper wird aus Bäumen hergestellt, die speziell für die Papierproduktion angebaut werden."))
+            .andExpect(jsonPath("$.imageUrl").value("https://cdn.example.test/notebook.jpg"))
+            .andExpect(jsonPath("$.price").value(5.95));
+    }
+
+    @Test
     void rejectsNonHttpUrls() throws Exception {
         mvc.perform(post("/api/v1/utils/scrape")
                 .session(session)
@@ -172,6 +185,19 @@ class ScraperControllerTests {
                 </a>
               </div>
               <span itemprop=\"price\">39,90 €</span>
+            </body></html>
+            """));
+        server.createContext("/bigcommerce-product", exchange -> respond(exchange, """
+            <!doctype html><html><head>
+              <title>Set mit 5 Notizbüchern aus nachhaltigem Papier (B5) | MUJI</title>
+              <meta property=\"og:title\" content=\"Set mit 5 Notizbüchern aus nachhaltigem Papier (B5)\">
+              <meta property=\"og:description\" content=\"Entdecken Sie schlichte, funktionale und hochwertige Haushaltswaren, Kleidung und Lifestyle-Essentials von MUJI.\">
+              <meta property=\"og:image\" content=\"https://cdn.example.test/notebook.jpg\">
+              <meta property=\"product:price:amount\" content=\"5.95\">
+            </head><body>
+              <div class=\"productView-description text-body-base-normal\">
+                <p>Unser 5er-Set Notizbücher aus Planted Tree Paper wird aus Bäumen hergestellt, die speziell für die Papierproduktion angebaut werden.</p>
+              </div>
             </body></html>
             """));
         server.start();
