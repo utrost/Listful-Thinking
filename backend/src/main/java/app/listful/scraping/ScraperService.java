@@ -41,7 +41,7 @@ public class ScraperService {
                 .cookie("lc-acbde", "de_DE")
                 .timeout(8_000)
                 .followRedirects(true)
-                .maxBodySize(0)
+                .maxBodySize(1_048_576)
                 .get();
             return extract(document);
         } catch (IOException ex) {

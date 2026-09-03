@@ -63,14 +63,16 @@ Implemented automated coverage:
 - Internal sharing is read-only for the recipient.
 - Public share DTOs exclude owner/admin/internal data.
 - Revoked public tokens fail.
+- SQL-injection-shaped login usernames and public-share tokens do not authenticate or resolve records.
 - Duplicate guest claims return conflict.
-- Scraper rejects non-HTTP(S) schemes.
+- Oversized API JSON bodies return `413 payload_too_large` before controller parsing.
+- Sensitive POST endpoints return `429 rate_limited` after too many requests from one client/window.
+- Scraper rejects non-HTTP(S) schemes and caps downloaded HTML at 1 MiB.
 - Notifications are owner-scoped.
 
 Known future hardening:
 
 - CSRF token flow for authenticated browser mutations.
-- Rate limits for login, registration, scrape, and guest claim endpoints.
-- SSRF host/IP protections for scraping beyond the current HTTP(S)-scheme guard.
+- Stronger SSRF host/IP protections for scraping beyond the current HTTP(S)-scheme guard.
 - Audit log for admin setting changes and public-share lifecycle.
 - Content Security Policy for the packaged SPA.

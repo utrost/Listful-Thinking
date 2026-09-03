@@ -7,6 +7,23 @@
 - Separate public and internal data shapes.
 - Treat all external URLs and public-token traffic as untrusted.
 
+## SQL injection posture
+
+Listful does not build SQL from user-provided strings. Database access uses Spring Data/JPA derived queries or JPQL with named parameters such as `:userId`, `:start`, and `:excludedStatuses`. Security regression tests send SQL-injection-shaped login usernames and public-share tokens and verify they do not authenticate or resolve records.
+
+## Request-size and rate limiting
+
+A servlet hardening filter rejects oversized API request bodies before JSON parsing and rate-limits sensitive POST endpoints per client IP, method, and path. The default runtime settings are:
+
+- `MAX_REQUEST_BODY_BYTES=65536`
+- `RATE_LIMIT_ENABLED=true`
+- `RATE_LIMIT_MAX_REQUESTS=60`
+- `RATE_LIMIT_WINDOW_SECONDS=60`
+- `RATE_LIMIT_MAX_BUCKETS=10000`
+- `TRUST_FORWARDED_FOR=false`
+
+Covered sensitive endpoints include login, registration, magic-link/password-reset request and consume routes, authenticated scrape requests, and public guest claims. By default the filter uses the socket remote address. Set `TRUST_FORWARDED_FOR=true` only when a trusted reverse proxy strips inbound spoofed headers and sets the real client IP; then the filter uses the first `X-Forwarded-For` value. The rate-limiter bucket map is bounded by `RATE_LIMIT_MAX_BUCKETS` and fails closed when exhausted.
+
 ## Authentication
 
 MVP uses Spring Security session cookies.
@@ -26,7 +43,7 @@ Implementation direction:
 
 - Use Spring Security CSRF protection for authenticated browser calls.
 - Expose CSRF token in the standard Spring-friendly way for the SPA.
-- Public unauthenticated guest claim endpoint needs a deliberate CSRF decision; for MVP it should validate token context and strict JSON body, and can later gain rate limiting.
+- Public unauthenticated guest claim endpoint uses token context, strict JSON body, request-size limits, and rate limiting; it still needs a deliberate CSRF decision if later reused by authenticated browser flows.
 
 ## Authorization
 
@@ -72,7 +89,7 @@ Public DTOs must exclude:
 
 - Accept only HTTP and HTTPS URLs.
 - Do not support `file:`, `ftp:`, or local-path inputs.
-- Apply timeout.
+- Apply timeout and bound downloaded HTML to 1 MiB.
 - Do not persist full scraped HTML.
 - Consider SSRF protections before exposing this beyond trusted self-hosted use.
 
@@ -82,7 +99,7 @@ Admins manage instance settings and users. MVP admins do not automatically have 
 
 ## Future hardening
 
-- Rate limiting for login and guest claims.
+- CSRF token flow for authenticated browser mutations.
 - Audit log for admin changes and public token generation.
 - Optional reverse-proxy trusted headers configuration.
 - Content Security Policy for SPA static assets.

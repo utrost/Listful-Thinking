@@ -42,6 +42,16 @@ if not eval(expr, {"__builtins__": {"all": all, "any": any, "len": len}}, {"data
     raise SystemExit(f"JSON assertion failed: {expr}; data={data!r}")' "$1"
 }
 
+expect_status_json() {
+  expected_status="$1"
+  json_expr="$2"
+  shift 2
+  response_file="$workdir/response.json"
+  status="$(curl -sS -o "$response_file" -w '%{http_code}' "$@")"
+  [ "$status" = "$expected_status" ] || { echo "Expected HTTP $expected_status, got $status; body=$(cat "$response_file")" >&2; exit 1; }
+  assert_json "$json_expr" < "$response_file"
+}
+
 curl_json() {
   curl -fsS "$@"
 }
@@ -62,6 +72,8 @@ services:
     environment:
       SYSTEM_LANG: en
       REGISTRATION_ENABLED: "true"
+      RATE_LIMIT_WINDOW_SECONDS: "3600"
+      TRUST_FORWARDED_FOR: "true"
       PUBLIC_BASE_URL: "http://localhost:${port}"
       MAIL_HOST: ""
       MAIL_PORT: ""
@@ -123,6 +135,24 @@ curl_json -H 'Content-Type: application/json' \
 curl_json -H 'Content-Type: application/json' \
   -d '{"email":"nobody@example.test"}' \
   "$base_url/api/v1/auth/password-reset" >/dev/null
+
+oversized_username="$(python3 -c 'print("a" * 70000)')"
+expect_status_json 413 'data["code"] == "payload_too_large"' \
+  -H 'Content-Type: application/json' \
+  -d "{\"username\":\"$oversized_username\",\"password\":\"wrong password\"}" \
+  "$base_url/api/v1/auth/login"
+for attempt in $(seq 1 60); do
+  expect_status_json 401 'data["code"] == "bad_credentials"' \
+    -H 'X-Forwarded-For: 203.0.113.60' \
+    -H 'Content-Type: application/json' \
+    -d '{"username":"missing","password":"wrong password"}' \
+    "$base_url/api/v1/auth/login"
+done
+expect_status_json 429 'data["code"] == "rate_limited"' \
+  -H 'X-Forwarded-For: 203.0.113.60' \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"missing","password":"wrong password"}' \
+  "$base_url/api/v1/auth/login"
 
 list_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Birthday","description":"Gift ideas","type":"WISH"}' \
