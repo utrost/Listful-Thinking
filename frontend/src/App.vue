@@ -406,7 +406,10 @@ const recurrenceOptions = computed(() => [
   { value: '', label: t('items.noRepeat') },
   { value: 'FREQ=DAILY', label: t('items.daily') },
   { value: 'FREQ=WEEKLY', label: t('items.weekly') },
-  { value: 'FREQ=MONTHLY', label: t('items.monthly') }
+  { value: 'FREQ=BIWEEKLY', label: t('items.biweekly') },
+  { value: 'FREQ=MONTHLY', label: t('items.monthly') },
+  { value: 'FREQ=QUARTERLY', label: t('items.quarterly') },
+  { value: 'FREQ=ANNUALLY', label: t('items.annually') }
 ]);
 const shareForm = reactive<{ username: string; permission: 'READ' | 'CONTRIBUTE' }>({ username: '', permission: 'READ' });
 const newListRules = computed(() => listFormRulesForType(listForm.type));

@@ -226,6 +226,26 @@ class ItemControllerTests {
     }
 
     @Test
+    void extendedChoreRecurrencesAdvanceByTheirCalendarIntervals() throws Exception {
+        MockHttpSession owner = register("owner");
+        String choreId = createList(owner, "Chores", "CHORE");
+
+        String biweekly = createChore(owner, choreId, "Clean filters", "2027-01-01T09:00:00Z", "FREQ=BIWEEKLY");
+        String quarterly = createChore(owner, choreId, "Service machine", "2027-01-31T09:00:00Z", "FREQ=QUARTERLY");
+        String annually = createChore(owner, choreId, "Renew insurance", "2027-02-28T09:00:00Z", "FREQ=ANNUALLY");
+
+        completeRecurringChore(owner, biweekly, "Clean filters", "2027-01-01T09:00:00Z", "FREQ=BIWEEKLY")
+            .andExpect(jsonPath("$.status").value("OPEN"))
+            .andExpect(jsonPath("$.dueDate").value("2027-01-15T09:00:00Z"));
+        completeRecurringChore(owner, quarterly, "Service machine", "2027-01-31T09:00:00Z", "FREQ=QUARTERLY")
+            .andExpect(jsonPath("$.status").value("OPEN"))
+            .andExpect(jsonPath("$.dueDate").value("2027-04-30T09:00:00Z"));
+        completeRecurringChore(owner, annually, "Renew insurance", "2027-02-28T09:00:00Z", "FREQ=ANNUALLY")
+            .andExpect(jsonPath("$.status").value("OPEN"))
+            .andExpect(jsonPath("$.dueDate").value("2028-02-28T09:00:00Z"));
+    }
+
+    @Test
     void recurringChoreSkipAndPostponeAdjustDueDateWithoutCompleting() throws Exception {
         MockHttpSession owner = register("owner");
         String choreId = createList(owner, "Chores", "CHORE");
@@ -403,6 +423,14 @@ class ItemControllerTests {
                 .content("{\"name\":\"%s\",\"status\":\"DONE\"}".formatted(name)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("DONE"));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions completeRecurringChore(MockHttpSession session, String itemId, String name, String dueDate, String recurrenceRule) throws Exception {
+        return mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(session)
+                .contentType("application/json")
+                .content("{\"name\":\"%s\",\"status\":\"DONE\",\"dueDate\":\"%s\",\"recurrenceRule\":\"%s\"}".formatted(name, dueDate, recurrenceRule)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.lastCompletedAt").isNotEmpty());
     }
 
     private String createChore(MockHttpSession session, String listId, String name, String dueDate, String recurrenceRule) throws Exception {

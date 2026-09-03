@@ -179,16 +179,29 @@ chore_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   "$base_url/api/v1/lists")"
 chore_id="$(printf '%s' "$chore_json" | json_field id)"
 chore_item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
-  -d '{"name":"Water plants","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY"}' \
+  -d '{"name":"Water plants","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=BIWEEKLY"}' \
   "$base_url/api/v1/lists/$chore_id/items")"
 chore_item_id="$(printf '%s' "$chore_item_json" | json_field id)"
 curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
-  -d '{"name":"Water plants","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY"}' \
-  "$base_url/api/v1/items/$chore_item_id" | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-08T09:00:00Z" and data["lastCompletedAt"]'
+  -d '{"name":"Water plants","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=BIWEEKLY"}' \
+  "$base_url/api/v1/items/$chore_item_id" | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-15T09:00:00Z" and data["lastCompletedAt"]'
 curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/items/$chore_item_id/skip" \
-  | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-15T09:00:00Z"'
+  | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-29T09:00:00Z"'
 curl_json -b "$admin_cookie" -X POST -H 'Content-Type: application/json' -d '{"days":1}' "$base_url/api/v1/items/$chore_item_id/postpone" \
-  | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-16T09:00:00Z"'
+  | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-30T09:00:00Z"'
+quarterly_chore_item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Service machine","dueDate":"2027-01-31T09:00:00Z","recurrenceRule":"FREQ=QUARTERLY"}' \
+  "$base_url/api/v1/lists/$chore_id/items")"
+quarterly_chore_item_id="$(printf '%s' "$quarterly_chore_item_json" | json_field id)"
+curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
+  -d '{"name":"Service machine","status":"DONE","dueDate":"2027-01-31T09:00:00Z","recurrenceRule":"FREQ=QUARTERLY"}' \
+  "$base_url/api/v1/items/$quarterly_chore_item_id" | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-04-30T09:00:00Z" and data["lastCompletedAt"]'
+annual_chore_item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"name":"Renew insurance","dueDate":"2027-02-28T09:00:00Z","recurrenceRule":"FREQ=ANNUALLY"}' \
+  "$base_url/api/v1/lists/$chore_id/items")"
+annual_chore_item_id="$(printf '%s' "$annual_chore_item_json" | json_field id)"
+curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/items/$annual_chore_item_id/skip" \
+  | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2028-02-28T09:00:00Z"'
 
 grocery_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"title":"Groceries","description":"Weekly shop","type":"GROCERY"}' \

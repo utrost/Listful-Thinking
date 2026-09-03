@@ -14,6 +14,15 @@ describe('recurring chore UI', () => {
     expect(app).toContain('lastCompletedAt');
   });
 
+  it('offers every supported recurrence rule in the picker', () => {
+    for (const rule of ['FREQ=DAILY', 'FREQ=WEEKLY', 'FREQ=BIWEEKLY', 'FREQ=MONTHLY', 'FREQ=QUARTERLY', 'FREQ=ANNUALLY']) {
+      expect(app).toContain(rule);
+    }
+    for (const key of ['items.daily', 'items.weekly', 'items.biweekly', 'items.monthly', 'items.quarterly', 'items.annually']) {
+      expect(app).toContain(key);
+    }
+  });
+
   it('wires skip and postpone through the API client', () => {
     expect(client).toContain('skipChoreItem');
     expect(client).toContain('/api/v1/items/${itemId}/skip');

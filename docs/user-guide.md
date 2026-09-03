@@ -203,7 +203,7 @@ Status meaning:
 
 Recurring chores:
 
-- Choose daily, weekly, or monthly recurrence instead of typing a raw rule.
+- Choose daily, weekly, every-two-weeks, monthly, quarterly, or annual recurrence instead of typing a raw rule.
 - Completing a recurring chore records the last completion time and advances the due date to the next occurrence.
 - Use **Skip** to move a recurring chore to its next occurrence without marking it completed.
 - Use **Postpone 1 day** for a small delay without changing the recurrence rule.

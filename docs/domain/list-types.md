@@ -120,7 +120,7 @@ UI behavior:
 MVP rules:
 
 - Public guest claiming is not a primary CHORE use case.
-- Simple recurrence is supported for daily, weekly, and monthly chores; broader calendar-style recurrence remains future work.
+- Simple recurrence is supported for daily, weekly, biweekly, monthly, quarterly, and annual chores.
 - Shopping fields (`url`, `image_url`, `price`) are rejected by the API for chore items.
 - Must not set list-level `target_date`; use item `due_date` instead.
 - Chore items use `OPEN` and `DONE`; wishlist statuses are rejected.
@@ -128,8 +128,10 @@ MVP rules:
 
 Current recurrence behavior:
 
-- Assign chores to registered users is still future work.
-- Simple daily/weekly/monthly recurrence advances the chore to its next due date when completed or skipped.
+- Daily, weekly, and biweekly recurrence advance by 1, 7, or 14 days.
+- Monthly, quarterly, and annual recurrence use UTC calendar arithmetic, so month-end dates clamp safely when the target month is shorter.
+- Completing a recurring chore records `last_completed_at`, advances `due_date`, and returns the item to `OPEN` for the next occurrence.
+- Skipping advances to the next occurrence without changing `last_completed_at`; postponing shifts the due date by an explicit number of days without changing the recurrence rule.
 
 ## EVENT
 

@@ -126,7 +126,7 @@ public class ItemService {
             throw new ValidationFailedException("Recurrence rules are only allowed on chore items.");
         }
         if (listType == ListType.CHORE && hasText(request.recurrenceRule()) && !isSupportedRecurrence(request.recurrenceRule())) {
-            throw new ValidationFailedException("Unsupported recurrence rule. Use FREQ=DAILY, FREQ=WEEKLY, or FREQ=MONTHLY.");
+            throw unsupportedRecurrenceRule();
         }
         if (listType != ListType.GROCERY && hasGroceryFields(request)) {
             throw new ValidationFailedException("Quantity and category are only allowed on grocery items.");
@@ -189,7 +189,7 @@ public class ItemService {
             throw new ValidationFailedException("Only dated recurring chore items support this action.");
         }
         if (!isSupportedRecurrence(item.getRecurrenceRule())) {
-            throw new ValidationFailedException("Unsupported recurrence rule. Use FREQ=DAILY, FREQ=WEEKLY, or FREQ=MONTHLY.");
+            throw unsupportedRecurrenceRule();
         }
     }
 
@@ -197,14 +197,26 @@ public class ItemService {
         return switch (recurrenceRule.trim().toUpperCase()) {
             case "FREQ=DAILY" -> dueDate.plus(1, ChronoUnit.DAYS);
             case "FREQ=WEEKLY" -> dueDate.plus(7, ChronoUnit.DAYS);
+            case "FREQ=BIWEEKLY" -> dueDate.plus(14, ChronoUnit.DAYS);
             case "FREQ=MONTHLY" -> dueDate.atZone(ZoneOffset.UTC).plusMonths(1).toInstant();
-            default -> throw new ValidationFailedException("Unsupported recurrence rule. Use FREQ=DAILY, FREQ=WEEKLY, or FREQ=MONTHLY.");
+            case "FREQ=QUARTERLY" -> dueDate.atZone(ZoneOffset.UTC).plusMonths(3).toInstant();
+            case "FREQ=ANNUALLY" -> dueDate.atZone(ZoneOffset.UTC).plusYears(1).toInstant();
+            default -> throw unsupportedRecurrenceRule();
         };
     }
 
     private boolean isSupportedRecurrence(String recurrenceRule) {
         String normalized = recurrenceRule.trim().toUpperCase();
-        return normalized.equals("FREQ=DAILY") || normalized.equals("FREQ=WEEKLY") || normalized.equals("FREQ=MONTHLY");
+        return normalized.equals("FREQ=DAILY")
+            || normalized.equals("FREQ=WEEKLY")
+            || normalized.equals("FREQ=BIWEEKLY")
+            || normalized.equals("FREQ=MONTHLY")
+            || normalized.equals("FREQ=QUARTERLY")
+            || normalized.equals("FREQ=ANNUALLY");
+    }
+
+    private ValidationFailedException unsupportedRecurrenceRule() {
+        return new ValidationFailedException("Unsupported recurrence rule. Use FREQ=DAILY, FREQ=WEEKLY, FREQ=BIWEEKLY, FREQ=MONTHLY, FREQ=QUARTERLY, or FREQ=ANNUALLY.");
     }
 
     private ItemResponse toResponse(Item item) {
