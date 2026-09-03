@@ -7,10 +7,12 @@ import app.listful.auth.dto.LoginRequest;
 import app.listful.auth.dto.PasswordResetConsumeRequest;
 import app.listful.auth.dto.RegisterRequest;
 import app.listful.auth.dto.TokenRequest;
+import app.listful.config.SecurityHardeningFilter;
 import app.listful.domain.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.util.Map;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
@@ -83,6 +85,11 @@ public class AuthController {
             session.invalidate();
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/csrf")
+    public Map<String, String> csrf(HttpServletRequest request) {
+        return Map.of("headerName", SecurityHardeningFilter.CSRF_HEADER, "token", SecurityHardeningFilter.ensureCsrfToken(request));
     }
 
     @GetMapping("/me")

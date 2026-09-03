@@ -69,12 +69,15 @@ Implemented automated coverage:
 - Duplicate guest claims return conflict.
 - Oversized API JSON bodies return `413 payload_too_large` before controller parsing.
 - Sensitive POST endpoints return `429 rate_limited` after too many requests from one client/window.
-- Scraper rejects non-HTTP(S) schemes and caps downloaded HTML at 1 MiB.
+- Scraper rejects non-HTTP(S) schemes, private/local/metadata network targets, unsafe redirect targets, and caps downloaded HTML at 1 MiB.
+- Browser-style authenticated mutations require `X-CSRF-TOKEN`; the SPA fetches it from `/api/v1/auth/csrf`.
+- API responses include CSP, referrer policy, and permissions policy headers.
+- Filter-level security rejects are written to `security_events`.
 - Notifications are owner-scoped.
 
 Known future hardening:
 
-- CSRF token flow for authenticated browser mutations.
-- Stronger SSRF host/IP protections for scraping beyond the current HTTP(S)-scheme guard.
-- Audit log for admin setting changes and public-share lifecycle.
-- Content Security Policy for the packaged SPA.
+- Hash public share tokens at rest.
+- Extend audit logging to admin/auth/public-share lifecycle events.
+- HTTPS/HSTS and `SESSION_COOKIE_SECURE=true` for internet-facing deployments.
+- Signed release images/SBOM publication.

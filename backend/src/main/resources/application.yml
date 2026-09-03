@@ -22,15 +22,23 @@ spring:
 
 server:
   port: 8080
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: strict
+        secure: ${SESSION_COOKIE_SECURE:false}
 
 listful:
   system-lang: ${SYSTEM_LANG:en}
   registration-enabled: ${REGISTRATION_ENABLED:false}
   public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
   security:
+    csrf-enabled: ${CSRF_ENABLED:true}
     rate-limit-enabled: ${RATE_LIMIT_ENABLED:true}
     rate-limit-max-requests: ${RATE_LIMIT_MAX_REQUESTS:60}
     rate-limit-window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
     rate-limit-max-buckets: ${RATE_LIMIT_MAX_BUCKETS:10000}
     trust-forwarded-for: ${TRUST_FORWARDED_FOR:false}
     max-request-body-bytes: ${MAX_REQUEST_BODY_BYTES:65536}
+    scraper-allow-private-addresses: ${SCRAPER_ALLOW_PRIVATE_ADDRESSES:false}

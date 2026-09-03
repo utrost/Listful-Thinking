@@ -38,13 +38,15 @@ Rules:
 
 ## CSRF
 
-Because sessions are cookie-based, mutating authenticated API calls need CSRF handling.
+Because sessions are cookie-based, mutating authenticated browser-style API calls use an app-level CSRF token flow.
 
-Implementation direction:
+Implementation:
 
-- Use Spring Security CSRF protection for authenticated browser calls.
-- Expose CSRF token in the standard Spring-friendly way for the SPA.
-- Public unauthenticated guest claim endpoint uses token context, strict JSON body, request-size limits, and rate limiting; it still needs a deliberate CSRF decision if later reused by authenticated browser flows.
+- `GET /api/v1/auth/csrf` creates/returns a session token.
+- Mutating `/api/v1/**` calls with browser request metadata (`Origin` or `Sec-Fetch-Site`) must include `X-CSRF-TOKEN`.
+- Auth bootstrap/link endpoints and public unauthenticated share routes remain exempt; they are separately protected by strict JSON parsing, request-size limits, and rate limiting.
+- The SPA API client fetches and caches the token before authenticated mutations.
+- Session cookies are explicitly `HttpOnly` and `SameSite=Strict`; `SESSION_COOKIE_SECURE=true` should be set when served via HTTPS.
 
 ## Authorization
 
@@ -90,17 +92,23 @@ Public DTOs must exclude:
 
 - Accept only HTTP and HTTPS URLs.
 - Do not support `file:`, `ftp:`, or local-path inputs.
+- Resolve the target host before fetching and reject loopback, link-local, site-local/private, Carrier Grade NAT, IPv6 unique-local, multicast, and metadata-service addresses unless `SCRAPER_ALLOW_PRIVATE_ADDRESSES=true` is deliberately set for a trusted test/dev deployment.
+- Connect the scraper socket to the validated address rather than handing hostnames back to the HTTP client for a second DNS lookup.
+- Disable automatic redirects; each redirect target is resolved, checked, and connected through the same validated-address path before the scraper follows it.
 - Apply timeout and bound downloaded HTML to 1 MiB.
 - Do not persist full scraped HTML.
-- Consider SSRF protections before exposing this beyond trusted self-hosted use.
 
 ## Admin boundaries
 
 Admins manage instance settings and users. MVP admins do not automatically have content-superuser access to every private list.
 
+## Security logging
+
+The app records structured security events for filter-level rejects such as oversized request bodies, rate limits, and CSRF failures in the `security_events` table and logs them as `security_event` lines. Future work can extend the same service to admin/user/public-share lifecycle events.
+
 ## Future hardening
 
-- CSRF token flow for authenticated browser mutations.
-- Audit log for admin changes and public token generation.
-- Optional reverse-proxy trusted headers configuration.
-- Content Security Policy for SPA static assets.
+- Hash public share tokens at rest.
+- Extend audit logging to admin changes, auth lifecycle, and public token generation/revocation.
+- HTTPS/HSTS and `SESSION_COOKIE_SECURE=true` for internet-facing deployments.
+- Signed release images/SBOM publication.

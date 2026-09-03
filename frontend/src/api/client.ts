@@ -200,10 +200,57 @@ export interface NotificationEntry {
   createdAt: string;
 }
 
-async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await fetch(path, {
+let csrfToken: string | null = null;
+let csrfFetchRef: typeof fetch | null = null;
+
+function isUnsafeMethod(method: string | undefined): boolean {
+  return ['POST', 'PUT', 'PATCH', 'DELETE'].includes((method ?? 'GET').toUpperCase());
+}
+
+function needsCsrf(path: string, init: RequestInit = {}): boolean {
+  return path.startsWith('/api/v1/')
+    && isUnsafeMethod(init.method)
+    && !path.startsWith('/api/v1/auth/')
+    && !path.startsWith('/api/v1/share/');
+}
+
+async function csrfHeaders(path: string, init: RequestInit = {}): Promise<Record<string, string>> {
+  if (!needsCsrf(path, init)) {
+    return {};
+  }
+  if (csrfFetchRef !== globalThis.fetch) {
+    csrfToken = null;
+    csrfFetchRef = globalThis.fetch;
+  }
+  if (csrfToken == null) {
+    const response = await fetch('/api/v1/auth/csrf', { credentials: 'include' });
+    if (!response.ok) {
+      throw new Error(`Request failed: ${response.status}`);
+    }
+    const payload = await response.json() as { token: string };
+    if (typeof payload.token !== 'string' || payload.token.length === 0) {
+      throw new Error('CSRF token response is invalid');
+    }
+    csrfToken = payload.token;
+  }
+  return { 'X-CSRF-TOKEN': csrfToken };
+}
+
+async function csrfFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const extraHeaders = await csrfHeaders(path, init);
+  return fetch(path, {
     ...init,
     credentials: 'include',
+    headers: {
+      ...extraHeaders,
+      ...(init.headers ?? {})
+    }
+  });
+}
+
+async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await csrfFetch(path, {
+    ...init,
     headers: {
       'Content-Type': 'application/json',
       ...(init.headers ?? {})
@@ -252,7 +299,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function logout(): Promise<void> {
-  const response = await fetch('/api/v1/auth/logout', {
+  const response = await csrfFetch('/api/v1/auth/logout', {
     method: 'POST',
     credentials: 'include'
   });
@@ -357,7 +404,7 @@ export async function cloneList(id: string, request: CloneListRequest = {}): Pro
 }
 
 export async function deleteList(id: string): Promise<void> {
-  const response = await fetch(`/api/v1/lists/${id}`, {
+  const response = await csrfFetch(`/api/v1/lists/${id}`, {
     method: 'DELETE',
     credentials: 'include'
   });
@@ -386,7 +433,7 @@ export async function updateItem(itemId: string, request: ItemRequest): Promise<
 }
 
 export async function deleteItem(itemId: string): Promise<void> {
-  const response = await fetch(`/api/v1/items/${itemId}`, {
+  const response = await csrfFetch(`/api/v1/items/${itemId}`, {
     method: 'DELETE',
     credentials: 'include'
   });
@@ -397,7 +444,7 @@ export async function deleteItem(itemId: string): Promise<void> {
 }
 
 export async function clearCompletedItems(listId: string): Promise<void> {
-  const response = await fetch(`/api/v1/lists/${listId}/items/completed`, {
+  const response = await csrfFetch(`/api/v1/lists/${listId}/items/completed`, {
     method: 'DELETE',
     credentials: 'include'
   });
@@ -432,7 +479,7 @@ export async function shareListWithUser(listId: string, request: ShareListReques
 }
 
 export async function revokeListShare(listId: string, username: string): Promise<void> {
-  const response = await fetch(`/api/v1/lists/${listId}/shares/${encodeURIComponent(username)}`, {
+  const response = await csrfFetch(`/api/v1/lists/${listId}/shares/${encodeURIComponent(username)}`, {
     method: 'DELETE',
     credentials: 'include'
   });
@@ -449,7 +496,7 @@ export async function createPublicShare(listId: string): Promise<PublicShareToke
 }
 
 export async function revokePublicShare(listId: string): Promise<void> {
-  const response = await fetch(`/api/v1/lists/${listId}/public-share`, {
+  const response = await csrfFetch(`/api/v1/lists/${listId}/public-share`, {
     method: 'DELETE',
     credentials: 'include'
   });

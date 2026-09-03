@@ -33,7 +33,8 @@ import org.springframework.test.web.servlet.MockMvc;
     "spring.datasource.url=jdbc:sqlite:file:scraper-test?mode=memory&cache=shared",
     "spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect",
     "spring.flyway.enabled=true",
-    "app.registration-enabled=true"
+    "listful.registration-enabled=true",
+    "listful.security.scraper-allow-private-addresses=true"
 })
 class ScraperControllerTests {
     @Autowired MockMvc mvc;

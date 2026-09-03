@@ -3,6 +3,7 @@ package app.listful.security;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -10,8 +11,10 @@ import app.listful.config.SecurityHardeningFilter;
 import app.listful.config.SecurityHardeningProperties;
 import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
+import app.listful.domain.repository.SecurityEventRepository;
 import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
+import app.listful.scraping.ScraperService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,9 +50,12 @@ class SecurityHardeningTests {
     @Autowired ListRepository listRepository;
     @Autowired ItemRepository itemRepository;
     @Autowired SettingRepository settingRepository;
+    @Autowired SecurityEventRepository securityEventRepository;
+    @Autowired ScraperService scraperService;
 
     @BeforeEach
     void cleanDatabase() {
+        securityEventRepository.deleteAll();
         itemRepository.deleteAll();
         listRepository.deleteAll();
         userRepository.deleteAll();
@@ -140,6 +146,64 @@ class SecurityHardeningTests {
                 .content("{\"url\":\"https://example.test/item\"}"))
             .andExpect(status().isTooManyRequests())
             .andExpect(jsonPath("$.code").value("rate_limited"));
+    }
+
+    @Test
+    void scraperRejectsPrivateNetworkTargetsBeforeFetching() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> scraperService.scrape("http://127.0.0.1:8080/internal"))
+            .isInstanceOf(app.listful.api.ValidationFailedException.class)
+            .hasMessageContaining("private");
+    }
+
+    @Test
+    void browserStyleAuthenticatedMutationsRequireCsrfToken() throws Exception {
+        MockHttpSession admin = register("admin", "correct horse battery staple");
+
+        mockMvc.perform(put("/api/v1/admin/settings").session(admin)
+                .header("Origin", "http://localhost:8080")
+                .contentType("application/json")
+                .content("{\"registrationEnabled\":true}"))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.code").value("csrf_required"));
+
+        assertThat(securityEventRepository.findByType("csrf_rejected"))
+            .singleElement()
+            .satisfies(event -> assertThat(event.getActorId()).isNotBlank());
+
+        MvcResult tokenResult = mockMvc.perform(get("/api/v1/auth/csrf").session(admin))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty())
+            .andReturn();
+        String csrfToken = JsonPath.read(tokenResult.getResponse().getContentAsString(), "$.token");
+
+        mockMvc.perform(put("/api/v1/admin/settings").session(admin)
+                .header("Origin", "http://localhost:8080")
+                .header("X-CSRF-TOKEN", csrfToken)
+                .contentType("application/json")
+                .content("{\"registrationEnabled\":true}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.registrationEnabled").value(true));
+    }
+
+    @Test
+    void securityHeadersAreSetOnApiResponses() throws Exception {
+        mockMvc.perform(get("/api/v1/health"))
+            .andExpect(status().isOk())
+            .andExpect(result -> {
+                assertThat(result.getResponse().getHeader("Content-Security-Policy")).contains("default-src 'self'");
+                assertThat(result.getResponse().getHeader("Referrer-Policy")).isEqualTo("no-referrer");
+                assertThat(result.getResponse().getHeader("Permissions-Policy")).contains("geolocation=()");
+            });
+    }
+
+    @Test
+    void securityRejectionsAreAudited() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/login")
+                .contentType("application/json")
+                .content("{\"username\":\"%s\",\"password\":\"wrong password\"}".formatted("a".repeat(200))))
+            .andExpect(status().isPayloadTooLarge());
+
+        assertThat(securityEventRepository.findByType("payload_too_large")).hasSize(1);
     }
 
     private MockHttpSession register(String username, String password) throws Exception {
