@@ -56,6 +56,8 @@ Then open <http://localhost:8080>, register the first admin, and verify the work
 Implemented automated coverage:
 
 - Password hashes are not returned from auth or admin user APIs.
+- Passwords are persisted only as salted BCrypt hashes; same plaintext passwords produce different stored hashes.
+- Password reset stores a fresh salted BCrypt hash and invalidates the old plaintext match.
 - First registered user is `ADMIN`; later users are `USER` when registration is enabled.
 - Non-admin users cannot access `/api/v1/admin/**`.
 - Registration-disabled errors are localized.

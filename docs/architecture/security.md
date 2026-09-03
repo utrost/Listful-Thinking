@@ -30,7 +30,8 @@ MVP uses Spring Security session cookies.
 
 Rules:
 
-- Passwords are hashed with BCrypt.
+- Passwords are stored only as salted BCrypt hashes; the plaintext password is never persisted.
+- BCrypt verification is used for login and password-reset replacement hashes.
 - Login creates a server-side session.
 - Logout invalidates the session.
 - The frontend uses `credentials: "include"`.

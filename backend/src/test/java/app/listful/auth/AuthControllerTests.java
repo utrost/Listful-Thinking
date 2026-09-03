@@ -20,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -38,6 +39,9 @@ class AuthControllerTests {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @MockBean
     private JavaMailSender mailSender;
@@ -73,6 +77,56 @@ class AuthControllerTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.username").value("uwe"))
             .andExpect(jsonPath("$.role").value("ADMIN"));
+    }
+
+    @Test
+    void registeredPasswordsAreStoredAsSaltedBCryptHashes() throws Exception {
+        MvcResult admin = mockMvc.perform(post("/api/v1/auth/register")
+                .contentType("application/json")
+                .content("{\"username\":\"uwe\",\"email\":\"uwe@example.test\",\"password\":\"same correct horse battery staple\"}"))
+            .andExpect(status().isCreated())
+            .andReturn();
+
+        mockMvc.perform(post("/api/v1/admin/users")
+                .session((MockHttpSession) admin.getRequest().getSession(false))
+                .contentType("application/json")
+                .content("{\"username\":\"annette\",\"email\":\"annette@example.test\",\"password\":\"same correct horse battery staple\",\"role\":\"USER\"}"))
+            .andExpect(status().isCreated());
+
+        String uweHash = userRepository.findByUsername("uwe").orElseThrow().getPasswordHash();
+        String annetteHash = userRepository.findByUsername("annette").orElseThrow().getPasswordHash();
+
+        assertThat(uweHash).startsWith("$2");
+        assertThat(annetteHash).startsWith("$2");
+        assertThat(uweHash).isNotEqualTo("same correct horse battery staple");
+        assertThat(annetteHash).isNotEqualTo("same correct horse battery staple");
+        assertThat(uweHash).isNotEqualTo(annetteHash);
+        assertThat(passwordEncoder.matches("same correct horse battery staple", uweHash)).isTrue();
+        assertThat(passwordEncoder.matches("same correct horse battery staple", annetteHash)).isTrue();
+    }
+
+    @Test
+    void passwordResetStoresANewSaltedBCryptHash() throws Exception {
+        register("uwe", "uwe@example.test", "correct horse battery staple");
+        String oldHash = userRepository.findByUsername("uwe").orElseThrow().getPasswordHash();
+
+        mockMvc.perform(post("/api/v1/auth/password-reset")
+                .contentType("application/json")
+                .content("{\"email\":\"uwe@example.test\"}"))
+            .andExpect(status().isNoContent());
+
+        String token = extractToken(sentMail().getText());
+        mockMvc.perform(post("/api/v1/auth/password-reset/consume")
+                .contentType("application/json")
+                .content("{\"token\":\"%s\",\"password\":\"new correct horse battery staple\"}".formatted(token)))
+            .andExpect(status().isNoContent());
+
+        String newHash = userRepository.findByUsername("uwe").orElseThrow().getPasswordHash();
+        assertThat(newHash).startsWith("$2");
+        assertThat(newHash).isNotEqualTo("new correct horse battery staple");
+        assertThat(newHash).isNotEqualTo(oldHash);
+        assertThat(passwordEncoder.matches("new correct horse battery staple", newHash)).isTrue();
+        assertThat(passwordEncoder.matches("correct horse battery staple", newHash)).isFalse();
     }
 
     @Test
