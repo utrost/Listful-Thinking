@@ -43,9 +43,10 @@ Request behavior:
 - HTML-oriented `Accept` header.
 - German-first `Accept-Language` fallback: `de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7`.
 - Additional browser navigation headers.
-- Redirects enabled.
-- Timeout: 8 seconds.
-- Full body allowed via Jsoup `maxBodySize(0)`.
+- Automatic HTTP redirects are disabled in the client path; the scraper follows up to five redirects manually after validating each redirect target.
+- Timeout: 8 seconds for connect/read.
+- Response headers are capped at 16 KiB; HTML body is capped at 1 MiB.
+- DNS is resolved before each fetch and private/local/link-local/metadata/multicast/CGNAT addresses are rejected by default.
 
 ## Async item enrichment
 
@@ -138,10 +139,10 @@ Earlier smoke runs had working examples for Fotoimpex, IKEA, eBay, MUJI, and Tch
 
 ## Failure policy
 
-- Direct utility scrape returns a controlled validation error when the target URL cannot be fetched.
+- Direct utility scrape returns a controlled validation error when the target URL cannot be fetched or violates SSRF protections.
 - Async item enrichment logs failures and does not roll back item creation.
-- Redirects are allowed for HTTP(S), but final external content remains untrusted.
-- Scraped HTML is never stored wholesale.
+- Redirects are allowed only for HTTP(S), up to five hops, and each redirect target is revalidated before connecting.
+- Scraped HTML is capped at 1 MiB and never stored wholesale.
 - Bot-protection pages are treated as non-actionable fetch failures unless they still expose useful public metadata.
 
 ## Known limitations and possible next slices
@@ -152,6 +153,7 @@ Earlier smoke runs had working examples for Fotoimpex, IKEA, eBay, MUJI, and Tch
 - No per-shop plugin architecture exists yet; selectors are centralized in `ScraperService`.
 - No metadata confidence score is shown in the UI.
 - No retry/proxy/cookie workflow is implemented for bot-protected shops.
+- The custom socket fetch path is intentionally conservative for SSRF protection; it may behave differently from a full browser or from Jsoup's built-in connection handling on unusual servers.
 
 Good next slices if more failures appear:
 

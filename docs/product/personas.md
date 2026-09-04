@@ -26,7 +26,7 @@ Primary goals:
 - Create wish, to-do, grocery, chore, and event lists.
 - Add and edit items.
 - Share lists with trusted people.
-- Use public links when guests should claim wishlist items.
+- Use public links when guests should view a list, claim wishlist items, or sign up for non-wishlist slots.
 - Receive due/reminder notifications.
 
 ## Internal Shared User
@@ -38,9 +38,9 @@ Primary goals:
 - See lists explicitly shared with them.
 - Coordinate around shared household/event information.
 
-MVP recommendation:
+Current behavior:
 
-- Internal shared users are read-only unless a later story explicitly grants collaboration rights.
+- Internal shared users may be read-only or contributor-enabled. Contributors can add/edit/complete supported items, but they cannot manage list metadata, shares, public links, or deletion.
 
 ## Guest
 
@@ -50,7 +50,7 @@ Primary goals:
 
 - Open a share link without creating an account.
 - See safe public list information.
-- Claim/reserve an open wishlist item by entering a guest name.
+- Depending on the public link mode, read a list, claim/reserve an open wishlist item, or sign up for an open non-wishlist item by entering a guest name.
 
 Constraints:
 

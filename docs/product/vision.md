@@ -32,4 +32,6 @@ A self-hoster can start one Docker container, mount one data volume, create the 
 
 ## MVP success
 
-The MVP is successful when a self-hoster can run the container, create the first admin, keep registration private, manage local users, create useful typed lists, add a URL-only wishlist item, generate a public share link, and have a guest claim an item without another account.
+The MVP is successful when a self-hoster can run the container, create the first admin, keep registration private, manage local users, create useful typed lists, add a URL-only wishlist item, generate a public share link, and have a guest claim or sign up for an allowed item without another account.
+
+The current implementation is private Tailnet/self-hosted ready. It is not yet public-internet ready without an HTTPS/HSTS/secure-cookie deployment pass and the remaining hardening work documented in [Current State and Risk Register](../current-state-and-risk-register.md).

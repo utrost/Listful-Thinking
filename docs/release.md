@@ -37,8 +37,8 @@ The smoke covers:
 - registration setting toggle
 - owner list creation
 - item creation
-- public share token creation
-- unauthenticated guest claim
+- public share token creation with explicit `WISH_CLAIM` and `SIGNUP` modes
+- unauthenticated guest wishlist claim and non-wishlist signup
 - SQLite DB file under `/app/data`
 
 ## Manual quickstart check
@@ -53,6 +53,8 @@ Then open <http://localhost:8080>, register the first admin, and verify the work
 
 ## Security test matrix
 
+For the full current posture and known weak points, see [Current State and Risk Register](current-state-and-risk-register.md).
+
 Implemented automated coverage:
 
 - Password hashes are not returned from auth or admin user APIs.
@@ -62,7 +64,7 @@ Implemented automated coverage:
 - Non-admin users cannot access `/api/v1/admin/**`.
 - Registration-disabled errors are localized.
 - Owner list and item APIs reject guessed IDs from other users.
-- Internal sharing is read-only for the recipient.
+- Internal sharing supports `READ` recipients and `CONTRIBUTE` recipients; contributor mutations remain item-scoped and list/share management stays owner-only.
 - Public share DTOs exclude owner/admin/internal data.
 - Revoked public tokens fail.
 - SQL-injection-shaped login usernames and public-share tokens do not authenticate or resolve records.
@@ -75,9 +77,11 @@ Implemented automated coverage:
 - Filter-level security rejects are written to `security_events`.
 - Notifications are owner-scoped.
 
-Known future hardening:
+Known weak points and future hardening:
 
-- Hash public share tokens at rest.
-- Extend audit logging to admin/auth/public-share lifecycle events.
-- HTTPS/HSTS and `SESSION_COOKIE_SECURE=true` for internet-facing deployments.
-- Signed release images/SBOM publication.
+- Alice/private deployment is Tailnet HTTP; public internet deployment needs HTTPS/TLS termination, verified HSTS, and `SESSION_COOKIE_SECURE=true`.
+- Public share tokens are high-entropy bearer secrets but still stored raw in SQLite; hash them at rest in a future migration.
+- Structured audit rows currently cover filter-level rejects; extend to admin/auth/user/public-share lifecycle events.
+- CI has OSV scanning, but release images/JARs are not signed and no SBOM artifact is published.
+- Current GitHub Actions are green but emit action-runtime deprecation warnings; upgrade action majors as maintenance work.
+- `npm audit` fails closed when the npm registry audit endpoint is unavailable. That is the desired security posture, but it can create transient red frontend jobs during registry 503/timeout incidents.

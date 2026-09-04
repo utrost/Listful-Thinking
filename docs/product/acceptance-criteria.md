@@ -55,12 +55,14 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 
 - Owners can share a list with another registered user by username.
 - Shared users can read the shared list and items.
-- MVP default: shared users are read-only.
+- Existing/missing-permission shares default to `READ`.
+- `CONTRIBUTE` shared users can add, edit, complete, and reopen supported items.
 - Owners can revoke internal sharing.
 
 ## Public sharing
 
 - Owners can generate a public token for one list.
+- Owners can choose public mode `VIEW`, `WISH_CLAIM`, or `SIGNUP`.
 - Public tokens are URL-safe and generated with at least 128 bits of entropy.
 - Revoking public sharing makes the old token unusable.
 - Public list responses do not expose owner email, internal user IDs, private share records, or admin fields.
@@ -68,7 +70,10 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 ## Guest claims
 
 - Guests can read a public list without authentication.
-- Guests can claim an `OPEN` item by providing a non-empty guest name.
+- Guests can claim/sign up for an `OPEN` item by providing a non-empty guest name only when the public link mode allows it.
+- `VIEW` links do not allow guest claims/signups.
+- `WISH_CLAIM` links allow wishlist item claims only.
+- `SIGNUP` links allow non-wishlist item signup only.
 - Claiming sets `status=CLAIMED` and `reserved_by_guest`.
 - Guests cannot claim already claimed or purchased items.
 - Guests cannot claim an item from another list using a valid token for a different list.

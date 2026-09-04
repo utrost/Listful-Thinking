@@ -4,7 +4,7 @@ Self-hosted, multi-tenant list management for wishlists, to-do lists, grocery li
 
 ## Status
 
-Current MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public wishlist sharing, list duplication, item search/filter/sort review controls, URL metadata scraping, date/time reminders for actionable list types, grocery list quantity/category fields, admin settings/user listing, and the single-container Docker build path.
+Current MVP/post-MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public link modes (`VIEW`, `WISH_CLAIM`, `SIGNUP`), list duplication, item search/filter/sort review controls, URL metadata scraping, date/time reminders for actionable list types, grocery quantity/category fields, admin settings/user management, security hardening, CI dependency scanning, and the single-container Docker build path. The current deployment posture is private Tailnet/self-hosted; see the current state and risk register for weak points before treating it as internet-ready.
 
 ## Quickstart
 
@@ -20,7 +20,7 @@ To run an automated container smoke test instead:
 scripts/smoke.sh
 ```
 
-The smoke script builds with Docker Compose, starts an isolated stack, verifies non-root runtime and the SQLite volume, then exercises auth, admin settings/users, list duplication, item creation, public sharing, and guest claiming.
+The smoke script builds with Docker Compose, starts an isolated stack, verifies non-root runtime and the SQLite volume, then exercises auth, admin settings/users, list duplication, item creation, public link modes, wishlist claiming, and non-wishlist signup.
 
 The app uses one persistent volume mount:
 
@@ -53,6 +53,7 @@ The first registered user will become `ADMIN`. Public registration is disabled b
 Start here:
 
 - [User and admin guide](docs/user-guide.md)
+- [Current state and risk register](docs/current-state-and-risk-register.md)
 - [Product vision](docs/product/vision.md)
 - [Personas and actors](docs/product/personas.md)
 - [Terminology](docs/product/terminology.md)

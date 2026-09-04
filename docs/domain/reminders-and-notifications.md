@@ -10,7 +10,7 @@ MVP reminder candidates:
 
 - Items with `due_date` within the next 24 hours.
 - Event lists with `target_date` approaching.
-- Recurring chores after their simple daily/weekly/monthly next due date is advanced.
+- Recurring chores after their supported daily/weekly/biweekly/monthly/quarterly/annual next due date is advanced.
 
 ## Scheduler
 
@@ -67,4 +67,4 @@ Implementation options:
 
 ## MVP simplification
 
-The MVP may check only fixed time windows and simple due dates. Full RFC recurrence expansion is not required before chore recurrence behavior is explicitly implemented.
+The MVP checks fixed time windows and simple due dates. Current chore recurrence supports daily, weekly, biweekly, monthly, quarterly, and annual intervals; full RFC recurrence expansion remains intentionally out of scope.

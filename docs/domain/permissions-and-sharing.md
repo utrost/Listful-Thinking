@@ -48,7 +48,9 @@ Implemented permission model:
 Can:
 
 - View safe public representation of one public list.
-- Claim an open item on that list with a guest name.
+- In `VIEW` mode: read only, with no guest mutation form.
+- In `WISH_CLAIM` mode: claim an open item on a `WISH` list with a guest name.
+- In `SIGNUP` mode: reserve/sign up for an open item on a non-`WISH` list with a guest name.
 
 Cannot:
 
@@ -92,8 +94,10 @@ Future extension point:
 - Owners create/revoke public guest links with `POST/DELETE /api/v1/lists/{id}/public-share`.
 - Tokens are URL-safe cryptographic random strings and are unique in the local database.
 - Public API responses use dedicated DTOs and omit owner email, owner ID, internal shares, settings, admin flags, and password data.
-- Guest claiming is limited to WISH lists and only items that belong to the token's list.
-- Duplicate claims return `409 item_already_claimed`; revoked or mismatched tokens/items return `404`.
+- Public links have explicit modes: `VIEW`, `WISH_CLAIM`, and `SIGNUP`.
+- `WISH_CLAIM` is valid only for `WISH` lists; `SIGNUP` is valid only for non-`WISH` lists; `VIEW` is read-only for all list types.
+- Guest claiming/signup is allowed only in the mode intended for the list type and only for items that belong to the token's list.
+- Duplicate claims/signups return `409 item_already_claimed`; revoked or mismatched tokens/items return `404`.
 
 ## Required authorization checks
 

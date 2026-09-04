@@ -21,17 +21,17 @@
 
 ### Lists and items
 
-- `WISH`, `CHORE`, and `EVENT` list types.
+- `WISH`, `TODO`, `GROCERY`, `CHORE`, and `EVENT` list types.
 - Owner CRUD for lists and items.
 - Type-specific frontend fields.
 - Owner-only purchased status management.
 
 ### Sharing
 
-- Internal registered-user read-only sharing.
+- Internal registered-user `READ` and `CONTRIBUTE` sharing.
 - Public share token generation/revocation.
 - Public guest read view.
-- Guest claim for open wishlist items.
+- Guest claim for open wishlist items and guest signup for open non-wishlist items when the public link mode allows it.
 
 ### Scraping
 
@@ -54,17 +54,18 @@
 ## Out of scope for MVP
 
 - OAuth/social login.
-- Password reset email flow.
 - Admin browsing of private user content.
-- Complex permission levels for internal shares.
-- Full recurrence engine.
+- Complex permission levels beyond current `READ`/`CONTRIBUTE` internal shares.
+- Full calendar-style recurrence engine beyond current daily/weekly/biweekly/monthly/quarterly/annual chore intervals.
 - Price history or automated price tracking.
 - Mobile native apps.
 - PostgreSQL/MySQL support.
 - Redis/background job infrastructure.
 - Multi-instance clustering.
 - Rich email templates.
-- Rate limiting, except as future hardening.
+- Internet-facing HTTPS/HSTS/secure-cookie deployment profile.
+- Public-share-token hashing at rest.
+- Full admin/auth/public-share lifecycle audit logging.
 
 ## MVP quality bar
 

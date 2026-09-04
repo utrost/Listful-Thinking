@@ -358,8 +358,8 @@ These are the most natural next candidates from the brainstorm because they exte
 
 1. **Grocery/errand list polish** — quantity/category fields, grouping, one-tap done/reopen, hide completed, and clear completed exist; future work is staple suggestions and optional live collaboration.
 2. **Reusable packing/event templates** — basic safe list duplication exists; future work is explicit template management and trip-specific/default item handling.
-3. **Maintenance schedule list** — simple daily/weekly/monthly chore recurrence exists; future work is maintenance history, mileage-based reminders, and specialized templates.
-4. **Signup sheet mode for public links** — public guests can claim wishlist items today; future work is claimable non-wishlist slots/tasks.
+3. **Maintenance schedule list** — simple daily/weekly/biweekly/monthly/quarterly/annual chore recurrence exists; future work is maintenance history, mileage-based reminders, and specialized templates.
+4. **Signup sheet mode for public links** — basic `SIGNUP` links now support claimable non-wishlist slots/tasks; future work is guest contact notes and guest self-unclaim/edit flows.
 5. **Project parts list** — wishlist-like URL enrichment plus task-like status for hobby builds.
 6. **Renewal tracker** — due-date reminders plus cost/cadence metadata.
 
@@ -367,7 +367,7 @@ These are the most natural next candidates from the brainstorm because they exte
 
 These are the remaining product choices that need real-world direction before they become implementation slices:
 
-- Should public links stay gift-wishlist-only, or should they become a generic claim/reserve/signup mechanism?
+- How much richer should public signup become beyond the current `VIEW` / `WISH_CLAIM` / `SIGNUP` modes: guest notes, contact fields, unclaim/edit tokens, or owner approval?
 - Should reusable templates be explicit user-managed templates, hard-coded starter templates, or just duplicate-list workflows for now?
 - Should reminders remain in-app/email, or eventually integrate with calendars, webhooks, or mobile push?
 - Should admin list visibility remain metadata-only, or should admins have a break-glass support view with audit logging?

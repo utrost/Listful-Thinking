@@ -15,7 +15,7 @@ The SPA uses browser routes outside `/api/v1`, for example `/s/:token`.
 - Return DTOs, not JPA entities.
 - Use ISO-8601 timestamp strings.
 - Use UUID strings for IDs.
-- Use enum values as uppercase strings: `WISH`, `CHORE`, `EVENT`, `OPEN`, `CLAIMED`, `PURCHASED`.
+- Use enum values as uppercase strings, for example list types (`WISH`, `TODO`, `GROCERY`, `CHORE`, `EVENT`), item statuses (`OPEN`, `CLAIMED`, `PURCHASED`, `DONE`), internal share permissions (`READ`, `CONTRIBUTE`), and public share modes (`VIEW`, `WISH_CLAIM`, `SIGNUP`).
 
 ## Error style
 
@@ -43,7 +43,7 @@ Rules:
 - `401 Unauthorized`: authentication required.
 - `403 Forbidden`: authenticated user lacks permission and existence disclosure is acceptable.
 - `404 Not Found`: missing or private resource should not be discoverable.
-- `409 Conflict`: duplicate guest claim or invalid state transition.
+- `409 Conflict`: duplicate guest claim/signup or invalid state transition.
 
 ## Auth endpoints
 

@@ -29,20 +29,20 @@ Status: complete for auth, settings, and initial backend i18n.
 
 ## Phase 3: Lists and items
 
-Status: complete for owner list/item CRUD, type-specific MVP validation, and internal read-only sharing.
+Status: complete for owner list/item CRUD, type-specific MVP validation, and internal read/contributor sharing.
 
 - Owner-isolated list CRUD
 - Item CRUD
-- Type-specific WISH/CHORE/EVENT form and API validation
-- Internal read-only sharing
+- Type-specific WISH/TODO/GROCERY/CHORE/EVENT form and API validation
+- Internal read/contributor sharing
 
 ## Phase 4: Public sharing
 
-Status: complete for public token lifecycle, safe guest read DTOs, and one-time wishlist claiming.
+Status: complete for public token lifecycle, safe guest read DTOs, wishlist claiming, read-only public views, and non-wishlist signup sheets.
 
 - Cryptographic share tokens
 - Guest read endpoint
-- Guest claim endpoint
+- Guest claim/signup endpoint with mode-specific authorization
 
 ## Phase 5: Scraping
 
@@ -77,6 +77,11 @@ Status: complete for MVP release smoke and docs.
 - Docker smoke script
 - README quickstart
 - Security test matrix
+- Current state and weak-point register
+
+## Current risk register
+
+The current implemented state and known weak points are tracked in [current-state-and-risk-register.md](current-state-and-risk-register.md). It is the canonical place to check whether the app is private-Tailnet-ready versus public-internet-ready.
 
 ## Implementation slices
 

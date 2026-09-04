@@ -300,7 +300,9 @@ Guests can:
 
 - Open the public link without logging in.
 - See a safe public version of the list.
-- Claim an open wishlist item by entering their name.
+- In `VIEW` mode: read the public list only.
+- In `WISH_CLAIM` mode: claim an open wishlist item by entering their name.
+- In `SIGNUP` mode: sign up for / reserve an open non-wishlist item by entering their name.
 
 Guests cannot:
 
@@ -312,7 +314,7 @@ Guests cannot:
 - Add or delete items.
 - Claim items from a different list.
 
-Public guest claiming is currently limited to `WISH` lists. A list owner can revoke a public link so the old URL stops working.
+Public guest mutation is mode-specific: `WISH_CLAIM` is only for `WISH` lists, `SIGNUP` is only for non-`WISH` lists, and `VIEW` is read-only. A list owner can revoke a public link so the old URL stops working.
 
 ## Notifications and reminders
 
@@ -488,7 +490,7 @@ Admins can see user and list metadata needed to operate the instance. The curren
 
 - Public links stop working after revocation.
 - Creating a new public link creates a new token; old copied URLs remain invalid.
-- Guest claims work only for supported wishlist items in the current app.
+- Guest claims/signups work only when the public link mode matches the list type: `WISH_CLAIM` for wishlists or `SIGNUP` for non-wishlist signup sheets. `VIEW` links are read-only.
 - A claimed item cannot be claimed again; duplicate guest claims return a conflict.
 
 ### Reminders do not appear
@@ -501,9 +503,10 @@ Admins can see user and list metadata needed to operate the instance. The curren
 
 ## Current limitations
 
-- Public claiming is only for wishlist items.
+- Public guest mutation is intentionally narrow: `WISH_CLAIM` only reserves wishlist items, `SIGNUP` only reserves non-wishlist items, and `VIEW` does not allow guest changes.
 - Grocery lists support quantity/category, category grouping, done/reopen, hide-completed, and clear-completed flows, but not offline-first live collaborative shopping.
 - Item review controls are client-side; very large lists may later need backend query parameters.
-- Chore recurrence supports the current simple daily/weekly/monthly flows; broader calendar-style recurrence remains a future extension.
+- Chore recurrence supports daily, weekly, biweekly, monthly, quarterly, and annual flows; broader calendar-style recurrence remains a future extension.
 - Email features require SMTP configuration; otherwise the app stays functional with password login and in-app notifications.
 - Admin inventory is metadata-focused and does not include a break-glass private content view.
+- Internet-facing deployment still needs a dedicated HTTPS/HSTS/secure-cookie pass; the current Alice deployment is private Tailnet HTTP.

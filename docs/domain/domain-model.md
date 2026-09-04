@@ -38,6 +38,7 @@ Fields:
 - `type`: `WISH`, `TODO`, `GROCERY`, `CHORE`, or `EVENT`
 - `share_token`
 - `is_public`
+- `public_share_mode`: `VIEW`, `WISH_CLAIM`, or `SIGNUP`
 - `target_date`
 - `created_at`
 
@@ -60,7 +61,7 @@ Fields:
 - `url`
 - `image_url`
 - `price`
-- `status`: `OPEN`, `CLAIMED`, `PURCHASED`
+- `status`: `OPEN`, `CLAIMED`, `PURCHASED`, or `DONE` depending on list type
 - `due_date`
 - `recurrence_rule`
 - `quantity`
@@ -72,8 +73,9 @@ Rules:
 - Items inherit access from their parent list.
 - Items cannot be accessed independently from authorization context.
 - `OPEN` is the default status.
-- `CLAIMED` means someone reserved the item, usually through a public wishlist link.
+- `CLAIMED` means someone reserved the item, usually through a public wishlist claim or signup link.
 - `PURCHASED` is owner-controlled for MVP.
+- `DONE` is used by TODO/GROCERY/CHORE/EVENT-style work items.
 - Type-specific fields are interpreted by the parent list type.
 - `quantity` and `category` are grocery-specific.
 
@@ -98,7 +100,8 @@ An internal share grants a registered user access to a list they do not own.
 Rules:
 
 - The owner can create and revoke shares.
-- MVP default: shared access is read-only.
+- Existing/missing-permission shares default to read-only `READ` access.
+- `CONTRIBUTE` shares allow item contribution but not list/share/public-link management.
 - Internal shares never imply admin rights.
 
 ## Public shares
@@ -109,6 +112,9 @@ Rules:
 
 - Tokens are generated with `SecureRandom` and URL-safe Base64.
 - A token grants access only to the safe guest representation of one list.
+- `VIEW` public links are read-only.
+- `WISH_CLAIM` links allow guest reservations for `WISH` lists only.
+- `SIGNUP` links allow guest reservations for non-`WISH` lists only.
 - Revocation clears or invalidates the token.
 - Re-enabling public sharing should create a new token.
 

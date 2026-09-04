@@ -38,7 +38,7 @@ UI behavior:
 
 - Show description, URL, image, price, and status.
 - Allow URL-only item creation and metadata-prefilled item forms; users can edit fetched values before saving.
-- Public guest page supports claiming.
+- Public guest page supports claiming when the link mode is `WISH_CLAIM`; `VIEW` remains read-only.
 
 MVP rules:
 
@@ -96,7 +96,7 @@ MVP rules:
 - Must not set list-level `target_date`.
 - Shopping fields (`url`, `image_url`, `price`) are rejected by the API for grocery items.
 - Due dates and recurrence rules are rejected by the API for grocery items; dated follow-ups belong in `TODO`/`CHORE`/`EVENT`.
-- Public guest claiming is not the primary GROCERY behavior.
+- Public guest claiming is not the primary GROCERY behavior, but a `SIGNUP` public link can be used when grocery-style items are repurposed as open slots/reservations.
 - Grocery items use `OPEN` and `DONE`; wishlist statuses are rejected.
 
 ## CHORE
@@ -119,7 +119,7 @@ UI behavior:
 
 MVP rules:
 
-- Public guest claiming is not a primary CHORE use case.
+- Public guest claiming is not a primary CHORE use case, but a `SIGNUP` public link can be used for small-group volunteer slots.
 - Simple recurrence is supported for daily, weekly, biweekly, monthly, quarterly, and annual chores.
 - Shopping fields (`url`, `image_url`, `price`) are rejected by the API for chore items.
 - Must not set list-level `target_date`; use item `due_date` instead.
@@ -160,7 +160,7 @@ MVP rules:
 - Event lists require `target_date`.
 - Event lists can trigger reminders based on `target_date` and item `due_date`.
 - Event items reject shopping fields and recurrence rules in the MVP.
-- Public guest claiming is not the primary EVENT behavior.
+- Public guest claiming is not the primary EVENT behavior, but a `SIGNUP` public link can turn event preparation items into guest-visible signup slots.
 - Event items use `OPEN` and `DONE`; wishlist statuses are rejected.
 - `DONE` event items are excluded from item due-date reminder scans.
 

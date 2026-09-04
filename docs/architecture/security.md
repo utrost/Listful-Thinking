@@ -1,5 +1,7 @@
 # Security Architecture
 
+This document describes implemented controls and known gaps. For a cross-project snapshot, see [Current State and Risk Register](../current-state-and-risk-register.md).
+
 ## Principles
 
 - Private by default.
@@ -47,6 +49,7 @@ Implementation:
 - Auth bootstrap/link endpoints and public unauthenticated share routes remain exempt; they are separately protected by strict JSON parsing, request-size limits, and rate limiting.
 - The SPA API client fetches and caches the token before authenticated mutations.
 - Session cookies are explicitly `HttpOnly` and `SameSite=Strict`; `SESSION_COOKIE_SECURE=true` should be set when served via HTTPS.
+- This app-level CSRF check is browser-metadata-aware: unsafe API calls without `Origin` and without `Sec-Fetch-Site` are treated as non-browser/API-client calls and are not rejected solely for missing CSRF. The browser protection therefore relies on both the token flow and `SameSite=Strict` cookies.
 
 ## Authorization
 
@@ -76,6 +79,7 @@ Controllers should remain thin and should not copy authorization rules.
 - Store token server-side.
 - Revocation invalidates old token.
 - Re-enable creates a new token.
+- Current weak point: public share tokens are bearer secrets and are still stored as raw token values in the application database. Hashing public share tokens at rest is future hardening.
 
 ## Public data exposure
 
@@ -106,9 +110,11 @@ Admins manage instance settings and users. MVP admins do not automatically have 
 
 The app records structured security events for filter-level rejects such as oversized request bodies, rate limits, and CSRF failures in the `security_events` table and logs them as `security_event` lines. Future work can extend the same service to admin/user/public-share lifecycle events.
 
-## Future hardening
+## Current weak points and future hardening
 
-- Hash public share tokens at rest.
-- Extend audit logging to admin changes, auth lifecycle, and public token generation/revocation.
-- HTTPS/HSTS and `SESSION_COOKIE_SECURE=true` for internet-facing deployments.
-- Signed release images/SBOM publication.
+- Alice currently runs as a private Tailnet HTTP deployment. Internet-facing use should add HTTPS/TLS termination, verify live HSTS, and set `SESSION_COOKIE_SECURE=true`.
+- Public share tokens are high-entropy and revocable, but stored raw at rest; migrate to hashed public-token storage before broader exposure.
+- Audit logging currently covers filter-level rejects. Extend it to admin changes, auth lifecycle, user lifecycle, and public token generation/revocation.
+- CI includes OSV dependency scanning, but release images/JARs are not signed and no SBOM artifact is published.
+- GitHub Actions currently pass but emit upstream deprecation warnings for some action runtimes; upgrade action majors as maintenance work.
+- Backups, host encryption, and host firewall policy are deployment-environment responsibilities, not enforced by this application repository.

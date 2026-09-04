@@ -22,6 +22,7 @@ Listful Thinking is a single-container web app:
 
 ## Detailed architecture docs
 
+- [Current state and risk register](current-state-and-risk-register.md)
 - [Architecture decision records](architecture/architecture-decision-records.md)
 - [API design](architecture/api-design.md)
 - [Persistence](architecture/persistence.md)

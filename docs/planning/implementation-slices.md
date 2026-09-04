@@ -197,22 +197,22 @@ Status: complete.
 
 User outcome:
 
-- Guest can open a link and claim an open wishlist item.
+- Guest can open a link and, depending on the public link mode, read only, claim an open wishlist item, or sign up for an open non-wishlist item.
 
 Backend:
 
 - Add public share DTOs/controller/service.
-- Add claim endpoint with conflict behavior.
+- Add claim/signup endpoint with conflict behavior and mode-specific authorization.
 
 Frontend:
 
-- Public share route and guest claim dialog.
+- Public share route and guest claim/signup dialog.
 
 Tests:
 
 - Guest sees safe fields only.
 - Cross-list claim blocked.
-- Duplicate claim returns 409.
+- Duplicate claim/signup returns 409.
 
 ## Slice 11: Scraping utility
 
@@ -538,7 +538,7 @@ Tests:
 
 ### Slice 22: Flexible public claim/signup modes
 
-Status: proposed.
+Status: complete for first flexible public mode slice.
 
 User outcome:
 
@@ -546,21 +546,21 @@ User outcome:
 
 Product gaps covered:
 
-- Public sharing is wishlist-only.
+- Public sharing used to be wishlist-only; this slice adds explicit non-wishlist signup modes while preserving wishlist-only semantics for `WISH_CLAIM`.
 - Events and small groups need claimable tasks/slots without accounts.
-- Guests need limited correction/contact flows.
+- Guests may later need limited correction/contact flows.
 
 Backend:
 
-- Add public link mode such as `VIEW`, `WISH_CLAIM`, `SIGNUP`.
-- Allow public claiming for supported non-wishlist list types without leaking private fields.
-- Consider guest note/contact and guest unclaim tokens.
+- Added public link modes `VIEW`, `WISH_CLAIM`, and `SIGNUP`.
+- Allowed public claiming for supported non-wishlist list types without leaking private fields.
+- Still future: guest note/contact and guest unclaim tokens.
 
 Frontend:
 
 - Let owners choose the public link mode.
-- Add guest signup/claim UI for supported list types.
-- Add owner controls to close/reopen public claiming.
+- Added guest signup/claim UI for supported list types.
+- Owner controls close/reopen public access by revoking/recreating links.
 
 Docs:
 

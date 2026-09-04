@@ -10,11 +10,12 @@
 
 ## Domain terms
 
-- **List:** a collection of items owned by one user. Lists have a type: `WISH`, `CHORE`, or `EVENT`.
+- **List:** a collection of items owned by one user. Lists have a type: `WISH`, `TODO`, `GROCERY`, `CHORE`, or `EVENT`.
 - **Item:** an entry inside a list. Fields are interpreted by list type.
 - **Share token:** cryptographically random URL-safe token that exposes a public guest view of one list.
-- **Internal share:** access grant from a list owner to another registered user.
-- **Claim:** guest reservation of an open item to prevent duplicate purchases.
+- **Public share mode:** owner-selected behavior for a public link: `VIEW`, `WISH_CLAIM`, or `SIGNUP`.
+- **Internal share:** access grant from a list owner to another registered user, currently `READ` or `CONTRIBUTE`.
+- **Claim/signup:** guest reservation of an open item to prevent duplicate purchases or duplicate slot signups.
 - **Notification:** in-app reminder or system message stored in the database.
 - **Setting:** global key/value configuration, such as registration enabled.
 
