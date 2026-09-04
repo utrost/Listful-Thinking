@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -119,17 +120,130 @@ class PublicShareTests {
             .andExpect(status().isNotFound());
     }
 
+    @Test
+    void ownerCanCreateReadOnlyPublicShareModeThatDoesNotAllowGuestClaims() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Read only ideas");
+        String itemId = createItem(owner, listId, "Book");
+
+        MvcResult created = mockMvc.perform(post("/api/v1/lists/{listId}/public-share", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"mode\":\"VIEW\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.mode").value("VIEW"))
+            .andReturn();
+        String token = JsonPath.read(created.getResponse().getContentAsString(), "$.shareToken");
+
+        mockMvc.perform(get("/api/v1/share/{token}", token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.mode").value("VIEW"));
+
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/claim", token, itemId)
+                .contentType("application/json")
+                .content("{\"guestName\":\"Annette\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
+    @Test
+    void signupModeAllowsGuestsToClaimOpenEventTasks() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createEventList(owner, "Birthday", "2026-10-01T12:00:00Z");
+        String itemId = createItem(owner, listId, "Bring salad");
+        String token = createPublicShare(owner, listId, "SIGNUP");
+
+        mockMvc.perform(get("/api/v1/share/{token}", token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.type").value("EVENT"))
+            .andExpect(jsonPath("$.mode").value("SIGNUP"));
+
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/claim", token, itemId)
+                .contentType("application/json")
+                .content("{\"guestName\":\"Annette\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("CLAIMED"))
+            .andExpect(jsonPath("$.reservedByGuest").value("Annette"));
+    }
+
+    @Test
+    void wishClaimModeIsRejectedForNonWishLists() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createEventList(owner, "Birthday", "2026-10-01T12:00:00Z");
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/public-share", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"mode\":\"WISH_CLAIM\"}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+    }
+
+    @Test
+    void taskLikeListsDefaultToReadOnlyPublicShareMode() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createEventList(owner, "Planning", "2026-10-01T12:00:00Z");
+
+        mockMvc.perform(get("/api/v1/lists/{listId}", listId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.publicShareMode").value("VIEW"));
+
+        MvcResult created = mockMvc.perform(post("/api/v1/lists/{listId}/public-share", listId).session(owner))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.mode").value("VIEW"))
+            .andReturn();
+        String token = JsonPath.read(created.getResponse().getContentAsString(), "$.shareToken");
+
+        mockMvc.perform(get("/api/v1/share/{token}", token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.mode").value("VIEW"));
+    }
+
+    @Test
+    void changingListTypeReconcilesExistingPublicShareMode() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createEventList(owner, "Planning", "2026-10-01T12:00:00Z");
+        String token = createPublicShare(owner, listId, "SIGNUP");
+
+        mockMvc.perform(put("/api/v1/lists/{listId}", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"title\":\"Planning\",\"description\":\"\",\"type\":\"WISH\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.publicShareMode").value("WISH_CLAIM"));
+
+        mockMvc.perform(get("/api/v1/share/{token}", token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.type").value("WISH"))
+            .andExpect(jsonPath("$.mode").value("WISH_CLAIM"));
+    }
+
     private String createPublicShare(MockHttpSession session, String listId) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/v1/lists/{listId}/public-share", listId).session(session))
+        return createPublicShare(session, listId, null);
+    }
+
+    private String createPublicShare(MockHttpSession session, String listId, String mode) throws Exception {
+        String body = mode == null ? null : "{\"mode\":\"%s\"}".formatted(mode);
+        var request = post("/api/v1/lists/{listId}/public-share", listId).session(session);
+        if (body != null) {
+            request.contentType("application/json").content(body);
+        }
+        MvcResult result = mockMvc.perform(request)
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.shareToken");
     }
 
     private String createWishList(MockHttpSession session, String title) throws Exception {
+        return createTypedList(session, title, "WISH", null);
+    }
+
+    private String createEventList(MockHttpSession session, String title, String targetDate) throws Exception {
+        return createTypedList(session, title, "EVENT", targetDate);
+    }
+
+    private String createTypedList(MockHttpSession session, String title, String type, String targetDate) throws Exception {
+        String targetPart = targetDate == null ? "" : ",\"targetDate\":\"%s\"".formatted(targetDate);
         MvcResult result = mockMvc.perform(post("/api/v1/lists").session(session)
                 .contentType("application/json")
-                .content("{\"title\":\"%s\",\"description\":\"\",\"type\":\"WISH\"}".formatted(title)))
+                .content("{\"title\":\"%s\",\"description\":\"\",\"type\":\"%s\"%s}".formatted(title, type, targetPart)))
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");

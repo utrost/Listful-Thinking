@@ -7,6 +7,7 @@ public record PublicListResponse(
     String description,
     String type,
     String targetDate,
+    String mode,
     List<PublicItemResponse> items
 ) {
 }

@@ -254,11 +254,25 @@ curl_json -b "$admin_cookie" "$base_url/api/v1/lists/$grocery_id/items" \
 curl_json -b "$admin_cookie" "$base_url/api/v1/admin/lists" \
   | assert_json 'any(item["title"] == "Next actions" and item["ownerUsername"] == "admin" for item in data) and any(item["title"] == "Groceries" and item["type"] == "GROCERY" for item in data)'
 
-share_json="$(curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/lists/$list_id/public-share")"
+signup_share_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"mode":"SIGNUP"}' \
+  "$base_url/api/v1/lists/$todo_id/public-share")"
+signup_token="$(printf '%s' "$signup_share_json" | json_field shareToken)"
+printf '%s' "$signup_share_json" | assert_json 'data["publicList"] is True and data["mode"] == "SIGNUP"'
+curl_json "$base_url/api/v1/share/$signup_token" \
+  | assert_json 'data["title"] == "Next actions" and data["mode"] == "SIGNUP" and any(item["id"] == "'"$todo_item_id"'" and item["status"] == "OPEN" for item in data["items"])'
+curl_json -H 'Content-Type: application/json' \
+  -d '{"guestName":"Visitor"}' \
+  "$base_url/api/v1/share/$signup_token/items/$todo_item_id/claim" | assert_json 'data["status"] == "CLAIMED" and data["reservedByGuest"] == "Visitor"'
+
+share_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"mode":"WISH_CLAIM"}' \
+  "$base_url/api/v1/lists/$list_id/public-share")"
+printf '%s' "$share_json" | assert_json 'data["publicList"] is True and data["mode"] == "WISH_CLAIM"'
 token="$(printf '%s' "$share_json" | json_field shareToken)"
 
 curl_json "$base_url/api/v1/share/$token" \
-  | assert_json 'data["title"] == "Birthday 2027" and len(data["items"]) == 2 and any(item["status"] == "OPEN" for item in data["items"])'
+  | assert_json 'data["title"] == "Birthday 2027" and data["mode"] == "WISH_CLAIM" and len(data["items"]) == 2 and any(item["status"] == "OPEN" for item in data["items"])'
 
 curl_json -H 'Content-Type: application/json' \
   -d '{"guestName":"Annette"}' \
@@ -268,4 +282,4 @@ curl_json -H 'Content-Type: application/json' \
 sqlite_path="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'test -f /app/data/listful-thinking.sqlite && echo present')"
 [ "$sqlite_path" = "present" ] || { echo "SQLite database missing in /app/data" >&2; exit 1; }
 
-echo "Smoke OK: health, non-root runtime, admin/users/settings, list clone, list/item/chore recurrence/grocery clear-completed/public claim, SQLite volume"
+echo "Smoke OK: health, non-root runtime, admin/users/settings, list clone, list/item/chore recurrence/grocery clear-completed/public claim/signup, SQLite volume"

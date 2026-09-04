@@ -115,6 +115,7 @@ public class ListService {
             list.getType().name(),
             list.isPublicList(),
             list.getShareToken(),
+            list.getPublicShareMode().name(),
             list.getTargetDate() == null ? null : list.getTargetDate().toString(),
             listAccessService.accessMode(actor, list),
             list.getCreatedAt().toString()

@@ -15,6 +15,7 @@
       <section v-if="publicToken" class="panel public-panel">
         <h2>{{ publicList?.title ?? t('sharing.publicList') }}</h2>
         <p v-if="publicList?.description">{{ publicList.description }}</p>
+        <p v-if="publicList" class="muted">{{ t(`sharing.modes.${publicList.mode}`) }}</p>
         <ul class="item-list">
           <li v-for="item in publicList?.items ?? []" :key="item.id">
             <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
@@ -23,9 +24,9 @@
               <small v-if="item.description">{{ item.description }}</small>
               <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
             </span>
-            <form v-if="item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
+            <form v-if="publicList?.mode !== 'VIEW' && item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
               <input v-model="guestName" :placeholder="t('sharing.guestName')" required />
-              <button type="submit">{{ t('sharing.claim') }}</button>
+              <button type="submit">{{ publicList?.mode === 'SIGNUP' ? t('sharing.signup') : t('sharing.claim') }}</button>
             </form>
           </li>
         </ul>
@@ -183,6 +184,11 @@
             <section v-if="selectedList.access === 'OWNER'" class="share-panel">
               <h4>{{ t('sharing.title') }}</h4>
               <div class="button-row">
+                <select v-model="publicShareMode">
+                  <option value="VIEW">{{ t('sharing.modes.VIEW') }}</option>
+                  <option v-if="selectedList.type === 'WISH'" value="WISH_CLAIM">{{ t('sharing.modes.WISH_CLAIM') }}</option>
+                  <option v-if="selectedList.type !== 'WISH'" value="SIGNUP">{{ t('sharing.modes.SIGNUP') }}</option>
+                </select>
                 <button type="button" class="secondary" @click="handleCreatePublicShare">{{ t('sharing.createPublic') }}</button>
                 <button v-if="selectedList.publicList" type="button" class="danger subtle" @click="handleRevokePublicShare">{{ t('sharing.revokePublic') }}</button>
               </div>
@@ -365,7 +371,8 @@ import {
   type ListShareEntry,
   type ListType,
   type NotificationEntry,
-  type PublicListEntry
+  type PublicListEntry,
+  type PublicShareMode
 } from './api/client';
 import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
 import { defaultItemReviewState, reviewDisplayedItems, type ItemReviewState } from './itemReview';
@@ -412,6 +419,7 @@ const recurrenceOptions = computed(() => [
   { value: 'FREQ=ANNUALLY', label: t('items.annually') }
 ]);
 const shareForm = reactive<{ username: string; permission: 'READ' | 'CONTRIBUTE' }>({ username: '', permission: 'READ' });
+const publicShareMode = ref<PublicShareMode>('WISH_CLAIM');
 const newListRules = computed(() => listFormRulesForType(listForm.type));
 const editListRules = computed(() => listFormRulesForType(editListForm.type));
 const currentItemFields = computed(() => itemFormFieldsForListType(selectedList.value?.type ?? 'WISH'));
@@ -530,6 +538,9 @@ async function handleLogout() {
 async function loadLists() {
   lists.value = await getLists();
   selectedList.value = lists.value[0] ?? null;
+  if (selectedList.value) {
+    publicShareMode.value = selectedList.value.publicShareMode ?? (selectedList.value.type === 'WISH' ? 'WISH_CLAIM' : 'VIEW');
+  }
   resetItemReviewForm();
   updateItemReviewNow();
   await loadListDetails();
@@ -537,6 +548,7 @@ async function loadLists() {
 
 async function selectList(list: ListEntry) {
   selectedList.value = list;
+  publicShareMode.value = list.publicShareMode ?? (list.type === 'WISH' ? 'WISH_CLAIM' : 'VIEW');
   editingList.value = false;
   pendingDeleteListId.value = null;
   resetItemReviewForm();
@@ -592,6 +604,7 @@ async function handleSaveEditedList() {
       targetDate: editListForm.type === 'EVENT' ? toIsoInstant(editListForm.targetDate) : undefined
     });
     selectedList.value = updated;
+    publicShareMode.value = updated.publicShareMode ?? (updated.type === 'WISH' ? 'WISH_CLAIM' : 'VIEW');
     lists.value = lists.value.map((list) => list.id === updated.id ? updated : list);
     editingList.value = false;
     await loadListDetails();
@@ -704,8 +717,8 @@ async function handleRevokeShare(username: string) {
 async function handleCreatePublicShare() {
   if (!selectedList.value) return;
   await run(async () => {
-    const token = await createPublicShare(selectedList.value!.id);
-    selectedList.value = { ...selectedList.value!, publicList: token.publicList, shareToken: token.shareToken };
+    const token = await createPublicShare(selectedList.value!.id, publicShareMode.value);
+    selectedList.value = { ...selectedList.value!, publicList: token.publicList, shareToken: token.shareToken, publicShareMode: token.mode };
     lists.value = lists.value.map((list) => list.id === selectedList.value!.id ? selectedList.value! : list);
   });
 }
@@ -714,7 +727,9 @@ async function handleRevokePublicShare() {
   if (!selectedList.value) return;
   await run(async () => {
     await revokePublicShare(selectedList.value!.id);
-    selectedList.value = { ...selectedList.value!, publicList: false, shareToken: null };
+    const defaultMode = selectedList.value!.type === 'WISH' ? 'WISH_CLAIM' : 'VIEW';
+    publicShareMode.value = defaultMode;
+    selectedList.value = { ...selectedList.value!, publicList: false, shareToken: null, publicShareMode: defaultMode };
     lists.value = lists.value.map((list) => list.id === selectedList.value!.id ? selectedList.value! : list);
   });
 }

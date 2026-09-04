@@ -34,6 +34,7 @@ const list = (type: ListEntry['type']): ListEntry => ({
   type,
   publicList: false,
   shareToken: null,
+  publicShareMode: type === 'WISH' ? 'WISH_CLAIM' : 'VIEW',
   targetDate: null,
   access: 'OWNER',
   createdAt: '2027-01-01T00:00:00Z'

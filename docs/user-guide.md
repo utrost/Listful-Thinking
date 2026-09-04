@@ -421,11 +421,11 @@ The inventory is not a private item-content browser.
 
 ## Which list type should I choose?
 
-- Use **WISH** when other people may reserve gift ideas from a public link. This is the only current list type with guest claiming.
+- Use **WISH** when other people may reserve gift ideas from a public link.
 - Use **TODO** for one-off personal tasks or follow-ups with optional due dates.
 - Use **GROCERY** for shopping and errands where quantity, category grouping, fast Done/Reopen, Hide completed, and Clear completed matter.
 - Use **CHORE** for household work that can recur daily, weekly, or monthly, or that needs a last-completed record.
-- Use **EVENT** for preparation around a target date, such as a trip, birthday, party, or school deadline.
+- Use **EVENT** for preparation around a target date, such as a trip, birthday, party, or school deadline. `SIGNUP` public links turn event items into a simple guest signup sheet.
 
 If you picked the wrong type early, edit the list type from the list detail panel. If the list already has many type-specific items, it is safer to create a new list or duplicate a close existing list and clean it up.
 
@@ -446,12 +446,13 @@ Internal sharing is for trusted users on the same instance:
 
 ### Public guest links
 
-Public links are for people without accounts:
+Public links are for people without accounts. The owner chooses a mode when creating the link:
 
-- A public link exposes one safe list view, not the owner's whole account.
-- Guests do not see owner email addresses, internal user IDs, internal share records, admin data, notifications, or private lists.
-- Current guest claiming is wishlist-only: guests can claim open `WISH` items with their name.
-- Revoking the public link makes the old URL stop working.
+- `VIEW`: read-only public list view; no guest form.
+- `WISH_CLAIM`: wishlist reservation flow for `WISH` lists.
+- `SIGNUP`: signup-sheet flow for non-wishlist lists, useful for event jobs, chores, or bring-along lists.
+
+Public links expose one safe list view, not the owner's whole account. Guests do not see owner email addresses, internal user IDs, internal share records, admin data, notifications, or private lists. Revoking the public link makes the old URL stop working.
 
 ### Admin visibility
 

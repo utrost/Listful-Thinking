@@ -159,7 +159,7 @@ Deletes owned list, or returns `404` when not owned.
 List response:
 
 ```json
-{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"targetDate":null,"access":"OWNER","createdAt":"2026-08-31T17:00:00Z"}
+{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"publicShareMode":"WISH_CLAIM","targetDate":null,"access":"OWNER","createdAt":"2026-08-31T17:00:00Z"}
 ```
 
 ## Items
@@ -292,12 +292,24 @@ Public endpoints do not require authentication. Browser links use `/s/{token}` a
 
 ### `POST /api/v1/lists/{id}/public-share`
 
-Requires ownership. Creates or returns an existing public token.
+Requires ownership. Creates or updates a public token for the requested mode. If no request body is provided, the default is `WISH_CLAIM` for wish lists and `VIEW` for other list types.
+
+Request:
+
+```json
+{"mode":"WISH_CLAIM"}
+```
+
+Supported modes:
+
+- `VIEW`: read-only public list view; no guest claiming/signup form.
+- `WISH_CLAIM`: wishlist claiming; only valid for `WISH` lists.
+- `SIGNUP`: signup sheet for non-wishlist list types; guests reserve open items with their names.
 
 Response:
 
 ```json
-{"listId":"uuid","publicList":true,"shareToken":"urlsafetoken","shareUrl":"/s/urlsafetoken"}
+{"listId":"uuid","publicList":true,"shareToken":"urlsafetoken","shareUrl":"/s/urlsafetoken","mode":"WISH_CLAIM"}
 ```
 
 ### `DELETE /api/v1/lists/{id}/public-share`
@@ -311,12 +323,12 @@ Returns a safe public representation of a public list and its items. It excludes
 Response:
 
 ```json
-{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"items":[{"id":"uuid","name":"Book","url":"https://example.test/book","imageUrl":null,"price":19.99,"status":"OPEN","dueDate":null,"quantity":null,"category":null,"reservedByGuest":null}]}
+{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"mode":"WISH_CLAIM","items":[{"id":"uuid","name":"Book","url":"https://example.test/book","imageUrl":null,"price":19.99,"status":"OPEN","dueDate":null,"quantity":null,"category":null,"reservedByGuest":null}]}
 ```
 
 ### `POST /api/v1/share/{token}/items/{itemId}/claim`
 
-Claims an open wishlist item for a guest.
+Reserves an open public item for a guest. `WISH_CLAIM` mode accepts wishlist items; `SIGNUP` mode accepts non-wishlist items. `VIEW` mode rejects guest claims with `400 validation_failed`.
 
 Request:
 

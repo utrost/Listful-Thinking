@@ -233,7 +233,7 @@ describe('auth API client', () => {
   it('calls public share token and guest endpoints', async () => {
     const fetchMock = mockJsonFetch({ shareToken: 'tok123', title: 'Birthday', items: [] });
 
-    await createPublicShare('l1');
+    await createPublicShare('l1', 'SIGNUP');
     await revokePublicShare('l1');
     await getPublicShare('tok123');
     await claimPublicItem('tok123', 'i1', { guestName: 'Annette' });
@@ -241,7 +241,8 @@ describe('auth API client', () => {
     expectApiCall(fetchMock, 1, '/api/v1/lists/l1/public-share', expect.objectContaining({
       method: 'POST',
       credentials: 'include',
-      headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'csrf-123' })
+      headers: expect.objectContaining({ 'X-CSRF-TOKEN': 'csrf-123' }),
+      body: JSON.stringify({ mode: 'SIGNUP' })
     }));
     expectApiCall(fetchMock, 2, '/api/v1/lists/l1/public-share', expect.objectContaining({
       method: 'DELETE',

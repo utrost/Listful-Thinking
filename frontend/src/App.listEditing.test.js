@@ -21,4 +21,9 @@ describe('list editing and cleanup UI', () => {
     expect(app).toContain("t('lists.deleteConfirm')");
     expect(app).toContain("t('lists.deleteCancel')");
   });
+
+  it('refreshes the selected public share mode after saving list type edits', () => {
+    expect(app).toContain('publicShareMode.value = updated.publicShareMode');
+    expect(app.indexOf('selectedList.value = updated')).toBeLessThan(app.indexOf('publicShareMode.value = updated.publicShareMode'));
+  });
 });

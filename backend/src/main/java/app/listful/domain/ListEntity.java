@@ -1,6 +1,7 @@
 package app.listful.domain;
 
 import app.listful.domain.enums.ListType;
+import app.listful.domain.enums.PublicShareMode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -38,6 +39,10 @@ public class ListEntity {
     @Column(name = "is_public", nullable = false)
     private int publicFlag;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "public_share_mode", nullable = false)
+    private PublicShareMode publicShareMode = PublicShareMode.VIEW;
+
     @Column(name = "target_date")
     private Instant targetDate;
 
@@ -53,18 +58,25 @@ public class ListEntity {
         this.title = title;
         this.description = description;
         this.type = type;
+        this.publicShareMode = defaultModeForType(type);
         this.createdAt = createdAt;
         this.publicFlag = 0;
     }
 
     public void enablePublicShare(String shareToken) {
+        enablePublicShare(shareToken, defaultModeForType(type));
+    }
+
+    public void enablePublicShare(String shareToken, PublicShareMode mode) {
         this.shareToken = shareToken;
+        this.publicShareMode = mode == null ? defaultModeForType(type) : mode;
         this.publicFlag = 1;
     }
 
     public void disablePublicShare() {
         this.shareToken = null;
         this.publicFlag = 0;
+        this.publicShareMode = defaultModeForType(type);
     }
 
     public void update(String title, String description, ListType type, Instant targetDate) {
@@ -72,6 +84,7 @@ public class ListEntity {
         this.description = description;
         this.type = type;
         this.targetDate = targetDate;
+        reconcilePublicShareMode();
     }
 
     public String getId() { return id; }
@@ -81,6 +94,20 @@ public class ListEntity {
     public ListType getType() { return type; }
     public String getShareToken() { return shareToken; }
     public boolean isPublicList() { return publicFlag == 1; }
+    public PublicShareMode getPublicShareMode() { return publicShareMode == null ? defaultModeForType(type) : publicShareMode; }
     public Instant getTargetDate() { return targetDate; }
     public Instant getCreatedAt() { return createdAt; }
+
+    private void reconcilePublicShareMode() {
+        if (type == ListType.WISH && publicShareMode == PublicShareMode.SIGNUP) {
+            publicShareMode = PublicShareMode.WISH_CLAIM;
+        }
+        if (type != ListType.WISH && publicShareMode == PublicShareMode.WISH_CLAIM) {
+            publicShareMode = PublicShareMode.VIEW;
+        }
+    }
+
+    private static PublicShareMode defaultModeForType(ListType type) {
+        return type == ListType.WISH ? PublicShareMode.WISH_CLAIM : PublicShareMode.VIEW;
+    }
 }

@@ -75,6 +75,7 @@ export interface AdminListEntry {
 }
 
 export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT';
+export type PublicShareMode = 'VIEW' | 'WISH_CLAIM' | 'SIGNUP';
 
 export interface ListEntry {
   id: string;
@@ -83,6 +84,7 @@ export interface ListEntry {
   type: ListType;
   publicList: boolean;
   shareToken: string | null;
+  publicShareMode: PublicShareMode;
   targetDate: string | null;
   access: 'OWNER' | 'READ' | 'CONTRIBUTE';
   createdAt: string;
@@ -153,6 +155,7 @@ export interface PublicShareToken {
   publicList: boolean;
   shareToken: string;
   shareUrl: string;
+  mode: PublicShareMode;
 }
 
 export interface PublicItemEntry {
@@ -174,6 +177,7 @@ export interface PublicListEntry {
   description: string | null;
   type: ListType;
   targetDate: string | null;
+  mode: PublicShareMode;
   items: PublicItemEntry[];
 }
 
@@ -489,9 +493,10 @@ export async function revokeListShare(listId: string, username: string): Promise
   }
 }
 
-export async function createPublicShare(listId: string): Promise<PublicShareToken> {
+export async function createPublicShare(listId: string, mode?: PublicShareMode): Promise<PublicShareToken> {
   return requestJson<PublicShareToken>(`/api/v1/lists/${listId}/public-share`, {
-    method: 'POST'
+    method: 'POST',
+    body: mode ? JSON.stringify({ mode }) : undefined
   });
 }
 

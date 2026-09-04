@@ -97,7 +97,13 @@
     "revokePublic": "Revoke public link",
     "publicList": "Shared list",
     "guestName": "Your name",
-    "claim": "Claim"
+    "claim": "Claim",
+    "signup": "Sign up",
+    "modes": {
+      "VIEW": "Read-only public view",
+      "WISH_CLAIM": "Wishlist claiming",
+      "SIGNUP": "Signup sheet"
+    }
   },
   "notifications": {
     "title": "Notifications",

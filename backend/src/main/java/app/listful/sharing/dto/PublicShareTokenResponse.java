@@ -4,6 +4,7 @@ public record PublicShareTokenResponse(
     String listId,
     boolean publicList,
     String shareToken,
-    String shareUrl
+    String shareUrl,
+    String mode
 ) {
 }

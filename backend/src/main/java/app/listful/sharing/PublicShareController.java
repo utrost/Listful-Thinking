@@ -5,6 +5,7 @@ import app.listful.lists.CurrentUser;
 import app.listful.sharing.dto.GuestClaimRequest;
 import app.listful.sharing.dto.PublicItemResponse;
 import app.listful.sharing.dto.PublicListResponse;
+import app.listful.sharing.dto.PublicShareRequest;
 import app.listful.sharing.dto.PublicShareTokenResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -28,9 +29,13 @@ public class PublicShareController {
     }
 
     @PostMapping("/lists/{listId}/public-share")
-    public ResponseEntity<PublicShareTokenResponse> createToken(@PathVariable String listId, Authentication authentication) {
+    public ResponseEntity<PublicShareTokenResponse> createToken(
+        @PathVariable String listId,
+        @RequestBody(required = false) PublicShareRequest request,
+        Authentication authentication
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(publicShareService.createToken(currentUser(authentication), listId));
+            .body(publicShareService.createToken(currentUser(authentication), listId, request));
     }
 
     @DeleteMapping("/lists/{listId}/public-share")

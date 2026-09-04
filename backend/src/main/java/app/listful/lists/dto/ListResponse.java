@@ -7,6 +7,7 @@ public record ListResponse(
     String type,
     boolean publicList,
     String shareToken,
+    String publicShareMode,
     String targetDate,
     String access,
     String createdAt

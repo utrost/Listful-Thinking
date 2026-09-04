@@ -97,7 +97,13 @@
     "revokePublic": "Öffentlichen Link entziehen",
     "publicList": "Geteilte Liste",
     "guestName": "Dein Name",
-    "claim": "Reservieren"
+    "claim": "Reservieren",
+    "signup": "Eintragen",
+    "modes": {
+      "VIEW": "Öffentliche Nur-Lesen-Ansicht",
+      "WISH_CLAIM": "Wunschliste reservieren",
+      "SIGNUP": "Eintragungsliste"
+    }
   },
   "notifications": {
     "title": "Benachrichtigungen",

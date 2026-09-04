@@ -8,12 +8,14 @@ import app.listful.domain.ListEntity;
 import app.listful.domain.User;
 import app.listful.domain.enums.ItemStatus;
 import app.listful.domain.enums.ListType;
+import app.listful.domain.enums.PublicShareMode;
 import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
 import app.listful.lists.ListAccessService;
 import app.listful.sharing.dto.GuestClaimRequest;
 import app.listful.sharing.dto.PublicItemResponse;
 import app.listful.sharing.dto.PublicListResponse;
+import app.listful.sharing.dto.PublicShareRequest;
 import app.listful.sharing.dto.PublicShareTokenResponse;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -34,11 +36,12 @@ public class PublicShareService {
     }
 
     @Transactional
-    public PublicShareTokenResponse createToken(User actor, String listId) {
+    public PublicShareTokenResponse createToken(User actor, String listId, PublicShareRequest request) {
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
-        if (!list.isPublicList() || list.getShareToken() == null) {
-            list.enablePublicShare(uniqueToken());
-        }
+        PublicShareMode mode = request == null || request.mode() == null ? defaultMode(list) : request.mode();
+        validateMode(list, mode);
+        String token = list.getShareToken() == null ? uniqueToken() : list.getShareToken();
+        list.enablePublicShare(token, mode);
         return toTokenResponse(list);
     }
 
@@ -56,6 +59,7 @@ public class PublicShareService {
             list.getDescription(),
             list.getType().name(),
             list.getTargetDate() == null ? null : list.getTargetDate().toString(),
+            list.getPublicShareMode().name(),
             itemRepository.findByListId(list.getId()).stream()
                 .map(this::toPublicItemResponse)
                 .toList()
@@ -65,8 +69,8 @@ public class PublicShareService {
     @Transactional
     public PublicItemResponse claim(String token, String itemId, GuestClaimRequest request) {
         ListEntity list = publicListByToken(token);
-        if (list.getType() != ListType.WISH) {
-            throw new ValidationFailedException("Guest claiming is only available for wish lists.");
+        if (!claimsEnabled(list)) {
+            throw new ValidationFailedException("Guest claiming is not enabled for this public link.");
         }
         Item item = itemRepository.findById(itemId)
             .filter(candidate -> candidate.getList().getId().equals(list.getId()))
@@ -84,6 +88,26 @@ public class PublicShareService {
             .orElseThrow(() -> new ResourceNotFoundException("Shared list not found"));
     }
 
+    private PublicShareMode defaultMode(ListEntity list) {
+        return list.getType() == ListType.WISH ? PublicShareMode.WISH_CLAIM : PublicShareMode.VIEW;
+    }
+
+    private void validateMode(ListEntity list, PublicShareMode mode) {
+        if (mode == PublicShareMode.WISH_CLAIM && list.getType() != ListType.WISH) {
+            throw new ValidationFailedException("Wish claiming mode is only available for wish lists.");
+        }
+        if (mode == PublicShareMode.SIGNUP && list.getType() == ListType.WISH) {
+            throw new ValidationFailedException("Signup mode is only available for task-like lists.");
+        }
+    }
+
+    private boolean claimsEnabled(ListEntity list) {
+        if (list.getPublicShareMode() == PublicShareMode.WISH_CLAIM) {
+            return list.getType() == ListType.WISH;
+        }
+        return list.getPublicShareMode() == PublicShareMode.SIGNUP;
+    }
+
     private String uniqueToken() {
         String token;
         do {
@@ -95,7 +119,7 @@ public class PublicShareService {
     }
 
     private PublicShareTokenResponse toTokenResponse(ListEntity list) {
-        return new PublicShareTokenResponse(list.getId(), list.isPublicList(), list.getShareToken(), "/s/" + list.getShareToken());
+        return new PublicShareTokenResponse(list.getId(), list.isPublicList(), list.getShareToken(), "/s/" + list.getShareToken(), list.getPublicShareMode().name());
     }
 
     private PublicItemResponse toPublicItemResponse(Item item) {
