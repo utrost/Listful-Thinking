@@ -82,6 +82,11 @@ public class AuthService {
     }
 
     @Transactional(readOnly = true)
+    public boolean registrationAvailable() {
+        return userRepository.count() == 0 || settingService.registrationEnabled();
+    }
+
+    @Transactional(readOnly = true)
     public User login(LoginRequest request) {
         String username = normalizeUsername(request.username());
         User user = userRepository.findByUsername(username)

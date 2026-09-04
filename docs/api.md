@@ -31,6 +31,19 @@ Responses:
 - `409 Conflict` with `username_taken` when username already exists.
 
 First registered user becomes `ADMIN`. Later registered users become `USER` when registration is enabled.
+When registration is disabled after bootstrap, the endpoint returns `403 Forbidden` with `registration_disabled`.
+
+### `GET /api/v1/auth/settings`
+
+Public bootstrap/auth UI settings. This intentionally exposes only whether the self-registration form should be available, not the full admin settings object.
+
+Response:
+
+```json
+{"registrationAvailable":false}
+```
+
+`registrationAvailable` is `true` when no users exist yet, so the first admin can still bootstrap the instance, or when an admin has enabled registration.
 
 ### `POST /api/v1/auth/login`
 

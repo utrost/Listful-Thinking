@@ -16,7 +16,8 @@
     "newPassword": "Neues Passwort",
     "setNewPassword": "Neues Passwort setzen",
     "emailSent": "Falls diese E-Mail existiert, wurde ein Link verschickt.",
-    "passwordUpdated": "Passwort aktualisiert. Du kannst dich jetzt anmelden."
+    "passwordUpdated": "Passwort aktualisiert. Du kannst dich jetzt anmelden.",
+    "registrationDisabled": "Selbstregistrierung ist gerade deaktiviert. Bitte einen Administrator, dein Konto anzulegen."
   },
   "health": {
     "check": "Backend prüfen",

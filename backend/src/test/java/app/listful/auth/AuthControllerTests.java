@@ -1,6 +1,7 @@
 package app.listful.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -8,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.listful.domain.enums.UserRole;
+import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,6 +43,9 @@ class AuthControllerTests {
     private UserRepository userRepository;
 
     @Autowired
+    private SettingRepository settingRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @MockBean
@@ -49,6 +54,7 @@ class AuthControllerTests {
     @BeforeEach
     void cleanDatabase() {
         userRepository.deleteAll();
+        settingRepository.deleteAll();
     }
 
     @Test
@@ -143,6 +149,30 @@ class AuthControllerTests {
     }
 
     @Test
+    void publicAuthSettingsExposeOnlyWhetherSelfRegistrationIsAvailable() throws Exception {
+        mockMvc.perform(get("/api/v1/auth/settings"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.*", hasSize(1)))
+            .andExpect(jsonPath("$.registrationAvailable").value(true));
+
+        MockHttpSession admin = registerAndReturnSession("admin", "admin@example.test", "password one");
+
+        mockMvc.perform(get("/api/v1/auth/settings"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.registrationAvailable").value(false));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/admin/settings")
+                .session(admin)
+                .contentType("application/json")
+                .content("{\"registrationEnabled\":true}"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/auth/settings"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.registrationAvailable").value(true));
+    }
+
+    @Test
     void loginMeAndLogoutWorkWithSessionCookies() throws Exception {
         register("uwe", "uwe@example.test", "correct horse battery staple");
 
@@ -234,11 +264,17 @@ class AuthControllerTests {
         return matcher.group(1);
     }
 
-    private void register(String username, String email, String password) throws Exception {
-        mockMvc.perform(post("/api/v1/auth/register")
+    private MockHttpSession registerAndReturnSession(String username, String email, String password) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType("application/json")
                 .content("{\"username\":\"%s\",\"email\":\"%s\",\"password\":\"%s\"}"
                     .formatted(username, email, password)))
-            .andExpect(status().isCreated());
+            .andExpect(status().isCreated())
+            .andReturn();
+        return (MockHttpSession) result.getRequest().getSession(false);
+    }
+
+    private void register(String username, String email, String password) throws Exception {
+        registerAndReturnSession(username, email, password);
     }
 }

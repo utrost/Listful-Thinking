@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createItem, createList, cloneList, createPublicShare, createAdminUser, clearCompletedItems, deleteItem, deleteList, getAdminLists, getAdminSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, skipChoreItem, postponeChoreItem, updateAdminSettings, updateAdminUser, updateItem, updateList, claimPublicItem } from './client';
+import { createItem, createList, cloneList, createPublicShare, createAdminUser, clearCompletedItems, deleteItem, deleteList, getAdminLists, getAdminSettings, getAuthSettings, getAdminUsers, getCurrentUser, getItems, getList, getListShares, getLists, getNotifications, getPublicShare, login, logout, markNotificationRead, register, requestMagicLink, requestPasswordReset, consumeMagicLink, consumePasswordReset, revokeListShare, revokePublicShare, scrapeUrl, shareListWithUser, skipChoreItem, postponeChoreItem, updateAdminSettings, updateAdminUser, updateItem, updateList, claimPublicItem } from './client';
 
 
 function apiCalls(fetchMock: ReturnType<typeof vi.spyOn>) {
@@ -47,6 +47,15 @@ describe('auth API client', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({ status: 401, ok: false } as Response);
 
     await expect(getCurrentUser()).resolves.toBeNull();
+  });
+
+  it('reads public auth settings without requiring a session', async () => {
+    const fetchMock = mockJsonFetch({ registrationAvailable: false });
+
+    await expect(getAuthSettings()).resolves.toEqual({ registrationAvailable: false });
+    expectApiCall(fetchMock, 1, '/api/v1/auth/settings', expect.objectContaining({
+      credentials: 'include'
+    }));
   });
 
   it('posts logout with credentials included', async () => {

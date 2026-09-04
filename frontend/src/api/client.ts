@@ -37,6 +37,10 @@ export interface AdminSettings {
   registrationEnabled: boolean;
 }
 
+export interface AuthSettings {
+  registrationAvailable: boolean;
+}
+
 export interface UpdateAdminSettingsRequest {
   registrationEnabled: boolean;
 }
@@ -270,6 +274,10 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
 
 export async function getHealth(): Promise<HealthResponse> {
   return requestJson<HealthResponse>('/api/v1/health');
+}
+
+export async function getAuthSettings(): Promise<AuthSettings> {
+  return requestJson<AuthSettings>('/api/v1/auth/settings');
 }
 
 export async function register(request: RegisterRequest): Promise<AuthUser> {

@@ -48,6 +48,7 @@ Rules:
 ## Auth endpoints
 
 - `POST /api/v1/auth/register`
+- `GET /api/v1/auth/settings`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`

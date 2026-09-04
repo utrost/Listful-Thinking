@@ -33,13 +33,17 @@
       </section>
 
       <section v-else-if="!currentUser" class="panel-grid">
-        <form class="panel" @submit.prevent="handleRegister">
+        <form v-if="authSettings?.registrationAvailable ?? false" class="panel" @submit.prevent="handleRegister">
           <h2>{{ t('auth.register') }}</h2>
           <label>{{ t('auth.username') }}<input v-model="registerForm.username" required minlength="3" /></label>
           <label>{{ t('auth.email') }}<input v-model="registerForm.email" type="email" /></label>
           <label>{{ t('auth.password') }}<input v-model="registerForm.password" type="password" required minlength="8" /></label>
           <button type="submit">{{ t('auth.register') }}</button>
         </form>
+        <section v-else-if="authSettings && !authSettings.registrationAvailable" class="panel">
+          <h2>{{ t('auth.register') }}</h2>
+          <p class="muted">{{ t('auth.registrationDisabled') }}</p>
+        </section>
 
         <form class="panel" @submit.prevent="handleLogin">
           <h2>{{ t('auth.login') }}</h2>
@@ -336,6 +340,7 @@ import {
   deleteItem,
   deleteList,
   getAdminSettings,
+  getAuthSettings,
   getAdminLists,
   getAdminUsers,
   getCurrentUser,
@@ -363,6 +368,7 @@ import {
   updateAdminSettings,
   updateAdminUser,
   type AuthUser,
+  type AuthSettings,
   type AdminSettings,
   type AdminListEntry,
   type AdminUserEntry,
@@ -385,6 +391,7 @@ const items = ref<ItemEntry[]>([]);
 const hideCompletedGroceries = ref(false);
 const shares = ref<ListShareEntry[]>([]);
 const notifications = ref<NotificationEntry[]>([]);
+const authSettings = ref<AuthSettings | null>(null);
 const adminSettings = ref<AdminSettings | null>(null);
 const adminUsers = ref<AdminUserEntry[]>([]);
 const adminLists = ref<AdminListEntry[]>([]);
@@ -465,11 +472,16 @@ onMounted(async () => {
 
   try {
     currentUser.value = await getCurrentUser();
-    await loadLists();
-    await loadNotifications();
-    await maybeLoadAdminPanel();
+    if (currentUser.value) {
+      await loadLists();
+      await loadNotifications();
+      await maybeLoadAdminPanel();
+    } else {
+      await loadAuthSettings();
+    }
   } catch {
     currentUser.value = null;
+    await loadAuthSettings();
   }
 });
 
@@ -533,6 +545,15 @@ async function handleLogout() {
   adminSettings.value = null;
   adminUsers.value = [];
   adminLists.value = [];
+  await loadAuthSettings();
+}
+
+async function loadAuthSettings() {
+  try {
+    authSettings.value = await getAuthSettings();
+  } catch {
+    authSettings.value = { registrationAvailable: false };
+  }
 }
 
 async function loadLists() {

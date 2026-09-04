@@ -16,7 +16,8 @@
     "newPassword": "New password",
     "setNewPassword": "Set new password",
     "emailSent": "If that email exists, a link has been sent.",
-    "passwordUpdated": "Password updated. You can log in now."
+    "passwordUpdated": "Password updated. You can log in now.",
+    "registrationDisabled": "Self-registration is currently disabled. Ask an administrator to create your account."
   },
   "health": {
     "check": "Check backend",

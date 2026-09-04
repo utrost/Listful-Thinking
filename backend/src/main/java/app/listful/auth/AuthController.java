@@ -1,6 +1,7 @@
 package app.listful.auth;
 
 import app.listful.api.ApiError;
+import app.listful.auth.dto.AuthSettingsResponse;
 import app.listful.auth.dto.AuthUserResponse;
 import app.listful.auth.dto.EmailLinkRequest;
 import app.listful.auth.dto.LoginRequest;
@@ -90,6 +91,11 @@ public class AuthController {
     @GetMapping("/csrf")
     public Map<String, String> csrf(HttpServletRequest request) {
         return Map.of("headerName", SecurityHardeningFilter.CSRF_HEADER, "token", SecurityHardeningFilter.ensureCsrfToken(request));
+    }
+
+    @GetMapping("/settings")
+    public AuthSettingsResponse settings() {
+        return new AuthSettingsResponse(authService.registrationAvailable());
     }
 
     @GetMapping("/me")
