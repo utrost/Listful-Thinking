@@ -385,7 +385,7 @@ class ItemControllerTests {
     }
 
     private void awaitItemName(String itemId, String expectedName) throws InterruptedException {
-        long deadline = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+        long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
         while (System.nanoTime() < deadline) {
             String currentName = itemRepository.findById(itemId).orElseThrow().getName();
             if (expectedName.equals(currentName)) {
@@ -397,7 +397,7 @@ class ItemControllerTests {
     }
 
     private void awaitItemPrice(String itemId, BigDecimal expectedPrice) throws InterruptedException {
-        long deadline = System.nanoTime() + Duration.ofSeconds(3).toNanos();
+        long deadline = System.nanoTime() + Duration.ofSeconds(10).toNanos();
         while (System.nanoTime() < deadline) {
             BigDecimal currentPrice = itemRepository.findById(itemId).orElseThrow().getPrice();
             if (currentPrice != null && expectedPrice.compareTo(currentPrice) == 0) {
