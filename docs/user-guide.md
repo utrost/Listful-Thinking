@@ -127,6 +127,7 @@ Typical user actions:
 
 - Add a task.
 - Add an optional due date/time.
+- Add an optional owner/responsible label and assistants/helpers label for coordination.
 - Receive reminders for due items.
 - Mark task status as it changes.
 
@@ -134,6 +135,8 @@ Fields:
 
 - name
 - due date/time
+- owner / responsible label
+- assistants / helpers label
 - status
 
 TODO lists do not use shopping fields or recurrence rules.
@@ -178,13 +181,14 @@ Shop mode:
 
 ### CHORE
 
-Use for household work and recurring duties.
+Use for household, shared-house, care-team, club, or small-team work and recurring duties.
 
 Typical user actions:
 
 - Add a chore.
 - Add a due date/time.
 - Add a recurrence rule such as `FREQ=WEEKLY`.
+- Add who is responsible and which people, roles, bots, or automations may assist.
 - Receive reminders for due chores.
 
 Fields:
@@ -192,6 +196,8 @@ Fields:
 - name
 - due date/time
 - recurrence rule
+- owner / responsible label
+- assistants / helpers label
 - status
 
 CHORE lists do not use shopping fields.
@@ -225,6 +231,8 @@ Fields:
 - list target date
 - item name
 - item due date/time
+- owner / responsible label
+- assistants / helpers label
 - status
 
 EVENT items do not use shopping fields or recurrence rules in the MVP.
@@ -237,6 +245,13 @@ Status meaning:
 ## Working with items
 
 List owners can edit their own items after creation. The edit form shows the same type-specific fields as the create form, so grocery items expose quantity/category, wish items expose URL/image/price, and dated items expose due-date controls.
+
+For work-style item types (`TODO`, `CHORE`, and `EVENT`), the item form also shows optional responsibility labels:
+
+- **Owner / responsible**: the person, role, group, bot, or automation accountable for making sure the item happens.
+- **Assistants / helpers**: optional supporting people, roles, bots, or local automations.
+
+These labels are coordination metadata only. They do not create accounts, grant permissions, create shares, or route reminders. Access still follows the parent list owner, internal shares, and public-link mode.
 
 Use the item review controls on a selected list to keep longer lists navigable:
 
@@ -416,10 +431,11 @@ The inventory is not a private item-content browser.
 
 ### Private household chores
 
-1. User creates a `CHORE` list called `Household`.
+1. User creates a `CHORE` list called `Household` or `Shared house`.
 2. User adds `Water plants` with a due date and recurrence rule.
-3. The app reminds the user when the chore is due.
-4. The owner can share the list read-only with another local account.
+3. User adds a neutral responsibility label such as `Plant owner`, `Kitchen team`, or `Reminder bot`.
+4. The app reminds the list owner when the chore is due.
+5. The list owner can share the list read-only or contributor-enabled with another local account.
 
 ## Which list type should I choose?
 
@@ -505,6 +521,7 @@ Admins can see user and list metadata needed to operate the instance. The curren
 
 - Public guest mutation is intentionally narrow: `WISH_CLAIM` only reserves wishlist items, `SIGNUP` only reserves non-wishlist items, and `VIEW` does not allow guest changes.
 - Grocery lists support quantity/category, category grouping, done/reopen, hide-completed, and clear-completed flows, but not offline-first live collaborative shopping.
+- Responsibility fields are free-text labels only. Structured household/team members, task rotation, assistant automation, and notification routing are future slices.
 - Item review controls are client-side; very large lists may later need backend query parameters.
 - Chore recurrence supports daily, weekly, biweekly, monthly, quarterly, and annual flows; broader calendar-style recurrence remains a future extension.
 - Email features require SMTP configuration; otherwise the app stays functional with password login and in-app notifications.

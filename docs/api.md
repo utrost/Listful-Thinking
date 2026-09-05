@@ -211,7 +211,7 @@ Type validation:
 - `CHORE` items reject shopping fields and allow `dueDate` plus `recurrenceRule`.
 - Supported chore recurrence rules are `FREQ=DAILY`, `FREQ=WEEKLY`, `FREQ=BIWEEKLY`, `FREQ=MONTHLY`, `FREQ=QUARTERLY`, and `FREQ=ANNUALLY`.
 - `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
-- `ownerLabel` and `assistantLabels` are optional coordination metadata for work-style items. They may name people, roles, bots, or local automations; they do not grant access or notification rights.
+- `ownerLabel` and `assistantLabels` are optional coordination metadata for work-style items. They may name people, roles, bots, or local automations; they do not grant access or notification rights. See [Item Responsibility Metadata](domain/item-responsibility.md) for the full semantics.
 
 ### `PUT /api/v1/items/{id}`
 

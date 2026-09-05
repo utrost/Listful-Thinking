@@ -84,6 +84,8 @@ Rules:
 - `assistant_labels` records optional helpers or assistants that can support or watch the item. Assistants can be people, roles, bots, or local automations; they do not receive permissions by being named here.
 - Responsibility labels are display/coordination metadata only. Authorization still follows the parent list and internal/public share rules.
 
+See [Item Responsibility Metadata](item-responsibility.md) for the full current contract, migration, supported list types, and future structured-actor direction.
+
 ## Settings
 
 Settings are global key/value entries.

@@ -57,6 +57,17 @@ Index every authorization lookup path:
 
 All mutable state must live under `/app/data`. A self-hoster can back up the SQLite file and any future files under the same directory.
 
+For schema-changing deployments, copy the live SQLite database before replacing the container and test additive migrations on the copy when practical. The Alice Tailnet runbook documents the concrete backup and post-deploy migration verification flow.
+
+## Current item responsibility columns
+
+Migration `V12__add_item_responsibility_labels.sql` adds nullable item-level responsibility metadata:
+
+- `owner_label`
+- `assistant_labels`
+
+These fields are free-text coordination labels. They are not foreign keys to users, do not create shares, and do not affect authorization. Access remains inherited from the parent list and its internal/public sharing rules.
+
 ## SQLite caveats
 
 - Prefer explicit migrations over generated schema.
