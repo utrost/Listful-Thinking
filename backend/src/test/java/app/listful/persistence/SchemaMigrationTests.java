@@ -47,4 +47,15 @@ class SchemaMigrationTests {
             "idx_list_shares_user_id"
         );
     }
+
+    @Test
+    void flywayCreatesItemResponsibilityColumns() {
+        List<String> columns = jdbcTemplate.queryForList(
+            "select name from pragma_table_info('items')",
+            String.class
+        );
+
+        assertThat(columns).contains("owner_label", "assistant_labels");
+    }
+
 }

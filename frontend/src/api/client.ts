@@ -122,6 +122,8 @@ export interface ItemEntry {
   category: string | null;
   reservedByGuest: string | null;
   lastCompletedAt: string | null;
+  ownerLabel: string | null;
+  assistantLabels: string | null;
 }
 
 export interface ItemRequest {
@@ -135,6 +137,8 @@ export interface ItemRequest {
   recurrenceRule?: string;
   quantity?: string;
   category?: string;
+  ownerLabel?: string;
+  assistantLabels?: string;
 }
 
 export interface PostponeRequest {

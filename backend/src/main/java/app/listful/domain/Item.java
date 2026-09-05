@@ -56,6 +56,12 @@ public class Item {
     @Column(name = "last_completed_at")
     private Instant lastCompletedAt;
 
+    @Column(name = "owner_label")
+    private String ownerLabel;
+
+    @Column(name = "assistant_labels")
+    private String assistantLabels;
+
     protected Item() {
     }
 
@@ -84,6 +90,10 @@ public class Item {
     }
 
     public void update(String name, String description, String url, String imageUrl, BigDecimal price, ItemStatus status, Instant dueDate, String recurrenceRule, String quantity, String category) {
+        update(name, description, url, imageUrl, price, status, dueDate, recurrenceRule, quantity, category, null, null);
+    }
+
+    public void update(String name, String description, String url, String imageUrl, BigDecimal price, ItemStatus status, Instant dueDate, String recurrenceRule, String quantity, String category, String ownerLabel, String assistantLabels) {
         this.name = name;
         this.description = description;
         this.url = url;
@@ -94,6 +104,8 @@ public class Item {
         this.recurrenceRule = recurrenceRule;
         this.quantity = quantity;
         this.category = category;
+        this.ownerLabel = ownerLabel;
+        this.assistantLabels = assistantLabels;
     }
 
     public String getId() { return id; }
@@ -120,4 +132,6 @@ public class Item {
     public String getReservedByGuest() { return reservedByGuest; }
     public Instant getLastCompletedAt() { return lastCompletedAt; }
     public void setLastCompletedAt(Instant lastCompletedAt) { this.lastCompletedAt = lastCompletedAt; }
+    public String getOwnerLabel() { return ownerLabel; }
+    public String getAssistantLabels() { return assistantLabels; }
 }

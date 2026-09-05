@@ -67,6 +67,8 @@ Fields:
 - `quantity`
 - `category`
 - `reserved_by_guest`
+- `owner_label` optional user-visible responsible person/role/agent label
+- `assistant_labels` optional user-visible helper/assistant labels
 
 Rules:
 
@@ -78,6 +80,9 @@ Rules:
 - `DONE` is used by TODO/GROCERY/CHORE/EVENT-style work items.
 - Type-specific fields are interpreted by the parent list type.
 - `quantity` and `category` are grocery-specific.
+- `owner_label` is item-level responsibility metadata, distinct from the registered account that owns the parent list. It may name a household member, roommate, role, or automation/agent label and is intentionally instance-local free text for the MVP.
+- `assistant_labels` records optional helpers or assistants that can support or watch the item. Assistants can be people, roles, bots, or local automations; they do not receive permissions by being named here.
+- Responsibility labels are display/coordination metadata only. Authorization still follows the parent list and internal/public share rules.
 
 ## Settings
 

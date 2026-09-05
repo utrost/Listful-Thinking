@@ -15,6 +15,8 @@ public record ItemRequest(
     Instant dueDate,
     @Size(max = 255) String recurrenceRule,
     @Size(max = 255) String quantity,
-    @Size(max = 255) String category
+    @Size(max = 255) String category,
+    @Size(max = 255) String ownerLabel,
+    @Size(max = 255) String assistantLabels
 ) {
 }

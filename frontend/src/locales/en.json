@@ -46,6 +46,8 @@
     "category": "Category",
     "uncategorized": "Uncategorized",
     "dueDate": "Due date",
+    "ownerLabel": "Owner / responsible",
+    "assistantLabels": "Assistants / helpers",
     "previewUrl": "Preview URL",
     "search": "Search items",
     "searchPlaceholder": "Name, notes, category, or URL",

@@ -190,7 +190,7 @@ Creates an item on an owned list or a list shared with `CONTRIBUTE` permission.
 Request:
 
 ```json
-{"name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null}
+{"name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null,"ownerLabel":"Responsible role","assistantLabels":"Local assistant"}
 ```
 
 Response: `201 Created` with item.
@@ -209,8 +209,9 @@ Type validation:
 - `TODO` items reject shopping fields and recurrence rules, and allow `dueDate` for reminders.
 - `GROCERY` items allow `quantity` and `category`, and reject shopping fields, due dates, and recurrence rules.
 - `CHORE` items reject shopping fields and allow `dueDate` plus `recurrenceRule`.
-- Supported chore recurrence rules are `FREQ=DAILY`, `FREQ=WEEKLY`, and `FREQ=MONTHLY`.
+- Supported chore recurrence rules are `FREQ=DAILY`, `FREQ=WEEKLY`, `FREQ=BIWEEKLY`, `FREQ=MONTHLY`, `FREQ=QUARTERLY`, and `FREQ=ANNUALLY`.
 - `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
+- `ownerLabel` and `assistantLabels` are optional coordination metadata for work-style items. They may name people, roles, bots, or local automations; they do not grant access or notification rights.
 
 ### `PUT /api/v1/items/{id}`
 
@@ -243,7 +244,7 @@ Deletes `DONE` items from an owned `GROCERY` list. This is the shop-mode reset p
 Item response:
 
 ```json
-{"id":"uuid","listId":"uuid","name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null,"reservedByGuest":null,"lastCompletedAt":null}
+{"id":"uuid","listId":"uuid","name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null,"reservedByGuest":null,"lastCompletedAt":null,"ownerLabel":"Responsible role","assistantLabels":"Local assistant"}
 ```
 
 ## Internal sharing

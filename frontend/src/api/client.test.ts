@@ -172,8 +172,8 @@ describe('auth API client', () => {
     const fetchMock = mockJsonFetch({ id: 'i1', listId: 'l1', name: 'Camera strap', status: 'OPEN' });
 
     await getItems('l1');
-    await createItem('l1', { name: 'Camera strap' });
-    await updateItem('i1', { name: 'Leather strap', status: 'PURCHASED', price: 29.9 });
+    await createItem('l1', { name: 'Camera strap', ownerLabel: 'Responsible role', assistantLabels: 'Reminder bot' });
+    await updateItem('i1', { name: 'Leather strap', status: 'PURCHASED', price: 29.9, ownerLabel: 'Gift owner', assistantLabels: 'Price watcher' });
     await deleteItem('i1');
     await clearCompletedItems('l1');
     await skipChoreItem('i2');
@@ -183,11 +183,12 @@ describe('auth API client', () => {
     expectApiCall(fetchMock, 2, '/api/v1/lists/l1/items', expect.objectContaining({
       method: 'POST',
       credentials: 'include',
-      body: JSON.stringify({ name: 'Camera strap' })
+      body: JSON.stringify({ name: 'Camera strap', ownerLabel: 'Responsible role', assistantLabels: 'Reminder bot' })
     }));
     expectApiCall(fetchMock, 3, '/api/v1/items/i1', expect.objectContaining({
       method: 'PUT',
-      credentials: 'include'
+      credentials: 'include',
+      body: JSON.stringify({ name: 'Leather strap', status: 'PURCHASED', price: 29.9, ownerLabel: 'Gift owner', assistantLabels: 'Price watcher' })
     }));
     expectApiCall(fetchMock, 4, '/api/v1/items/i1', expect.objectContaining({
       method: 'DELETE',

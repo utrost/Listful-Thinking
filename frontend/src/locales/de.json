@@ -46,6 +46,8 @@
     "category": "Kategorie",
     "uncategorized": "Ohne Kategorie",
     "dueDate": "Fällig am",
+    "ownerLabel": "Owner / verantwortlich",
+    "assistantLabels": "Assistenten / Helfer",
     "previewUrl": "URL-Vorschau",
     "search": "Einträge suchen",
     "searchPlaceholder": "Name, Notizen, Kategorie oder URL",
