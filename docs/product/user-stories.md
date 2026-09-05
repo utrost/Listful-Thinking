@@ -138,6 +138,14 @@ As a wishlist owner, I want price, URL, and image fields so gift ideas are usefu
 
 As a chore-list owner, I want recurrence and due dates without shopping fields so household tasks stay clear.
 
+### Story: Item responsibility owner
+
+As a household or small-team coordinator, I want a task or chore to show who owns the responsibility so follow-up is clear without hardcoding family-specific names.
+
+### Story: Item assistants/helpers
+
+As a coordinator, I want optional assistant/helper labels on tasks and chores so human helpers, roles, bots, or local automations can be visible without granting extra permissions.
+
 ### Story: Event-specific fields
 
 As an event-list owner, I want a target date and due items so event planning has a deadline.

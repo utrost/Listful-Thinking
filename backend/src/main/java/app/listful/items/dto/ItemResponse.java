@@ -16,6 +16,8 @@ public record ItemResponse(
     String quantity,
     String category,
     String reservedByGuest,
-    String lastCompletedAt
+    String lastCompletedAt,
+    String ownerLabel,
+    String assistantLabels
 ) {
 }

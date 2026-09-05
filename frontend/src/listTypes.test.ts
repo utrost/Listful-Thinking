@@ -23,21 +23,24 @@ describe('list type UI rules', () => {
       showImageUrl: false,
       showPrice: false,
       showDueDate: true,
-      showRecurrenceRule: true
+      showRecurrenceRule: true,
+      showResponsibility: true
     });
     expect(itemFormFieldsForListType('EVENT')).toEqual({
       showUrl: false,
       showImageUrl: false,
       showPrice: false,
       showDueDate: true,
-      showRecurrenceRule: false
+      showRecurrenceRule: false,
+      showResponsibility: true
     });
     expect(itemFormFieldsForListType('TODO')).toEqual({
       showUrl: false,
       showImageUrl: false,
       showPrice: false,
       showDueDate: true,
-      showRecurrenceRule: false
+      showRecurrenceRule: false,
+      showResponsibility: true
     });
     expect(itemFormFieldsForListType('GROCERY')).toEqual({
       showUrl: false,
@@ -46,7 +49,8 @@ describe('list type UI rules', () => {
       showDueDate: false,
       showRecurrenceRule: false,
       showQuantity: true,
-      showCategory: true
+      showCategory: true,
+      showResponsibility: true
     });
   });
 });

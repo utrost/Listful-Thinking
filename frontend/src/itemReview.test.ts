@@ -16,7 +16,9 @@ const baseItem = (overrides: Partial<ItemEntry>): ItemEntry => ({
   quantity: overrides.quantity ?? null,
   category: overrides.category ?? null,
   reservedByGuest: null,
-  lastCompletedAt: null
+  lastCompletedAt: null,
+  ownerLabel: overrides.ownerLabel ?? null,
+  assistantLabels: overrides.assistantLabels ?? null
 });
 
 const state = (overrides: Partial<ItemReviewState> = {}): ItemReviewState => ({

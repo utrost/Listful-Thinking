@@ -224,6 +224,8 @@
               <input v-if="currentItemFields.showQuantity" v-model="itemForm.quantity" :placeholder="t('items.quantity')" />
               <input v-if="currentItemFields.showCategory" v-model="itemForm.category" :placeholder="t('items.category')" />
               <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
+              <input v-if="currentItemFields.showResponsibility" v-model="itemForm.ownerLabel" :placeholder="t('items.ownerLabel')" />
+              <input v-if="currentItemFields.showResponsibility" v-model="itemForm.assistantLabels" :placeholder="t('items.assistantLabels')" />
               <select v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule">
                 <option v-for="option in recurrenceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
               </select>
@@ -270,12 +272,15 @@
                       <input v-model="editItemForm.name" :placeholder="t('items.newName')" required />
                       <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :placeholder="t('items.quantity')" />
                       <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :placeholder="t('items.category')" />
+                      <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.ownerLabel" :placeholder="t('items.ownerLabel')" />
+                      <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.assistantLabels" :placeholder="t('items.assistantLabels')" />
                       <button type="submit">{{ t('items.save') }}</button>
                       <button type="button" class="secondary subtle" @click="handleCancelEditItem">{{ t('items.cancel') }}</button>
                     </form>
                     <span v-else>
                       <strong>{{ item.name }}</strong>
                       <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
+                      <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                       <small>{{ item.status }}</small>
                     </span>
                     <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
@@ -299,6 +304,8 @@
                   <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :placeholder="t('items.quantity')" />
                   <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :placeholder="t('items.category')" />
                   <input v-if="currentItemFields.showDueDate" v-model="editItemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
+                  <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.ownerLabel" :placeholder="t('items.ownerLabel')" />
+                  <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.assistantLabels" :placeholder="t('items.assistantLabels')" />
                   <select v-if="currentItemFields.showRecurrenceRule" v-model="editItemForm.recurrenceRule">
                     <option v-for="option in recurrenceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                   </select>
@@ -309,6 +316,7 @@
                   <strong>{{ item.name }}</strong>
                   <small v-if="item.description">{{ item.description }}</small>
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
+                  <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                   <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ item.lastCompletedAt }}</template></small>
                 </span>
                 <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
@@ -411,9 +419,9 @@ const listForm = reactive<{ title: string; description: string; type: ListType; 
 const editingList = ref(false);
 const pendingDeleteListId = ref<string | null>(null);
 const editListForm = reactive<{ title: string; description: string; type: ListType; targetDate: string }>({ title: '', description: '', type: 'WISH', targetDate: '' });
-const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
+const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
 const editingItemId = ref<string | null>(null);
-const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '' });
+const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
 const itemReviewForm = reactive<ItemReviewState>(defaultItemReviewState());
 const itemReviewNow = ref(new Date());
 const recurrenceOptions = computed(() => [
@@ -800,7 +808,9 @@ async function handleCreateItem() {
       dueDate: fields.showDueDate ? toIsoInstant(itemForm.dueDate) : undefined,
       recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined,
       quantity: fields.showQuantity ? itemForm.quantity || undefined : undefined,
-      category: fields.showCategory ? itemForm.category || undefined : undefined
+      category: fields.showCategory ? itemForm.category || undefined : undefined,
+      ownerLabel: itemForm.ownerLabel || undefined,
+      assistantLabels: itemForm.assistantLabels || undefined
     });
     resetItemForm();
     items.value = [created, ...items.value];
@@ -821,6 +831,8 @@ function handleStartEditItem(item: ItemEntry) {
   editItemForm.recurrenceRule = item.recurrenceRule ?? '';
   editItemForm.quantity = item.quantity ?? '';
   editItemForm.category = item.category ?? '';
+  editItemForm.ownerLabel = item.ownerLabel ?? '';
+  editItemForm.assistantLabels = item.assistantLabels ?? '';
 }
 
 function handleCancelEditItem() {
@@ -884,7 +896,9 @@ function itemPayloadFromEditForm(status: ItemEntry['status']) {
     dueDate: fields.showDueDate ? toIsoInstant(editItemForm.dueDate) : undefined,
     recurrenceRule: fields.showRecurrenceRule ? editItemForm.recurrenceRule || undefined : undefined,
     quantity: fields.showQuantity ? editItemForm.quantity || undefined : undefined,
-    category: fields.showCategory ? editItemForm.category || undefined : undefined
+    category: fields.showCategory ? editItemForm.category || undefined : undefined,
+    ownerLabel: editItemForm.ownerLabel || undefined,
+    assistantLabels: editItemForm.assistantLabels || undefined
   };
 }
 
@@ -899,7 +913,9 @@ function itemPayloadFromItem(item: ItemEntry, status: ItemEntry['status']) {
     dueDate: item.dueDate ?? undefined,
     recurrenceRule: item.recurrenceRule ?? undefined,
     quantity: item.quantity ?? undefined,
-    category: item.category ?? undefined
+    category: item.category ?? undefined,
+    ownerLabel: item.ownerLabel ?? undefined,
+    assistantLabels: item.assistantLabels ?? undefined
   };
 }
 
@@ -933,5 +949,7 @@ function resetItemForm() {
   itemForm.recurrenceRule = '';
   itemForm.quantity = '';
   itemForm.category = '';
+  itemForm.ownerLabel = '';
+  itemForm.assistantLabels = '';
 }
 </script>

@@ -44,7 +44,7 @@ public class ItemService {
         validateForListType(list, request);
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
-        item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category());
+        item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         Item saved = itemRepository.save(item);
         if (shouldEnrichWishUrlItem(list, request)) {
             itemEnrichmentService.enrichUrlItem(saved.getId(), request.url().trim());
@@ -56,7 +56,7 @@ public class ItemService {
     public ItemResponse update(User actor, String itemId, ItemRequest request) {
         Item item = requireContributableItem(actor, itemId);
         validateForListType(item.getList(), request);
-        item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category());
+        item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         advanceCompletedRecurringChore(item);
         return toResponse(item);
     }
@@ -173,6 +173,10 @@ public class ItemService {
         return value != null && !value.isBlank();
     }
 
+    private String trimmedOrNull(String value) {
+        return hasText(value) ? value.trim() : null;
+    }
+
     private void advanceCompletedRecurringChore(Item item) {
         if (item.getList().getType() == ListType.CHORE
                 && item.getStatus() == ItemStatus.DONE
@@ -234,7 +238,9 @@ public class ItemService {
             item.getQuantity(),
             item.getCategory(),
             item.getReservedByGuest(),
-            item.getLastCompletedAt() == null ? null : item.getLastCompletedAt().toString()
+            item.getLastCompletedAt() == null ? null : item.getLastCompletedAt().toString(),
+            item.getOwnerLabel(),
+            item.getAssistantLabels()
         );
     }
 }

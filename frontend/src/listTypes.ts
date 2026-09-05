@@ -13,6 +13,7 @@ export type ItemFormFields = {
   showRecurrenceRule: boolean;
   showQuantity?: boolean;
   showCategory?: boolean;
+  showResponsibility?: boolean;
 };
 
 export function listFormRulesForType(type: ListType): ListFormRules {
@@ -29,6 +30,7 @@ export function itemFormFieldsForListType(type: ListType): ItemFormFields {
     showPrice: type === 'WISH',
     showDueDate: type === 'TODO' || type === 'CHORE' || type === 'EVENT',
     showRecurrenceRule: type === 'CHORE',
+    ...(type === 'TODO' || type === 'GROCERY' || type === 'CHORE' || type === 'EVENT' ? { showResponsibility: true } : {}),
     ...(type === 'GROCERY' ? { showQuantity: true, showCategory: true } : {})
   };
 }

@@ -266,6 +266,32 @@ class ItemControllerTests {
     }
 
     @Test
+    void choreItemsCarryGenericOwnerAndAssistantLabels() throws Exception {
+        MockHttpSession owner = register("owner");
+        String choreId = createList(owner, "Household rotation", "CHORE");
+
+        MvcResult created = mockMvc.perform(post("/api/v1/lists/{listId}/items", choreId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Water plants","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY","ownerLabel":"Resident on plants","assistantLabels":"Reminder bot; backup helper"}
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.ownerLabel").value("Resident on plants"))
+            .andExpect(jsonPath("$.assistantLabels").value("Reminder bot; backup helper"))
+            .andReturn();
+        String itemId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Water plants","status":"OPEN","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY","ownerLabel":"Plant owner","assistantLabels":"Local assistant"}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.ownerLabel").value("Plant owner"))
+            .andExpect(jsonPath("$.assistantLabels").value("Local assistant"));
+    }
+
+    @Test
     void unsupportedChoreRecurrenceFailsClearly() throws Exception {
         MockHttpSession owner = register("owner");
         String choreId = createList(owner, "Chores", "CHORE");

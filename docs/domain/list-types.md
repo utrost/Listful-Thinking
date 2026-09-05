@@ -57,11 +57,14 @@ Relevant item fields:
 - `name`
 - `due_date`
 - `status`
+- optional `owner_label`
+- optional `assistant_labels`
 
 UI behavior:
 
 - Hide price, image, URL, and recurrence fields.
-- Show due date/time so the reminder scanner can notify the owner.
+- Show due date/time so the reminder scanner can notify the list owner.
+- Show owner and assistant/helper labels for coordination without assuming a concrete family structure.
 
 MVP rules:
 
@@ -111,11 +114,13 @@ Relevant item fields:
 - `due_date`
 - `recurrence_rule`
 - `status`
+- optional `owner_label`
+- optional `assistant_labels`
 
 UI behavior:
 
 - Hide price, image, and URL fields by default.
-- Show due date and recurrence.
+- Show due date, recurrence, owner, and assistant/helper labels.
 
 MVP rules:
 
@@ -148,11 +153,13 @@ Relevant item fields:
 - `name`
 - `due_date`
 - optional `status`
+- optional `owner_label`
+- optional `assistant_labels`
 
 UI behavior:
 
 - Require or strongly prompt for target date.
-- Emphasize due dates and completion state.
+- Emphasize due dates, completion state, owner, and assistant/helper labels.
 - Hide shopping fields unless the event item is explicitly a wishlist-like item in a future extension.
 
 MVP rules:
