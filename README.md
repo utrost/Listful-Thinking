@@ -4,7 +4,7 @@ Self-hosted, multi-tenant list management for wishlists, to-do lists, grocery li
 
 ## Status
 
-Current MVP/post-MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public link modes (`VIEW`, `WISH_CLAIM`, `SIGNUP`), list duplication, item search/filter/sort review controls, URL metadata scraping, date/time reminders for actionable list types, grocery quantity/category fields, admin settings/user management, security hardening, CI dependency scanning, and the single-container Docker build path. The current deployment posture is private Tailnet/self-hosted; see the current state and risk register for weak points before treating it as internet-ready.
+Current MVP/post-MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public link modes (`VIEW`, `WISH_CLAIM`, `SIGNUP`), list duplication, item search/filter/sort review controls, URL metadata scraping, date/time reminders for actionable list types, grocery quantity/category fields, item responsibility labels for work-style lists, admin settings/user management, security hardening, CI dependency scanning, and the single-container Docker build path. The current deployment posture is private Tailnet/self-hosted; see the current state and risk register for weak points before treating it as internet-ready.
 
 ## Quickstart
 
@@ -66,6 +66,7 @@ Domain and architecture:
 - [Architecture](docs/architecture.md)
 - [API](docs/api.md)
 - [Domain model](docs/domain/domain-model.md)
+- [Item responsibility metadata](docs/domain/item-responsibility.md)
 - [Permissions and sharing](docs/domain/permissions-and-sharing.md)
 - [List types](docs/domain/list-types.md)
 - [Scraping](docs/domain/scraping.md)
@@ -73,6 +74,7 @@ Domain and architecture:
 - [Security architecture](docs/architecture/security.md)
 - [Architecture decisions](docs/architecture/architecture-decision-records.md)
 - [Release verification](docs/release.md)
+- [Alice Tailnet deployment](docs/deployment/alice-tailnet.md)
 
 Planning:
 

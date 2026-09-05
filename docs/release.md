@@ -37,6 +37,7 @@ The smoke covers:
 - registration setting toggle
 - owner list creation
 - item creation
+- item responsibility labels (`ownerLabel`, `assistantLabels`) for work-style list items
 - public share token creation with explicit `WISH_CLAIM` and `SIGNUP` modes
 - unauthenticated guest wishlist claim and non-wishlist signup
 - SQLite DB file under `/app/data`
@@ -50,6 +51,19 @@ docker compose up --build
 ```
 
 Then open <http://localhost:8080>, register the first admin, and verify the workspace loads.
+
+## Alice Tailnet deployment
+
+The private Alice deployment is not driven by the repository Docker Compose file. It is a direct single-container Tailnet deployment that preserves the existing container name, Tailscale-only port binding, restart policy, and persistent SQLite volume.
+
+Use [Alice Tailnet Deployment](deployment/alice-tailnet.md) when deploying to Alice. At minimum, verify:
+
+- `listful-thinking-alice` is recreated from the merged `listful-thinking:alice` image.
+- `100.123.149.120:8080->8080/tcp` remains the only app port binding.
+- `/api/v1/health` returns `{"status":"ok"}`.
+- The root page loads and the production JS asset contains markers for the changed feature.
+- For schema releases, the live SQLite database has the expected Flyway version and columns after deployment.
+- The LAN IP does not answer on port `8080` while the service is meant to be Tailnet-only.
 
 ## Security test matrix
 
@@ -76,6 +90,7 @@ Implemented automated coverage:
 - API responses include CSP, referrer policy, and permissions policy headers.
 - Filter-level security rejects are written to `security_events`.
 - Notifications are owner-scoped.
+- Responsibility labels are preserved through item create/update/read paths and remain authorization-neutral.
 
 Known weak points and future hardening:
 

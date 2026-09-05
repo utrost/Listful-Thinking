@@ -209,12 +209,13 @@ chore_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   "$base_url/api/v1/lists")"
 chore_id="$(printf '%s' "$chore_json" | json_field id)"
 chore_item_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
-  -d '{"name":"Water plants","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=BIWEEKLY"}' \
+  -d '{"name":"Water plants","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=BIWEEKLY","ownerLabel":"Plant owner","assistantLabels":"Reminder bot"}' \
   "$base_url/api/v1/lists/$chore_id/items")"
+printf '%s' "$chore_item_json" | assert_json 'data["ownerLabel"] == "Plant owner" and data["assistantLabels"] == "Reminder bot"'
 chore_item_id="$(printf '%s' "$chore_item_json" | json_field id)"
 curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
-  -d '{"name":"Water plants","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=BIWEEKLY"}' \
-  "$base_url/api/v1/items/$chore_item_id" | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-15T09:00:00Z" and data["lastCompletedAt"]'
+  -d '{"name":"Water plants","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=BIWEEKLY","ownerLabel":"Plant owner","assistantLabels":"Reminder bot"}' \
+  "$base_url/api/v1/items/$chore_item_id" | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-15T09:00:00Z" and data["lastCompletedAt"] and data["ownerLabel"] == "Plant owner" and data["assistantLabels"] == "Reminder bot"'
 curl_json -b "$admin_cookie" -X POST "$base_url/api/v1/items/$chore_item_id/skip" \
   | assert_json 'data["status"] == "OPEN" and data["dueDate"] == "2027-01-29T09:00:00Z"'
 curl_json -b "$admin_cookie" -X POST -H 'Content-Type: application/json' -d '{"days":1}' "$base_url/api/v1/items/$chore_item_id/postpone" \
@@ -282,4 +283,4 @@ curl_json -H 'Content-Type: application/json' \
 sqlite_path="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'test -f /app/data/listful-thinking.sqlite && echo present')"
 [ "$sqlite_path" = "present" ] || { echo "SQLite database missing in /app/data" >&2; exit 1; }
 
-echo "Smoke OK: health, non-root runtime, admin/users/settings, list clone, list/item/chore recurrence/grocery clear-completed/public claim/signup, SQLite volume"
+echo "Smoke OK: health, non-root runtime, admin/users/settings, list clone, list/item responsibility/chore recurrence/grocery clear-completed/public claim/signup, SQLite volume"

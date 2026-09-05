@@ -1,6 +1,6 @@
 # Current State and Risk Register
 
-Last updated: 2026-09-04 on current `main`.
+Last updated: 2026-09-05 on current `main`.
 
 This document describes what exists in the repository and the Alice deployment today. It intentionally includes weak points and deferred hardening work so the current state is not over-sold.
 
@@ -14,6 +14,7 @@ Current production-like deployment is a private self-hosted MVP on Alice:
 - Alice container: `listful-thinking-alice` using image `listful-thinking:alice`.
 - Alice bind address is Tailnet-only: `100.123.149.120:8080->8080/tcp`.
 - Latest live health check returned `{"status":"ok"}`.
+- Deployment runbook: [Alice Tailnet Deployment](deployment/alice-tailnet.md).
 
 This is considered acceptable for a family/private Tailnet MVP. It is not yet a public-internet deployment profile.
 
@@ -36,6 +37,7 @@ Implemented and verified MVP/post-MVP features include:
 - Due-date reminders with SMTP-or-in-app fallback and owner-scoped notifications.
 - Grocery quantity/category fields and clear-completed workflow.
 - Operational chore recurrence including daily, weekly, biweekly, monthly, quarterly, and annual intervals.
+- Optional item responsibility labels (`ownerLabel`, `assistantLabels`) for work-style `TODO`, `CHORE`, and `EVENT` items. These labels are coordination metadata only; list ownership and sharing remain the authorization model.
 
 ## Current security controls
 
@@ -67,13 +69,16 @@ These are known and intentionally documented:
 6. **GitHub Actions deprecation warnings remain.** GitHub warns about Node 20/runtime deprecations for some `uses:` actions and `setup-java@v4` deprecation. This is maintenance noise, not a failing gate.
 7. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
 8. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
-9. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
-10. **Backups/encryption are outside this repository.** The app uses a persistent SQLite volume; backup retention, backup encryption, and host hardening belong to the deployment environment.
+9. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.
+10. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
+11. **Backups/encryption are outside this repository.** The app uses a persistent SQLite volume; backup retention, backup encryption, and host hardening belong to the deployment environment.
 
 ## Verification evidence
 
 Recent verified implementation gates:
 
+- GitHub Actions run `33962767179` passed on merged `main` commit `5a8c1f1` for the item responsibility implementation.
+- Alice deployment of `5a8c1f1` was verified with health, browser load, packaged asset markers, Flyway version `12`, `owner_label`/`assistant_labels` columns, item-count preservation, and Tailnet-only binding.
 - `mvn -q test` passed locally after the current hardening/public-share work.
 - `npm test && npm run build && npm audit --omit=dev` passed locally.
 - `scripts/smoke.sh` passed with health, non-root runtime, admin/users/settings, list clone, item/chore recurrence, grocery clear-completed, public claim/signup, and SQLite volume checks.
