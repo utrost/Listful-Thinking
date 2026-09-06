@@ -1,52 +1,225 @@
 # Listful Thinking
 
-Self-hosted, multi-tenant list management for wishlists, to-do lists, grocery lists, chores, and events.
+Listful Thinking is a small self-hosted web app for everyday lists that need just enough structure and sharing: wishlists, to-dos, groceries, chores, and event preparation.
 
-## Status
+It is meant for a household, family, club, care team, or small private group that wants shared lists without adopting a full productivity suite or sending list data to a hosted service. You run one container, store one SQLite database, create local users, and decide explicitly which lists stay private, which are shared with other registered users, and which get a public guest link.
 
-Current MVP/post-MVP foundation includes Spring Boot backend, Vue frontend, SQLite persistence, session auth, owner/shared list and item workflows, public link modes (`VIEW`, `WISH_CLAIM`, `SIGNUP`), list duplication, item search/filter/sort review controls, URL metadata scraping, date/time reminders for actionable list types, grocery quantity/category fields, item responsibility labels for work-style lists, admin settings/user management, security hardening, CI dependency scanning, and the single-container Docker build path. The current deployment posture is private Tailnet/self-hosted; see the current state and risk register for weak points before treating it as internet-ready.
+## What it does
 
-## Quickstart
+- **Typed lists:** create `WISH`, `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists with type-specific fields and validation.
+- **Private by default:** users see their own lists unless another user shares a list with them.
+- **Registered-user collaboration:** list owners can share read-only or contributor access with another local account. Contributors can add and update items; owners keep destructive/list-management control.
+- **Public guest sharing:** owners can create public links with modes for read-only viewing, wishlist claiming, or signup-style participation.
+- **Wishlist helpers:** paste product URLs, scrape basic metadata where allowed, track claim/purchase state, and let guests reserve gifts.
+- **Grocery/shop mode:** use quantity/category fields, group by category, hide completed items, and clear completed grocery items after shopping.
+- **Chores and events:** use due dates, simple recurrence for chores, skip/postpone actions, target dates for events, and owner/helper labels for coordination.
+- **Notifications:** reminders appear in-app and can also be sent by email when SMTP is configured.
+- **Admin bootstrap:** the first registered account becomes admin; admins can manage registration, create users, activate/deactivate users, and inspect list ownership metadata.
+
+## Current status
+
+The current implementation is an MVP/post-MVP private self-hosting foundation:
+
+- Spring Boot backend with session auth, CSRF protection, Flyway migrations, SQLite persistence, URL scraping, reminders, admin endpoints, and security hardening.
+- Vue frontend served by the backend as a single web app.
+- Single-container Docker build path with persistent `/app/data` volume.
+- Automated smoke coverage for auth, admin settings/users, typed lists, internal sharing, item workflows, public links, guest claiming/signup, responsibility labels, and container runtime checks.
+
+Deployment posture: **private Tailnet/self-hosted ready**, not yet something to expose directly to the public internet without the HTTPS/secure-cookie/hardening work tracked in [Current state and risk register](docs/current-state-and-risk-register.md).
+
+## Requirements
+
+For the recommended container path:
+
+- Docker with Docker Compose v2
+- `curl` and `python3` if you want to run the smoke script
+
+For local development without Docker:
+
+- Java 17
+- Maven 3.9+
+- Node.js/npm compatible with the frontend toolchain (`package-lock.json` is committed; the Docker build currently uses Node 24)
+
+## Quick start with Docker Compose
+
+From the repository root:
 
 ```bash
 docker compose up --build
 ```
 
+Then open:
+
+```text
+http://localhost:8080
+```
+
+On a fresh database, register the first account in the browser. That first account becomes `ADMIN`. Later self-registration is disabled by default unless you enable it through admin settings or start with `REGISTRATION_ENABLED=true`.
+
+Stop the app with:
+
+```bash
+docker compose down
+```
+
+Remove the app container and the development SQLite volume only when you deliberately want to delete local app data:
+
+```bash
+docker compose down -v
+```
+
+## Data and backups
+
+The container stores its database at:
+
+```text
+/app/data/listful-thinking.sqlite
+```
+
+The default Compose file mounts that path as the named volume:
+
+```text
+listful-data:/app/data
+```
+
+For simple manual backups, copy the SQLite file from the volume or bind-mount `./data:/app/data`. If you use a bind mount, create it so the container user can write to it:
+
+```bash
+mkdir -p data
+sudo chown 1000:1000 data
+```
+
+Then change the Compose volume entry to:
+
+```yaml
+volumes:
+  - ./data:/app/data
+```
+
+## Configuration
+
+The app is designed to start with no required external services. Useful environment variables are:
+
+```env
+SYSTEM_LANG=en
+REGISTRATION_ENABLED=false
+PUBLIC_BASE_URL=http://localhost:8080
+SESSION_COOKIE_SECURE=false
+MAIL_HOST=
+MAIL_PORT=25
+MAIL_USER=
+MAIL_PASS=
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_MAX_REQUESTS=60
+RATE_LIMIT_WINDOW_SECONDS=60
+RATE_LIMIT_MAX_BUCKETS=10000
+TRUST_FORWARDED_FOR=false
+MAX_REQUEST_BODY_BYTES=65536
+SCRAPER_ALLOW_PRIVATE_ADDRESSES=false
+CSRF_ENABLED=true
+```
+
+Common choices:
+
+- Set `PUBLIC_BASE_URL` to the URL users will open, especially when public share or email links should point at a Tailnet/reverse-proxy hostname.
+- Keep `REGISTRATION_ENABLED=false` for a private instance after the first admin account exists; use the admin panel to create more users.
+- Set `SESSION_COOKIE_SECURE=true` only when the app is served over HTTPS.
+- Leave mail variables empty if you do not need email login/reset/reminders; in-app login and notifications still work.
+
+## Build and run manually for development
+
+The Docker build performs these steps automatically. For local development, run them explicitly.
+
+Build the frontend:
+
+```bash
+cd frontend
+npm ci
+npm run build
+cd ..
+```
+
+Copy the built frontend into the backend static resources:
+
+```bash
+rm -rf backend/src/main/resources/static
+mkdir -p backend/src/main/resources/static
+cp -R frontend/dist/. backend/src/main/resources/static/
+```
+
+Run backend tests and package the application:
+
+```bash
+cd backend
+mvn test
+mvn package
+cd ..
+```
+
+Run the packaged app with a local SQLite database path:
+
+```bash
+mkdir -p data
+LISTFUL_DB_PATH="$PWD/data/listful-thinking.sqlite" \
+PUBLIC_BASE_URL="http://localhost:8080" \
+java -jar backend/target/listful-thinking-*.jar
+```
+
 Then open <http://localhost:8080>.
 
-To run an automated container smoke test instead:
+For frontend-only development, you can run Vite:
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+The production-style path is still the integrated Spring Boot app that serves the built frontend and `/api/v1` backend from the same origin.
+
+## Verify a build
+
+Run the full container smoke test:
 
 ```bash
 scripts/smoke.sh
 ```
 
-The smoke script builds with Docker Compose, starts an isolated stack, verifies non-root runtime and the SQLite volume, then exercises auth, admin settings/users, list duplication, item creation, public link modes, wishlist claiming, and non-wishlist signup.
+The smoke script builds a temporary Docker Compose stack on port `18080`, waits for `/api/v1/health`, verifies the non-root container user and SQLite volume, then exercises:
 
-The app uses one persistent volume mount:
+- first-admin bootstrap and regular user registration
+- admin settings and user management
+- typed list creation and validation
+- internal list sharing with contributor access
+- item creation/update/status workflows
+- list cloning
+- public share modes
+- wishlist guest claiming and non-wishlist signup
+- reminder-related fields and responsibility labels
+- security hardening checks such as request-size and rate-limit behavior
 
-- Docker Compose default: named volume `listful-data:/app/data`
-- Optional bind mount for manual backups: `./data:/app/data` after creating it as UID/GID `1000:1000`
+To keep the smoke stack around for debugging after a failure:
 
-SQLite database file:
-
-- `/app/data/listful-thinking.sqlite`
-
-## Environment variables
-
-Only `SYSTEM_LANG` is expected for a minimal zero-config startup, and even that has a default.
-
-```env
-SYSTEM_LANG=en
-REGISTRATION_ENABLED=false
-MAIL_HOST=
-MAIL_PORT=
-MAIL_USER=
-MAIL_PASS=
+```bash
+LISTFUL_KEEP_SMOKE=true scripts/smoke.sh
 ```
 
-## First admin bootstrap
+To change the temporary smoke port:
 
-The first registered user will become `ADMIN`. Public registration is disabled by default after bootstrap unless enabled by admin setting or `REGISTRATION_ENABLED=true`.
+```bash
+LISTFUL_SMOKE_PORT=18081 scripts/smoke.sh
+```
+
+## Repository layout
+
+```text
+backend/     Spring Boot API, auth, persistence, Flyway migrations, tests
+frontend/    Vue/Vite app, type-specific list UI, frontend tests
+scripts/     Container smoke tests and script contract checks
+docs/        Product, user/admin, domain, API, architecture, deployment, and planning docs
+Dockerfile   Multi-stage frontend + backend + JRE image build
+docker-compose.yml Local single-container runtime with a persistent SQLite volume
+```
 
 ## Documentation
 
