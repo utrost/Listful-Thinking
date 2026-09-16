@@ -72,13 +72,27 @@ public class PublicShareService {
         if (!claimsEnabled(list)) {
             throw new ValidationFailedException("Guest claiming is not enabled for this public link.");
         }
+        int claimed;
+        try {
+            claimed = itemRepository.claimOpenItem(
+                itemId,
+                list.getId(),
+                request.guestName(),
+                ItemStatus.OPEN,
+                ItemStatus.CLAIMED
+            );
+        } catch (RuntimeException ex) {
+            if (isSqliteLockContention(ex)) {
+                throw new ConflictException("item_already_claimed", "Item is already claimed.");
+            }
+            throw ex;
+        }
         Item item = itemRepository.findById(itemId)
             .filter(candidate -> candidate.getList().getId().equals(list.getId()))
             .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
-        if (item.getStatus() != ItemStatus.OPEN) {
+        if (claimed == 0) {
             throw new ConflictException("item_already_claimed", "Item is already claimed.");
         }
-        item.claimForGuest(request.guestName());
         return toPublicItemResponse(item);
     }
 
@@ -106,6 +120,16 @@ public class PublicShareService {
             return list.getType() == ListType.WISH;
         }
         return list.getPublicShareMode() == PublicShareMode.SIGNUP;
+    }
+
+    private boolean isSqliteLockContention(Throwable ex) {
+        for (Throwable current = ex; current != null; current = current.getCause()) {
+            String message = current.getMessage();
+            if (message != null && (message.contains("SQLITE_LOCKED") || message.contains("database table is locked"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String uniqueToken() {
