@@ -129,11 +129,32 @@ class InternalSharingTests {
             .andReturn();
         String itemId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
 
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Already bought\",\"status\":\"PURCHASED\"}"))
+            .andExpect(status().isNotFound());
+
         mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(contributor)
                 .contentType("application/json")
                 .content("{\"name\":\"Bring chocolate cake\",\"status\":\"OPEN\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Bring chocolate cake"));
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Bring chocolate cake\",\"status\":\"PURCHASED\"}"))
+            .andExpect(status().isNotFound());
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+                .contentType("application/json")
+                .content("{\"name\":\"Bring chocolate cake\",\"status\":\"PURCHASED\"}"))
+            .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Bring dark chocolate cake\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.status").value("PURCHASED"));
 
         mockMvc.perform(put("/api/v1/lists/{id}", listId).session(contributor)
                 .contentType("application/json")

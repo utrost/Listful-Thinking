@@ -263,7 +263,7 @@ Review controls are client-side in the current slice: they work on the items alr
 
 For `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists, use **Done** to complete an item and **Reopen** to move one-off completed items back to `OPEN`. Done items do not create due-date reminders. Recurring chores are special: **Done** records a completion and immediately advances the due date, so the item stays `OPEN` for its next occurrence.
 
-For `WISH` lists, the lifecycle stays gift-specific: guests can claim open items from a public link, and owners can use `PURCHASED` for bought items.
+For `WISH` lists, product URLs appear as **View product** links in signed-in and public views. Guests can claim open items from a public link. Owners can mark `OPEN` or `CLAIMED` wishes as `PURCHASED`, then use **Reopen wish** to return a purchased item to `OPEN`. Contributors can edit wishlist item details but cannot change wishlist status.
 
 ## Working with list metadata
 

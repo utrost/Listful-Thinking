@@ -1,5 +1,6 @@
 package app.listful.sharing;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -104,6 +105,23 @@ class PublicShareTests {
                 .content("{\"guestName\":\"Martha\"}"))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.code").value("item_already_claimed"));
+    }
+
+    @Test
+    void deactivatedSessionIsInvalidatedButPublicShareIsServedAnonymously() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Birthday");
+        String token = createPublicShare(owner, listId);
+        var user = userRepository.findByUsername("owner").orElseThrow();
+        user.setActive(false);
+        userRepository.saveAndFlush(user);
+
+        mockMvc.perform(get("/api/v1/share/{token}", token).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Birthday"));
+
+        assertThatThrownBy(() -> owner.getAttribute("SPRING_SECURITY_CONTEXT"))
+            .isInstanceOf(IllegalStateException.class);
     }
 
     @Test

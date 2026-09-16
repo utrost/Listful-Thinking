@@ -49,6 +49,7 @@
     "ownerLabel": "Owner / responsible",
     "assistantLabels": "Assistants / helpers",
     "previewUrl": "Preview URL",
+    "viewProduct": "View product",
     "search": "Search items",
     "searchPlaceholder": "Name, notes, category, or URL",
     "reviewControlsLabel": "Item review controls",
@@ -87,6 +88,8 @@
     "cancel": "Cancel",
     "done": "Done",
     "reopen": "Reopen",
+    "markPurchased": "Mark purchased",
+    "reopenWish": "Reopen wish",
     "delete": "Delete"
   },
   "sharing": {
