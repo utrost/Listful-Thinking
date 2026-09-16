@@ -43,7 +43,8 @@ UI behavior:
 MVP rules:
 
 - Guests can claim `OPEN` wishlist items.
-- Owner controls `PURCHASED` status.
+- Owners control wishlist status: `OPEN` or `CLAIMED` can be marked `PURCHASED`, and `PURCHASED` can be reopened to `OPEN`.
+- Contributors can edit wishlist item details but cannot change wishlist status.
 
 ## TODO
 

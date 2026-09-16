@@ -41,6 +41,12 @@ public class ItemService {
     @Transactional
     public ItemResponse create(User actor, String listId, ItemRequest request) {
         ListEntity list = listAccessService.requireContributableList(actor, listId);
+        if (list.getType() == ListType.WISH
+                && request.status() != null
+                && request.status() != ItemStatus.OPEN
+                && !list.getUser().getId().equals(actor.getId())) {
+            throw new ResourceNotFoundException("List not found");
+        }
         validateForListType(list, request);
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
@@ -55,8 +61,15 @@ public class ItemService {
     @Transactional
     public ItemResponse update(User actor, String itemId, ItemRequest request) {
         Item item = requireContributableItem(actor, itemId);
+        if (item.getList().getType() == ListType.WISH
+                && request.status() != null
+                && request.status() != item.getStatus()
+                && !item.getList().getUser().getId().equals(actor.getId())) {
+            throw new ResourceNotFoundException("Item not found");
+        }
         validateForListType(item.getList(), request);
-        item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
+        ItemStatus status = request.status() == null ? item.getStatus() : request.status();
+        item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), status, request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         advanceCompletedRecurringChore(item);
         return toResponse(item);
     }

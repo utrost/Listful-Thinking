@@ -49,6 +49,7 @@
     "ownerLabel": "Owner / verantwortlich",
     "assistantLabels": "Assistenten / Helfer",
     "previewUrl": "URL-Vorschau",
+    "viewProduct": "Produkt ansehen",
     "search": "Einträge suchen",
     "searchPlaceholder": "Name, Notizen, Kategorie oder URL",
     "reviewControlsLabel": "Eintragsprüfung",
@@ -87,6 +88,8 @@
     "cancel": "Abbrechen",
     "done": "Erledigt",
     "reopen": "Wieder öffnen",
+    "markPurchased": "Als gekauft markieren",
+    "reopenWish": "Wunsch wieder öffnen",
     "delete": "Löschen"
   },
   "sharing": {

@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -84,7 +86,8 @@ class AdminUsersControllerTests {
     @Test
     void adminCanDeactivateUserAndDeactivatedUserCannotLogin() throws Exception {
         MockHttpSession adminSession = register("admin", "admin@example.test", "correct horse battery staple");
-        register("martha", "martha@example.test", "another good password");
+        MockHttpSession userSession = register("martha", "martha@example.test", "another good password");
+        MockHttpSession secondUserSession = login("martha", "another good password");
         String userId = userRepository.findByUsername("martha").orElseThrow().getId();
 
         mockMvc.perform(patch("/api/v1/admin/users/{id}", userId).session(adminSession)
@@ -98,6 +101,23 @@ class AdminUsersControllerTests {
                 .contentType("application/json")
                 .content("{\"username\":\"martha\",\"password\":\"another good password\"}"))
             .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/auth/me").session(userSession))
+            .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(get("/api/v1/lists").session(secondUserSession))
+            .andExpect(status().isUnauthorized());
+
+        mockMvc.perform(patch("/api/v1/admin/users/{id}", userId).session(adminSession)
+                .contentType("application/json")
+                .content("{\"active\":true}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.active").value(true));
+
+        assertThatThrownBy(() -> userSession.getAttribute("SPRING_SECURITY_CONTEXT"))
+            .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> secondUserSession.getAttribute("SPRING_SECURITY_CONTEXT"))
+            .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -123,6 +143,15 @@ class AdminUsersControllerTests {
                 .content("{\"username\":\"%s\",\"email\":\"%s\",\"password\":\"%s\"}"
                     .formatted(username, email, password)))
             .andExpect(status().isCreated())
+            .andReturn();
+        return (MockHttpSession) result.getRequest().getSession(false);
+    }
+
+    private MockHttpSession login(String username, String password) throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                .contentType("application/json")
+                .content("{\"username\":\"%s\",\"password\":\"%s\"}".formatted(username, password)))
+            .andExpect(status().isOk())
             .andReturn();
         return (MockHttpSession) result.getRequest().getSession(false);
     }

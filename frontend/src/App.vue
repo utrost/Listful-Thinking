@@ -22,6 +22,7 @@
             <span>
               <strong>{{ item.name }}</strong>
               <small v-if="item.description">{{ item.description }}</small>
+              <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ t('items.viewProduct') }}</a>
               <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
             </span>
             <form v-if="publicList?.mode !== 'VIEW' && item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
@@ -315,12 +316,15 @@
                 <span v-else>
                   <strong>{{ item.name }}</strong>
                   <small v-if="item.description">{{ item.description }}</small>
+                  <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ t('items.viewProduct') }}</a>
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                   <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ item.lastCompletedAt }}</template></small>
                 </span>
                 <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
                 <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                <button v-if="selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status !== 'PURCHASED'" type="button" class="secondary subtle" @click="handleSetWishStatus(item, 'PURCHASED')">{{ t('items.markPurchased') }}</button>
+                <button v-else-if="selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status === 'PURCHASED'" type="button" class="secondary subtle" @click="handleSetWishStatus(item, 'OPEN')">{{ t('items.reopenWish') }}</button>
                 <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.recurrenceRule" type="button" class="secondary subtle" @click="handleSkipChore(item)">{{ t('items.skipOccurrence') }}</button>
                 <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.dueDate" type="button" class="secondary subtle" @click="handlePostponeChore(item)">{{ t('items.postpone') }}</button>
                 <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
@@ -855,6 +859,13 @@ async function handleToggleItemDone(item: ItemEntry) {
   });
 }
 
+async function handleSetWishStatus(item: ItemEntry, status: 'OPEN' | 'PURCHASED') {
+  await run(async () => {
+    const updated = await updateItem(item.id, itemPayloadFromItem(item, status));
+    items.value = items.value.map((existing) => existing.id === item.id ? updated : existing);
+  });
+}
+
 async function handleSkipChore(item: ItemEntry) {
   await run(async () => {
     const updated = await skipChoreItem(item.id);
@@ -937,6 +948,16 @@ function toLocalDateTime(isoInstant: string | null): string {
   const date = new Date(isoInstant);
   const offsetMs = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function safeProductUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:' ? parsed.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function resetItemForm() {
