@@ -16,6 +16,13 @@ import app.listful.domain.repository.ListShareRepository;
 import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,6 +132,59 @@ class PublicShareTests {
     }
 
     @Test
+    void concurrentGuestClaimsAllowExactlyOneWinner() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Birthday");
+        String itemId = createItem(owner, listId, "Book");
+        String token = createPublicShare(owner, listId);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<ClaimAttempt>> futures = new ArrayList<>();
+
+        for (String guestName : List.of("Annette", "Martha")) {
+            futures.add(executor.submit(() -> {
+                ready.countDown();
+                if (!start.await(5, TimeUnit.SECONDS)) {
+                    throw new AssertionError("Timed out waiting to start concurrent claim");
+                }
+                MvcResult result = mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/claim", token, itemId)
+                        .contentType("application/json")
+                        .content("{\"guestName\":\"%s\"}".formatted(guestName)))
+                    .andReturn();
+                return new ClaimAttempt(guestName, result.getResponse().getStatus(), result.getResponse().getContentAsString());
+            }));
+        }
+
+        if (!ready.await(5, TimeUnit.SECONDS)) {
+            throw new AssertionError("Claim workers were not ready");
+        }
+        start.countDown();
+        List<ClaimAttempt> attempts = new ArrayList<>();
+        for (Future<ClaimAttempt> future : futures) {
+            attempts.add(future.get(10, TimeUnit.SECONDS));
+        }
+        executor.shutdownNow();
+
+        List<ClaimAttempt> winners = attempts.stream()
+            .filter(attempt -> attempt.status() == 200)
+            .toList();
+        List<ClaimAttempt> losers = attempts.stream()
+            .filter(attempt -> attempt.status() == 409)
+            .toList();
+
+        org.assertj.core.api.Assertions.assertThat(winners)
+            .describedAs("claim attempts: %s", attempts)
+            .hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(losers)
+            .describedAs("claim attempts: %s", attempts)
+            .hasSize(1);
+        org.assertj.core.api.Assertions.assertThat(losers.get(0).body()).contains("item_already_claimed");
+        org.assertj.core.api.Assertions.assertThat(itemRepository.findById(itemId).orElseThrow().getReservedByGuest())
+            .isEqualTo(winners.get(0).guestName());
+    }
+
+    @Test
     void guestClaimIsOnlyAllowedForItemsBelongingToTheSharedWishList() throws Exception {
         MockHttpSession owner = register("owner");
         String sharedListId = createWishList(owner, "Shared");
@@ -231,6 +291,9 @@ class PublicShareTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.type").value("WISH"))
             .andExpect(jsonPath("$.mode").value("WISH_CLAIM"));
+    }
+
+    private record ClaimAttempt(String guestName, int status, String body) {
     }
 
     private String createPublicShare(MockHttpSession session, String listId) throws Exception {
