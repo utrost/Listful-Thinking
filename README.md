@@ -121,9 +121,10 @@ CSRF_ENABLED=true
 
 Common choices:
 
+- The default Compose file forwards all variables listed above, so `docker compose up` and `docker compose config` should show the same runtime settings you intend to run.
 - Set `PUBLIC_BASE_URL` to the URL users will open, especially when public share or email links should point at a Tailnet/reverse-proxy hostname.
 - Keep `REGISTRATION_ENABLED=false` for a private instance after the first admin account exists; use the admin panel to create more users.
-- Set `SESSION_COOKIE_SECURE=true` only when the app is served over HTTPS.
+- Set `SESSION_COOKIE_SECURE=true` only when the app is served over HTTPS. For HTTPS deployments, verify a login response sets the session cookie with the `Secure` attribute before exposing the instance beyond a private network.
 - Leave mail variables empty if you do not need email login/reset/reminders; in-app login and notifications still work.
 
 ## Build and run manually for development
