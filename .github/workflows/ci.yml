@@ -6,6 +6,15 @@ on:
   pull_request:
 
 jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Script and Compose contracts
+        run: |
+          scripts/test-smoke-contract.sh
+          scripts/test-compose-env-contract.sh
+
   backend:
     runs-on: ubuntu-latest
     steps:
