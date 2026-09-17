@@ -9,6 +9,8 @@
     "test": "vitest --run",
     "test:gui": "playwright test",
     "test:gui:smoke": "playwright test --grep @smoke",
+    "test:gui:sharing": "playwright test --grep @sharing",
+    "test:gui:mobile": "playwright test --grep @mobile --project=chromium-mobile",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
