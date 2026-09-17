@@ -1,10 +1,12 @@
 package app.listful.settings;
 
 import app.listful.api.ApiError;
+import app.listful.api.ConflictException;
 import app.listful.auth.AuthService;
 import app.listful.auth.UsernameAlreadyExistsException;
 import app.listful.domain.ListEntity;
 import app.listful.domain.User;
+import app.listful.domain.enums.UserRole;
 import app.listful.domain.repository.ListRepository;
 import app.listful.domain.repository.UserRepository;
 import app.listful.settings.dto.AdminCreateUserRequest;
@@ -63,9 +65,13 @@ public class AdminUsersController {
     }
 
     @PatchMapping("/users/{id}")
+    @Transactional
     public AdminUserResponse updateUser(@PathVariable String id, @Valid @RequestBody AdminUpdateUserRequest request) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!request.active() && user.isActive() && user.getRole() == UserRole.ADMIN && userRepository.countByRoleAndActive(UserRole.ADMIN, 1) <= 1) {
+            throw new ConflictException("last_active_admin", "At least one active admin account must remain.");
+        }
         user.setActive(request.active());
         return toResponse(userRepository.save(user));
     }

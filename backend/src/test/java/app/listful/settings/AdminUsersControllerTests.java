@@ -121,6 +121,40 @@ class AdminUsersControllerTests {
     }
 
     @Test
+    void cannotDeactivateOnlyActiveAdmin() throws Exception {
+        MockHttpSession adminSession = register("admin", "admin@example.test", "correct horse battery staple");
+        String adminId = userRepository.findByUsername("admin").orElseThrow().getId();
+
+        mockMvc.perform(patch("/api/v1/admin/users/{id}", adminId).session(adminSession)
+                .contentType("application/json")
+                .content("{\"active\":false}"))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.code").value("last_active_admin"));
+
+        mockMvc.perform(get("/api/v1/admin/users").session(adminSession))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].active").value(true));
+    }
+
+    @Test
+    void canDeactivateOneAdminWhenAnotherActiveAdminRemains() throws Exception {
+        MockHttpSession adminSession = register("admin", "admin@example.test", "correct horse battery staple");
+        mockMvc.perform(post("/api/v1/admin/users").session(adminSession)
+                .contentType("application/json")
+                .content("{\"username\":\"backup\",\"email\":\"backup@example.test\",\"password\":\"admin set password\",\"role\":\"ADMIN\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.role").value("ADMIN"));
+        String backupAdminId = userRepository.findByUsername("backup").orElseThrow().getId();
+
+        mockMvc.perform(patch("/api/v1/admin/users/{id}", backupAdminId).session(adminSession)
+                .contentType("application/json")
+                .content("{\"active\":false}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.username").value("backup"))
+            .andExpect(jsonPath("$.active").value(false));
+    }
+
+    @Test
     void adminCanSeeAllListsWithOwnerMetadata() throws Exception {
         MockHttpSession adminSession = register("admin", "admin@example.test", "correct horse battery staple");
         MockHttpSession userSession = register("martha", "martha@example.test", "another good password");

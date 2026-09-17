@@ -11,6 +11,9 @@ describe('admin workspace shell', () => {
     expect(appVue).toContain('handleToggleRegistration');
     expect(appVue).toContain('handleAdminCreateUser');
     expect(appVue).toContain('handleToggleUserActive');
+    expect(appVue).toContain('cannotDeactivateAdminUser');
+    expect(appVue).toContain(':disabled="cannotDeactivateAdminUser(user)"');
+    expect(appVue).toContain("t('admin.lastActiveAdminHint')");
     expect(appVue).toContain('adminUsers');
     expect(appVue).toContain('adminLists');
   });
