@@ -6,9 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import app.listful.domain.repository.SettingRepository;
+import app.listful.domain.repository.SecurityEventRepository;
 import app.listful.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,8 +39,12 @@ class AdminUsersControllerTests {
     @Autowired
     private SettingRepository settingRepository;
 
+    @Autowired
+    private SecurityEventRepository securityEventRepository;
+
     @BeforeEach
     void cleanDatabase() {
+        securityEventRepository.deleteAll();
         userRepository.deleteAll();
         settingRepository.deleteAll();
     }
@@ -81,6 +87,15 @@ class AdminUsersControllerTests {
             .andExpect(jsonPath("$.role").value("USER"))
             .andExpect(jsonPath("$.active").value(true))
             .andExpect(jsonPath("$.passwordHash").doesNotExist());
+
+        assertThat(securityEventRepository.findByType("admin_user_created"))
+            .singleElement()
+            .satisfies(event -> {
+                assertThat(event.getActorId()).isEqualTo(userRepository.findByUsername("admin").orElseThrow().getId());
+                assertThat(event.getPath()).isEqualTo("/api/v1/admin/users");
+                assertThat(event.getDetails()).contains("targetUsername=bob", "targetRole=USER");
+                assertThat(event.getDetails()).doesNotContain("admin set password");
+            });
     }
 
     @Test
@@ -113,6 +128,14 @@ class AdminUsersControllerTests {
                 .content("{\"active\":true}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.active").value(true));
+
+        assertThat(securityEventRepository.findByType("admin_user_active_changed"))
+            .hasSize(2)
+            .allSatisfy(event -> {
+                assertThat(event.getActorId()).isEqualTo(userRepository.findByUsername("admin").orElseThrow().getId());
+                assertThat(event.getPath()).isEqualTo("/api/v1/admin/users/%s".formatted(userId));
+                assertThat(event.getDetails()).contains("targetUsername=martha");
+            });
 
         assertThatThrownBy(() -> userSession.getAttribute("SPRING_SECURITY_CONTEXT"))
             .isInstanceOf(IllegalStateException.class);

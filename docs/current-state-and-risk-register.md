@@ -1,6 +1,6 @@
 # Current State and Risk Register
 
-Last updated: 2026-09-05 on current `main`.
+Last updated: 2026-09-17 on current `main`.
 
 This document describes what exists in the repository and the Alice deployment today. It intentionally includes weak points and deferred hardening work so the current state is not over-sold.
 
@@ -54,6 +54,7 @@ Implemented controls:
 - Security headers are emitted: CSP, Referrer-Policy, Permissions-Policy, plus HSTS only on secure requests.
 - Scraper accepts only HTTP(S), rejects private/local/link-local/metadata/multicast/CGNAT targets by default, connects to the validated resolved address, disables automatic redirects, revalidates redirects, applies timeouts, and caps downloaded HTML at 1 MiB.
 - Filter-level rejects such as body-limit, rate-limit, and CSRF failures are recorded in `security_events` and logged as `security_event` lines.
+- Structured audit rows are recorded for admin user creation, admin user activation/deactivation, admin registration-setting changes, and public-share creation/revocation. Audit details intentionally avoid passwords and raw public-share tokens.
 - Public DTOs exclude password hashes, owner emails, internal user IDs, internal shares, settings, admin flags, and notification data.
 - CI includes backend tests, frontend audit/test/build, and OSV dependency scanning for backend/frontend lockfiles.
 
@@ -63,19 +64,20 @@ These are known and intentionally documented:
 
 1. **No public-internet TLS profile yet.** Alice currently serves Tailnet HTTP. Public hosting needs HTTPS/TLS termination, HSTS in real browser traffic, and `SESSION_COOKIE_SECURE=true`.
 2. **CSRF protection is browser-metadata-aware.** Browser-style unsafe authenticated calls require a token, but non-browser clients without `Origin`/`Sec-Fetch-Site` are allowed for compatibility. This depends on `SameSite=Strict` cookies for browser protection.
-3. **Audit logging is partial.** Filter-level rejects are logged and persisted. Admin changes, auth lifecycle events, public-share generation/revocation, and user management lifecycle events are not yet all captured as structured audit rows.
+3. **Audit logging is still partial.** Filter-level rejects, selected admin/user-management changes, and public-share generation/revocation are logged and persisted as structured rows. Auth lifecycle events such as login success/failure, logout, magic-link use, and password-reset use are not yet all captured as structured audit rows.
 4. **No release signing/SBOM publication.** CI scans dependencies with OSV, but published images/JARs are not signed and no SBOM artifact is published.
-5. **GitHub Actions deprecation warnings remain.** GitHub warns about Node 20/runtime deprecations for some `uses:` actions and `setup-java@v4` deprecation. This is maintenance noise, not a failing gate.
-6. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
-7. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
-8. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.
-9. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
-10. **Backups/encryption are outside this repository.** The app uses a persistent SQLite volume; backup retention, backup encryption, and host hardening belong to the deployment environment.
+5. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
+6. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
+7. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.
+8. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
+9. **Backups/encryption are outside this repository.** The app uses a persistent SQLite volume; backup retention, backup encryption, and host hardening belong to the deployment environment.
 
 ## Verification evidence
 
 Recent verified implementation gates:
 
+- GitHub Actions run `35258643915` passed on merged `main` commit `f8920ab`, and GitHub Actions Node 20/runtime deprecation warnings were removed by upgrading official action majors.
+- Focused backend audit tests passed locally with `mvn -q -Dtest=AdminUsersControllerTests,AdminSettingsControllerTests,PublicShareTests test`.
 - GitHub Actions run `33962767179` passed on merged `main` commit `5a8c1f1` for the item responsibility implementation.
 - Alice deployment of `5a8c1f1` was verified with health, browser load, packaged asset markers, Flyway version `12`, `owner_label`/`assistant_labels` columns, item-count preservation, and Tailnet-only binding.
 - `mvn -q test` passed locally after the current hardening/public-share work.
@@ -96,7 +98,6 @@ Docs-only verification for this update:
 If the app moves beyond private Tailnet use, prioritize:
 
 1. Add an HTTPS reverse-proxy deployment profile and set `SESSION_COOKIE_SECURE=true`; verify HSTS on the live HTTPS endpoint.
-2. Extend structured audit logging to admin/user/auth/public-share lifecycle events.
-3. Upgrade deprecated GitHub Actions and verify warnings disappear.
-4. Publish SBOM and sign release images/artifacts.
-5. Add a small admin/security view or CLI for reviewing `security_events` without raw DB access.
+2. Extend structured audit logging to the remaining auth lifecycle events.
+3. Publish SBOM and sign release images/artifacts.
+4. Add a small admin/security view or CLI for reviewing `security_events` without raw DB access.
