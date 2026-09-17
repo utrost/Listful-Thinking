@@ -2,11 +2,13 @@ package app.listful.sharing;
 
 import app.listful.domain.User;
 import app.listful.lists.CurrentUser;
+import app.listful.security.SecurityAuditService;
 import app.listful.sharing.dto.GuestClaimRequest;
 import app.listful.sharing.dto.PublicItemResponse;
 import app.listful.sharing.dto.PublicListResponse;
 import app.listful.sharing.dto.PublicShareRequest;
 import app.listful.sharing.dto.PublicShareTokenResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,24 +25,44 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class PublicShareController {
     private final PublicShareService publicShareService;
+    private final SecurityAuditService auditService;
 
-    public PublicShareController(PublicShareService publicShareService) {
+    public PublicShareController(PublicShareService publicShareService, SecurityAuditService auditService) {
         this.publicShareService = publicShareService;
+        this.auditService = auditService;
     }
 
     @PostMapping("/lists/{listId}/public-share")
     public ResponseEntity<PublicShareTokenResponse> createToken(
         @PathVariable String listId,
         @RequestBody(required = false) PublicShareRequest request,
-        Authentication authentication
+        Authentication authentication,
+        HttpServletRequest httpRequest
     ) {
+        User actor = currentUser(authentication);
+        PublicShareTokenResponse response = publicShareService.createToken(actor, listId, request);
+        auditService.record(
+            "public_share_created",
+            actor.getId(),
+            httpRequest.getRemoteAddr(),
+            httpRequest.getRequestURI(),
+            "listId=%s mode=%s".formatted(listId, response.mode())
+        );
         return ResponseEntity.status(HttpStatus.CREATED)
-            .body(publicShareService.createToken(currentUser(authentication), listId, request));
+            .body(response);
     }
 
     @DeleteMapping("/lists/{listId}/public-share")
-    public ResponseEntity<Void> revokeToken(@PathVariable String listId, Authentication authentication) {
-        publicShareService.revokeToken(currentUser(authentication), listId);
+    public ResponseEntity<Void> revokeToken(@PathVariable String listId, Authentication authentication, HttpServletRequest httpRequest) {
+        User actor = currentUser(authentication);
+        publicShareService.revokeToken(actor, listId);
+        auditService.record(
+            "public_share_revoked",
+            actor.getId(),
+            httpRequest.getRemoteAddr(),
+            httpRequest.getRequestURI(),
+            "listId=%s".formatted(listId)
+        );
         return ResponseEntity.noContent().build();
     }
 

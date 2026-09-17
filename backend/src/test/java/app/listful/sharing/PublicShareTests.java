@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
 import app.listful.domain.repository.ListShareRepository;
+import app.listful.domain.repository.SecurityEventRepository;
 import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
@@ -49,10 +50,12 @@ class PublicShareTests {
     @Autowired ListRepository listRepository;
     @Autowired UserRepository userRepository;
     @Autowired SettingRepository settingRepository;
+    @Autowired SecurityEventRepository securityEventRepository;
     @Autowired JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void cleanDatabase() {
+        securityEventRepository.deleteAll();
         itemRepository.deleteAll();
         listShareRepository.deleteAll();
         listRepository.deleteAll();
@@ -79,6 +82,14 @@ class PublicShareTests {
             .startsWith("sha256:")
             .doesNotContain(token)
             .isNotEqualTo(token);
+        assertThat(securityEventRepository.findByType("public_share_created"))
+            .singleElement()
+            .satisfies(event -> {
+                assertThat(event.getActorId()).isEqualTo(userRepository.findByUsername("owner").orElseThrow().getId());
+                assertThat(event.getPath()).isEqualTo("/api/v1/lists/%s/public-share".formatted(listId));
+                assertThat(event.getDetails()).contains("listId=%s".formatted(listId), "mode=WISH_CLAIM");
+                assertThat(event.getDetails()).doesNotContain(token);
+            });
 
         mockMvc.perform(get("/api/v1/share/{token}", token))
             .andExpect(status().isOk())
@@ -86,6 +97,15 @@ class PublicShareTests {
 
         mockMvc.perform(delete("/api/v1/lists/{listId}/public-share", listId).session(owner))
             .andExpect(status().isNoContent());
+
+        assertThat(securityEventRepository.findByType("public_share_revoked"))
+            .singleElement()
+            .satisfies(event -> {
+                assertThat(event.getActorId()).isEqualTo(userRepository.findByUsername("owner").orElseThrow().getId());
+                assertThat(event.getPath()).isEqualTo("/api/v1/lists/%s/public-share".formatted(listId));
+                assertThat(event.getDetails()).contains("listId=%s".formatted(listId));
+                assertThat(event.getDetails()).doesNotContain(token);
+            });
 
         mockMvc.perform(get("/api/v1/share/{token}", token))
             .andExpect(status().isNotFound());

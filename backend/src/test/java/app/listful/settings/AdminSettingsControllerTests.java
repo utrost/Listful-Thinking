@@ -1,5 +1,6 @@
 package app.listful.settings;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -7,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.listful.domain.repository.SettingRepository;
+import app.listful.domain.repository.SecurityEventRepository;
 import app.listful.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,8 +37,12 @@ class AdminSettingsControllerTests {
     @Autowired
     private SettingRepository settingRepository;
 
+    @Autowired
+    private SecurityEventRepository securityEventRepository;
+
     @BeforeEach
     void cleanDatabase() {
+        securityEventRepository.deleteAll();
         userRepository.deleteAll();
         settingRepository.deleteAll();
     }
@@ -56,6 +62,14 @@ class AdminSettingsControllerTests {
                     """))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.registrationEnabled").value(true));
+
+        assertThat(securityEventRepository.findByType("admin_registration_setting_changed"))
+            .singleElement()
+            .satisfies(event -> {
+                assertThat(event.getActorId()).isEqualTo(userRepository.findByUsername("admin").orElseThrow().getId());
+                assertThat(event.getPath()).isEqualTo("/api/v1/admin/settings");
+                assertThat(event.getDetails()).contains("registrationEnabled=true");
+            });
 
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType("application/json")

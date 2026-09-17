@@ -6,8 +6,6 @@ import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class SecurityAuditService {
@@ -18,7 +16,6 @@ public class SecurityAuditService {
         this.repository = repository;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void record(String type, String actorId, String clientIp, String path, String details) {
         String safeDetails = details == null ? null : details.substring(0, Math.min(details.length(), 2000));
         try {
