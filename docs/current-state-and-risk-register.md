@@ -62,16 +62,15 @@ Implemented controls:
 These are known and intentionally documented:
 
 1. **No public-internet TLS profile yet.** Alice currently serves Tailnet HTTP. Public hosting needs HTTPS/TLS termination, HSTS in real browser traffic, and `SESSION_COOKIE_SECURE=true`.
-2. **Public share tokens are bearer tokens stored server-side as raw token values.** They are high-entropy and revocable, but hashing public share tokens at rest remains a future hardening step.
-3. **CSRF protection is browser-metadata-aware.** Browser-style unsafe authenticated calls require a token, but non-browser clients without `Origin`/`Sec-Fetch-Site` are allowed for compatibility. This depends on `SameSite=Strict` cookies for browser protection.
-4. **Audit logging is partial.** Filter-level rejects are logged and persisted. Admin changes, auth lifecycle events, public-share generation/revocation, and user management lifecycle events are not yet all captured as structured audit rows.
-5. **No release signing/SBOM publication.** CI scans dependencies with OSV, but published images/JARs are not signed and no SBOM artifact is published.
-6. **GitHub Actions deprecation warnings remain.** GitHub warns about Node 20/runtime deprecations for some `uses:` actions and `setup-java@v4` deprecation. This is maintenance noise, not a failing gate.
-7. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
-8. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
-9. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.
-10. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
-11. **Backups/encryption are outside this repository.** The app uses a persistent SQLite volume; backup retention, backup encryption, and host hardening belong to the deployment environment.
+2. **CSRF protection is browser-metadata-aware.** Browser-style unsafe authenticated calls require a token, but non-browser clients without `Origin`/`Sec-Fetch-Site` are allowed for compatibility. This depends on `SameSite=Strict` cookies for browser protection.
+3. **Audit logging is partial.** Filter-level rejects are logged and persisted. Admin changes, auth lifecycle events, public-share generation/revocation, and user management lifecycle events are not yet all captured as structured audit rows.
+4. **No release signing/SBOM publication.** CI scans dependencies with OSV, but published images/JARs are not signed and no SBOM artifact is published.
+5. **GitHub Actions deprecation warnings remain.** GitHub warns about Node 20/runtime deprecations for some `uses:` actions and `setup-java@v4` deprecation. This is maintenance noise, not a failing gate.
+6. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
+7. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
+8. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.
+9. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
+10. **Backups/encryption are outside this repository.** The app uses a persistent SQLite volume; backup retention, backup encryption, and host hardening belong to the deployment environment.
 
 ## Verification evidence
 
@@ -97,8 +96,7 @@ Docs-only verification for this update:
 If the app moves beyond private Tailnet use, prioritize:
 
 1. Add an HTTPS reverse-proxy deployment profile and set `SESSION_COOKIE_SECURE=true`; verify HSTS on the live HTTPS endpoint.
-2. Hash public share tokens at rest and migrate existing live tokens safely.
-3. Extend structured audit logging to admin/user/auth/public-share lifecycle events.
-4. Upgrade deprecated GitHub Actions and verify warnings disappear.
-5. Publish SBOM and sign release images/artifacts.
-6. Add a small admin/security view or CLI for reviewing `security_events` without raw DB access.
+2. Extend structured audit logging to admin/user/auth/public-share lifecycle events.
+3. Upgrade deprecated GitHub Actions and verify warnings disappear.
+4. Publish SBOM and sign release images/artifacts.
+5. Add a small admin/security view or CLI for reviewing `security_events` without raw DB access.

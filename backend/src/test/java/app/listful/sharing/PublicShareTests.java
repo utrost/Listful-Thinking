@@ -1,5 +1,6 @@
 package app.listful.sharing;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -30,6 +31,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -47,6 +49,7 @@ class PublicShareTests {
     @Autowired ListRepository listRepository;
     @Autowired UserRepository userRepository;
     @Autowired SettingRepository settingRepository;
+    @Autowired JdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void cleanDatabase() {
@@ -71,6 +74,11 @@ class PublicShareTests {
             .andReturn();
 
         String token = JsonPath.read(created.getResponse().getContentAsString(), "$.shareToken");
+        String storedToken = storedShareTokenFor(listId);
+        assertThat(storedToken)
+            .startsWith("sha256:")
+            .doesNotContain(token)
+            .isNotEqualTo(token);
 
         mockMvc.perform(get("/api/v1/share/{token}", token))
             .andExpect(status().isOk())
@@ -293,6 +301,27 @@ class PublicShareTests {
             .andExpect(jsonPath("$.mode").value("WISH_CLAIM"));
     }
 
+    @Test
+    void legacyRawShareTokensAreAcceptedOnceAndMigratedToHash() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Legacy public link");
+        jdbcTemplate.update(
+            "update lists set share_token = ?, is_public = 1, public_share_mode = 'WISH_CLAIM' where id = ?",
+            "legacy-public-token",
+            listId
+        );
+
+        mockMvc.perform(get("/api/v1/share/{token}", "legacy-public-token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Legacy public link"));
+
+        String storedToken = storedShareTokenFor(listId);
+        assertThat(storedToken)
+            .startsWith("sha256:")
+            .doesNotContain("legacy-public-token")
+            .isNotEqualTo("legacy-public-token");
+    }
+
     private record ClaimAttempt(String guestName, int status, String body) {
     }
 
@@ -310,6 +339,10 @@ class PublicShareTests {
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.shareToken");
+    }
+
+    private String storedShareTokenFor(String listId) {
+        return jdbcTemplate.queryForObject("select share_token from lists where id = ?", String.class, listId);
     }
 
     private String createWishList(MockHttpSession session, String title) throws Exception {

@@ -12,6 +12,7 @@ import app.listful.domain.enums.PublicShareMode;
 import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
 import app.listful.lists.ListAccessService;
+import app.listful.security.TokenHashing;
 import app.listful.sharing.dto.GuestClaimRequest;
 import app.listful.sharing.dto.PublicItemResponse;
 import app.listful.sharing.dto.PublicListResponse;
@@ -40,8 +41,8 @@ public class PublicShareService {
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
         PublicShareMode mode = request == null || request.mode() == null ? defaultMode(list) : request.mode();
         validateMode(list, mode);
-        String token = list.getShareToken() == null ? uniqueToken() : list.getShareToken();
-        list.enablePublicShare(token, mode);
+        String token = uniqueToken();
+        list.enablePublicShare(TokenHashing.sha256(token), token, mode);
         return toTokenResponse(list);
     }
 
@@ -51,7 +52,7 @@ public class PublicShareService {
         list.disablePublicShare();
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public PublicListResponse getPublicList(String token) {
         ListEntity list = publicListByToken(token);
         return new PublicListResponse(
@@ -97,9 +98,20 @@ public class PublicShareService {
     }
 
     private ListEntity publicListByToken(String token) {
-        return listRepository.findByShareToken(token)
+        String tokenHash = TokenHashing.sha256(token);
+        return listRepository.findByShareTokenHash(tokenHash)
+            .or(() -> migrateLegacyRawToken(token, tokenHash))
             .filter(ListEntity::isPublicList)
             .orElseThrow(() -> new ResourceNotFoundException("Shared list not found"));
+    }
+
+    private java.util.Optional<ListEntity> migrateLegacyRawToken(String token, String tokenHash) {
+        return listRepository.findByShareTokenHash(token)
+            .filter(ListEntity::isPublicList)
+            .map(list -> {
+                list.migratePublicShareTokenHash(tokenHash);
+                return list;
+            });
     }
 
     private PublicShareMode defaultMode(ListEntity list) {
@@ -138,7 +150,7 @@ public class PublicShareService {
             byte[] bytes = new byte[32];
             secureRandom.nextBytes(bytes);
             token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        } while (listRepository.findByShareToken(token).isPresent());
+        } while (listRepository.findByShareTokenHash(TokenHashing.sha256(token)).isPresent());
         return token;
     }
 

@@ -58,7 +58,7 @@ class RepositoryPersistenceTests {
 
         assertThat(userRepository.findByUsername("uwe")).contains(owner);
         assertThat(listRepository.findByUserId(owner.getId())).containsExactly(list);
-        assertThat(listRepository.findByShareToken("abc123")).contains(list);
+        assertThat(listRepository.findByShareTokenHash("abc123")).contains(list);
         assertThat(itemRepository.findByListId(list.getId())).containsExactly(item);
         assertThat(settingRepository.findById("registration.enabled")).contains(setting);
         assertThat(listShareRepository.findByUserId(sharedUser.getId())).containsExactly(share);

@@ -16,5 +16,5 @@ public interface ListRepository extends JpaRepository<ListEntity, String> {
         order by l.createdAt desc
         """)
     List<ListEntity> findAccessibleByUserId(@Param("userId") String userId);
-    Optional<ListEntity> findByShareToken(String shareToken);
+    Optional<ListEntity> findByShareTokenHash(String shareTokenHash);
 }

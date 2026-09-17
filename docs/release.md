@@ -95,7 +95,7 @@ Implemented automated coverage:
 Known weak points and future hardening:
 
 - Alice/private deployment is Tailnet HTTP; public internet deployment needs HTTPS/TLS termination, verified HSTS, and `SESSION_COOKIE_SECURE=true`.
-- Public share tokens are high-entropy bearer secrets but still stored raw in SQLite; hash them at rest in a future migration.
+- Public share token hashes are stored at rest; raw bearer tokens are returned only at generation time and legacy raw rows are migrated to hashes.
 - Structured audit rows currently cover filter-level rejects; extend to admin/auth/user/public-share lifecycle events.
 - CI has OSV scanning, but release images/JARs are not signed and no SBOM artifact is published.
 - Current GitHub Actions are green but emit action-runtime deprecation warnings; upgrade action majors as maintenance work.
