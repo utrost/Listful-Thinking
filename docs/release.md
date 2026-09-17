@@ -9,7 +9,7 @@ Run from the repository root:
 ```bash
 cd backend && mvn test
 cd ../frontend && npm test && npm run build
-cd .. && scripts/test-smoke-contract.sh
+cd .. && scripts/test-smoke-contract.sh && scripts/test-compose-env-contract.sh && scripts/test-docs-contract.sh
 ```
 
 ## Container smoke
@@ -56,7 +56,8 @@ Then open <http://localhost:8080>, register the first admin, and verify the work
 
 The private Alice deployment is not driven by the repository Docker Compose file. It is a direct single-container Tailnet deployment that preserves the existing container name, Tailscale-only port binding, restart policy, and persistent SQLite volume.
 
-Use [Alice Tailnet Deployment](deployment/alice-tailnet.md) when deploying to Alice. At minimum, verify:
+Use [Alice Tailnet Deployment](deployment/alice-tailnet.md) when deploying to Alice.
+Use [Self-Hosting Handbook](deployment/self-hosting-handbook.md) for general private/Tailnet installs and public HTTPS reverse-proxy deployments. At minimum, verify:
 
 - `listful-thinking-alice` is recreated from the merged `listful-thinking:alice` image.
 - `100.123.149.120:8080->8080/tcp` remains the only app port binding.
