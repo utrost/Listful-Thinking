@@ -25,7 +25,7 @@ The current implementation is an MVP/post-MVP private self-hosting foundation:
 - Single-container Docker build path with persistent `/app/data` volume.
 - Automated smoke coverage for auth, admin settings/users, typed lists, internal sharing, item workflows, public links, guest claiming/signup, responsibility labels, and container runtime checks.
 
-Deployment posture: **private Tailnet/self-hosted ready**, not yet something to expose directly to the public internet without the HTTPS/secure-cookie/hardening work tracked in [Current state and risk register](docs/current-state-and-risk-register.md).
+Deployment posture: **private Tailnet/self-hosted ready** with a general [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md). Public internet deployments must use HTTPS, secure cookies, and reverse-proxy hardening as described in that handbook and tracked in [Current state and risk register](docs/current-state-and-risk-register.md).
 
 ## Requirements
 
@@ -248,6 +248,7 @@ Domain and architecture:
 - [Security architecture](docs/architecture/security.md)
 - [Architecture decisions](docs/architecture/architecture-decision-records.md)
 - [Release verification](docs/release.md)
+- [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md)
 - [Alice Tailnet deployment](docs/deployment/alice-tailnet.md)
 
 Planning:
