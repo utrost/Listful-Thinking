@@ -391,6 +391,22 @@ A deactivated user:
 
 Existing data is preserved. Admins can reactivate the account later.
 
+The app blocks deactivating the last active `ADMIN`. Keep at least one backup admin active before deactivating an admin account.
+
+If a database was locked out before this guard existed, stop the app, back up the SQLite file first, then inspect active admins with:
+
+```bash
+sqlite3 /app/data/listful-thinking.sqlite "select id, username, role, active from users where role='ADMIN';"
+```
+
+Reactivate one known admin only after confirming the backup exists:
+
+```bash
+sqlite3 /app/data/listful-thinking.sqlite "update users set active=1 where username='admin';"
+```
+
+Start the app again, log in as that admin, and create or reactivate a second admin from the Admin panel.
+
 ### List inventory
 
 Admins can see a list inventory across the instance.

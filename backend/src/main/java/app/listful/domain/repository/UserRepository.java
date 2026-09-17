@@ -1,6 +1,7 @@
 package app.listful.domain.repository;
 
 import app.listful.domain.User;
+import app.listful.domain.enums.UserRole;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,4 +14,6 @@ public interface UserRepository extends JpaRepository<User, String> {
     boolean existsByUsername(String username);
 
     List<User> findAllByOrderByCreatedAtAsc();
+
+    long countByRoleAndActive(UserRole role, int active);
 }

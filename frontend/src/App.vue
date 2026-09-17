@@ -106,7 +106,8 @@
             <li v-for="user in adminUsers" :key="user.id">
               <span><strong>{{ user.username }}</strong> · {{ user.role }} · {{ user.active ? t('admin.active') : t('admin.inactive') }}</span>
               <small>{{ user.email ?? t('admin.noEmail') }}</small>
-              <button type="button" class="secondary subtle" @click="handleToggleUserActive(user.id, !user.active)">{{ user.active ? t('admin.deactivate') : t('admin.activate') }}</button>
+              <button type="button" class="secondary subtle" :disabled="cannotDeactivateAdminUser(user)" @click="handleToggleUserActive(user.id, !user.active)">{{ user.active ? t('admin.deactivate') : t('admin.activate') }}</button>
+              <small v-if="cannotDeactivateAdminUser(user)" class="muted">{{ t('admin.lastActiveAdminHint') }}</small>
             </li>
           </ul>
           <h4>{{ t('admin.lists') }}</h4>
@@ -456,7 +457,12 @@ const groceryGroups = computed(() => {
   }
   return [...grouped.entries()].sort(([left], [right]) => left.localeCompare(right));
 });
+const activeAdminCount = computed(() => adminUsers.value.filter((user) => user.role === 'ADMIN' && user.active).length);
 let itemReviewNowInterval: number | undefined;
+
+function cannotDeactivateAdminUser(user: AdminUserEntry) {
+  return user.role === 'ADMIN' && user.active && activeAdminCount.value <= 1;
+}
 
 function updateItemReviewNow() {
   itemReviewNow.value = new Date();

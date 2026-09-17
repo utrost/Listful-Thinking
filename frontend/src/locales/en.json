@@ -125,6 +125,7 @@
     "inactive": "inactive",
     "activate": "Activate",
     "deactivate": "Deactivate",
+    "lastActiveAdminHint": "At least one active admin must remain.",
     "lists": "All lists"
   }
 }
