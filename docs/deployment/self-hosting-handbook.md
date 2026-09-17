@@ -62,34 +62,31 @@ You must also terminate HTTPS in a reverse proxy such as Caddy, nginx, Traefik, 
 
 If you are unsure, leave `TRUST_FORWARDED_FOR=false`. That is safer than trusting spoofable client-provided headers.
 
-## Minimal Docker Compose deployment
+## Local quickstart versus production profile
 
-Create an `.env` file next to `docker-compose.yml`:
-
-```env
-SYSTEM_LANG=en
-REGISTRATION_ENABLED=false
-PUBLIC_BASE_URL=http://localhost:8080
-SESSION_COOKIE_SECURE=false
-MAIL_HOST=
-MAIL_PORT=25
-MAIL_USER=
-MAIL_PASS=
-RATE_LIMIT_ENABLED=true
-RATE_LIMIT_MAX_REQUESTS=60
-RATE_LIMIT_WINDOW_SECONDS=60
-RATE_LIMIT_MAX_BUCKETS=10000
-TRUST_FORWARDED_FOR=false
-MAX_REQUEST_BODY_BYTES=65536
-SCRAPER_ALLOW_PRIVATE_ADDRESSES=false
-CSRF_ENABLED=true
-```
-
-Start the app:
+Use the default `docker-compose.yml` for a quick local first look:
 
 ```bash
-docker compose up --build -d
+docker compose up --build
 ```
+
+Use the production profile for a longer-lived self-hosted instance:
+
+```bash
+cp .env.example .env
+# edit .env before starting
+mkdir -p data
+sudo chown 1000:1000 data
+docker compose --env-file .env -f compose.prod.yml up --build -d
+```
+
+The production profile adds a few operator defaults that the quickstart intentionally keeps simple:
+
+- `restart: unless-stopped` so the container returns after host/container restarts.
+- A healthcheck against `/api/v1/health`.
+- A host-visible bind mount controlled by `LISTFUL_DATA_BIND=./data`.
+- A private default port binding: `LISTFUL_BIND=127.0.0.1` and `LISTFUL_PORT=8080`.
+- The same documented runtime hardening variables as the default Compose file.
 
 Check health:
 
@@ -99,16 +96,16 @@ curl -fsS http://localhost:8080/api/v1/health
 
 Open `http://localhost:8080`, register the first account, and keep that account safe. The first account becomes `ADMIN`.
 
-Stop the app:
+Stop the production profile:
 
 ```bash
-docker compose down
+docker compose --env-file .env -f compose.prod.yml down
 ```
 
-Only delete the volume when you intentionally want to delete the database:
+Only delete the production data directory when you intentionally want to delete the database:
 
 ```bash
-docker compose down -v
+rm -rf data
 ```
 
 ## Data and backups

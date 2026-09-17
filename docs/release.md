@@ -42,15 +42,28 @@ The smoke covers:
 - unauthenticated guest wishlist claim and non-wishlist signup
 - SQLite DB file under `/app/data`
 
-## Manual quickstart check
+## Manual quickstart and production profile checks
 
-For the exact README path:
+For the exact README quickstart path:
 
 ```bash
 docker compose up --build
 ```
 
 Then open <http://localhost:8080>, register the first admin, and verify the workspace loads.
+
+For the production self-hosting profile, verify the example env file renders and the health endpoint works:
+
+```bash
+docker compose --env-file .env.example -f compose.prod.yml config
+mkdir -p data
+sudo chown 1000:1000 data
+docker compose --env-file .env.example -f compose.prod.yml up --build -d
+curl -fsS http://localhost:8080/api/v1/health
+docker compose --env-file .env.example -f compose.prod.yml down
+```
+
+The production profile is documented in [Self-Hosting Handbook](deployment/self-hosting-handbook.md).
 
 ## Alice Tailnet deployment
 

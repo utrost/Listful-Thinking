@@ -42,7 +42,7 @@ For local development without Docker:
 
 ## Quick start with Docker Compose
 
-From the repository root:
+Use this for a local evaluation or development-style first look:
 
 ```bash
 docker compose up --build
@@ -67,6 +67,28 @@ Remove the app container and the development SQLite volume only when you deliber
 ```bash
 docker compose down -v
 ```
+
+## Production self-hosting Compose profile
+
+For a longer-lived self-hosted instance, use the production Compose profile and explicit environment file:
+
+```bash
+cp .env.example .env
+# edit .env: PUBLIC_BASE_URL, LISTFUL_BIND/LISTFUL_PORT, mail if needed
+mkdir -p data
+sudo chown 1000:1000 data
+docker compose --env-file .env -f compose.prod.yml up --build -d
+curl -fsS http://localhost:8080/api/v1/health
+```
+
+The production profile differs from the quickstart in a few important ways:
+
+- It uses a host-visible data bind mount controlled by `LISTFUL_DATA_BIND` instead of an anonymous-looking named volume.
+- It sets `restart: unless-stopped` and a container healthcheck.
+- It binds to `127.0.0.1:8080` by default, so a same-host reverse proxy can reach the app while the app port is not directly public.
+- It keeps public-internet behavior opt-in: set `PUBLIC_BASE_URL=https://...` and `SESSION_COOKIE_SECURE=true` only when HTTPS is actually terminating in front of the app.
+
+For the full operator guide, including private LAN/Tailnet versus public HTTPS deployment choices, see [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md).
 
 ## Data and backups
 

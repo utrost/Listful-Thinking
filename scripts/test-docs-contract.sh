@@ -17,6 +17,8 @@ require_in_file() {
 }
 
 require_in_file README.md "docs/deployment/self-hosting-handbook.md"
+require_in_file README.md "compose.prod.yml"
+require_in_file README.md ".env.example"
 require_in_file docs/release.md "deployment/self-hosting-handbook.md"
 require_in_file "$handbook" "Private LAN or Tailnet"
 require_in_file "$handbook" "Public internet behind HTTPS"

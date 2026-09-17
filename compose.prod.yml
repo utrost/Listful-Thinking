@@ -1,0 +1,32 @@
+services:
+  listful-thinking:
+    build: .
+    image: listful-thinking:prod
+    ports:
+      - "${LISTFUL_BIND:-127.0.0.1}:${LISTFUL_PORT:-8080}:8080"
+    environment:
+      SYSTEM_LANG: ${SYSTEM_LANG:-en}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-25}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-60}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+      RATE_LIMIT_MAX_BUCKETS: ${RATE_LIMIT_MAX_BUCKETS:-10000}
+      TRUST_FORWARDED_FOR: ${TRUST_FORWARDED_FOR:-false}
+      MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-65536}
+      SCRAPER_ALLOW_PRIVATE_ADDRESSES: ${SCRAPER_ALLOW_PRIVATE_ADDRESSES:-false}
+      CSRF_ENABLED: ${CSRF_ENABLED:-true}
+    volumes:
+      - ${LISTFUL_DATA_BIND:-./data}:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health | grep -q '\"status\":\"ok\"'"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
