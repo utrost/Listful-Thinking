@@ -118,6 +118,8 @@ A public share is a list-specific token.
 Rules:
 
 - Tokens are generated with `SecureRandom` and URL-safe Base64.
+- The database stores only a `sha256:` token hash in the historical `share_token` column; the raw bearer token is returned only at generation time and is never persisted.
+- Existing raw-token database rows are migrated to hashes by Flyway and by a lookup-time compatibility path.
 - A token grants access only to the safe guest representation of one list.
 - `VIEW` public links are read-only.
 - `WISH_CLAIM` links allow guest reservations for `WISH` lists only.

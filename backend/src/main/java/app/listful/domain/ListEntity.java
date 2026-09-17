@@ -34,7 +34,10 @@ public class ListEntity {
     private ListType type;
 
     @Column(name = "share_token", unique = true)
-    private String shareToken;
+    private String shareTokenHash;
+
+    @jakarta.persistence.Transient
+    private String transientShareToken;
 
     @Column(name = "is_public", nullable = false)
     private int publicFlag;
@@ -63,18 +66,28 @@ public class ListEntity {
         this.publicFlag = 0;
     }
 
-    public void enablePublicShare(String shareToken) {
-        enablePublicShare(shareToken, defaultModeForType(type));
+    public void enablePublicShare(String shareTokenHash) {
+        enablePublicShare(shareTokenHash, null, defaultModeForType(type));
     }
 
-    public void enablePublicShare(String shareToken, PublicShareMode mode) {
-        this.shareToken = shareToken;
+    public void enablePublicShare(String shareTokenHash, PublicShareMode mode) {
+        enablePublicShare(shareTokenHash, null, mode);
+    }
+
+    public void enablePublicShare(String shareTokenHash, String transientShareToken, PublicShareMode mode) {
+        this.shareTokenHash = shareTokenHash;
+        this.transientShareToken = transientShareToken;
         this.publicShareMode = mode == null ? defaultModeForType(type) : mode;
         this.publicFlag = 1;
     }
 
+    public void migratePublicShareTokenHash(String shareTokenHash) {
+        this.shareTokenHash = shareTokenHash;
+    }
+
     public void disablePublicShare() {
-        this.shareToken = null;
+        this.shareTokenHash = null;
+        this.transientShareToken = null;
         this.publicFlag = 0;
         this.publicShareMode = defaultModeForType(type);
     }
@@ -92,7 +105,8 @@ public class ListEntity {
     public String getTitle() { return title; }
     public String getDescription() { return description; }
     public ListType getType() { return type; }
-    public String getShareToken() { return shareToken; }
+    public String getShareToken() { return transientShareToken; }
+    public String getShareTokenHash() { return shareTokenHash; }
     public boolean isPublicList() { return publicFlag == 1; }
     public PublicShareMode getPublicShareMode() { return publicShareMode == null ? defaultModeForType(type) : publicShareMode; }
     public Instant getTargetDate() { return targetDate; }

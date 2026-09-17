@@ -76,10 +76,12 @@ Controllers should remain thin and should not copy authorization rules.
 - Generate with `SecureRandom`.
 - Use URL-safe Base64.
 - Use at least 128 bits of entropy.
-- Store token server-side.
+- Store only a `sha256:` hash of the token in the application database.
+- Resolve incoming public tokens by hashing the presented bearer token before lookup.
+- Migrate legacy raw database values to hashes during Flyway startup; a compatibility path also hashes a legacy raw value if it is encountered during lookup.
 - Revocation invalidates old token.
 - Re-enable creates a new token.
-- Current weak point: public share tokens are bearer secrets and are still stored as raw token values in the application database. Hashing public share tokens at rest is future hardening.
+- Existing public links keep working after migration, but the owner UI can only show the raw bearer token immediately after generating a link; if an owner loses the URL, they should revoke/recreate it.
 
 ## Public data exposure
 
