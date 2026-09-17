@@ -28,6 +28,10 @@ export default defineConfig({
     {
       name: 'chromium-desktop',
       use: { ...devices['Desktop Chrome'] }
+    },
+    {
+      name: 'chromium-mobile',
+      use: { ...devices['Pixel 5'] }
     }
   ]
 });
