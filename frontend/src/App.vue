@@ -600,7 +600,13 @@ function resetItemReviewForm() {
 }
 
 async function loadListDetails() {
-  await Promise.all([loadItems(), loadShares()]);
+  const listId = selectedList.value?.id;
+  if (!listId) {
+    items.value = [];
+    shares.value = [];
+    return;
+  }
+  await Promise.all([loadItems(listId), loadShares(listId)]);
 }
 
 async function handleCreateList() {
@@ -672,12 +678,26 @@ async function handleConfirmDeleteList(id: string) {
   });
 }
 
-async function loadItems() {
-  items.value = selectedList.value ? await getItems(selectedList.value.id) : [];
+async function loadItems(listId = selectedList.value?.id) {
+  if (!listId) {
+    items.value = [];
+    return;
+  }
+  const loadedItems = await getItems(listId);
+  if (selectedList.value?.id === listId) {
+    items.value = loadedItems;
+  }
 }
 
-async function loadShares() {
-  shares.value = selectedList.value ? await getListShares(selectedList.value.id) : [];
+async function loadShares(listId = selectedList.value?.id) {
+  if (!listId) {
+    shares.value = [];
+    return;
+  }
+  const loadedShares = await getListShares(listId);
+  if (selectedList.value?.id === listId) {
+    shares.value = loadedShares;
+  }
 }
 
 async function loadNotifications() {
