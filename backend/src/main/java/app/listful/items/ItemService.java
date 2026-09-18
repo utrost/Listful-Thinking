@@ -17,6 +17,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 public class ItemService {
@@ -53,7 +55,7 @@ public class ItemService {
         item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         Item saved = itemRepository.save(item);
         if (shouldEnrichWishUrlItem(list, request)) {
-            itemEnrichmentService.enrichUrlItem(saved.getId(), request.url().trim());
+            enrichUrlItemAfterCommit(saved.getId(), request.url().trim());
         }
         return toResponse(saved);
     }
@@ -169,6 +171,19 @@ public class ItemService {
                 || !hasText(request.description())
                 || !hasText(request.imageUrl())
                 || request.price() == null);
+    }
+
+    private void enrichUrlItemAfterCommit(String itemId, String url) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            itemEnrichmentService.enrichUrlItem(itemId, url);
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                itemEnrichmentService.enrichUrlItem(itemId, url);
+            }
+        });
     }
 
     private boolean isWishUrlOnlyCandidate(ListEntity list, ItemRequest request) {
