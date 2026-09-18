@@ -14,11 +14,11 @@ describe('item owner and assistant labels', () => {
     expect(app).not.toMatch(/Uwe|Martha|Alice/);
   });
 
-  it('sends responsibility metadata through create edit and status-toggle payloads', () => {
-    expect(app).toContain('ownerLabel: itemForm.ownerLabel || undefined');
-    expect(app).toContain('assistantLabels: itemForm.assistantLabels || undefined');
-    expect(app).toContain('ownerLabel: editItemForm.ownerLabel || undefined');
-    expect(app).toContain('assistantLabels: editItemForm.assistantLabels || undefined');
+  it('sends responsibility metadata only when the selected list type supports it', () => {
+    expect(app).toContain('ownerLabel: fields.showResponsibility ? itemForm.ownerLabel || undefined : undefined');
+    expect(app).toContain('assistantLabels: fields.showResponsibility ? itemForm.assistantLabels || undefined : undefined');
+    expect(app).toContain('ownerLabel: fields.showResponsibility ? editItemForm.ownerLabel || undefined : undefined');
+    expect(app).toContain('assistantLabels: fields.showResponsibility ? editItemForm.assistantLabels || undefined : undefined');
     expect(app).toContain('ownerLabel: item.ownerLabel ?? undefined');
     expect(app).toContain('assistantLabels: item.assistantLabels ?? undefined');
   });

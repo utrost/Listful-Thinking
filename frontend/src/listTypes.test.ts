@@ -49,8 +49,7 @@ describe('list type UI rules', () => {
       showDueDate: false,
       showRecurrenceRule: false,
       showQuantity: true,
-      showCategory: true,
-      showResponsibility: true
+      showCategory: true
     });
   });
 });

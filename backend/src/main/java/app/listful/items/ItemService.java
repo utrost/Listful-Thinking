@@ -144,6 +144,9 @@ public class ItemService {
         if (listType != ListType.GROCERY && hasGroceryFields(request)) {
             throw new ValidationFailedException("Quantity and category are only allowed on grocery items.");
         }
+        if (!supportsResponsibilityFields(listType) && hasResponsibilityFields(request)) {
+            throw new ValidationFailedException("Responsibility labels are only allowed on to-do, chore, and event items.");
+        }
         if (listType == ListType.GROCERY && request.dueDate() != null) {
             throw new ValidationFailedException("Due dates are only allowed on to-do, chore, and event items.");
         }
@@ -180,6 +183,14 @@ public class ItemService {
 
     private boolean hasGroceryFields(ItemRequest request) {
         return hasText(request.quantity()) || hasText(request.category());
+    }
+
+    private boolean hasResponsibilityFields(ItemRequest request) {
+        return hasText(request.ownerLabel()) || hasText(request.assistantLabels());
+    }
+
+    private boolean supportsResponsibilityFields(ListType listType) {
+        return listType == ListType.TODO || listType == ListType.CHORE || listType == ListType.EVENT;
     }
 
     private boolean hasText(String value) {

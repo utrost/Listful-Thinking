@@ -266,9 +266,11 @@ class ItemControllerTests {
     }
 
     @Test
-    void choreItemsCarryGenericOwnerAndAssistantLabels() throws Exception {
+    void workStyleItemsCarryGenericOwnerAndAssistantLabels() throws Exception {
         MockHttpSession owner = register("owner");
+        String todoId = createList(owner, "Next actions", "TODO");
         String choreId = createList(owner, "Household rotation", "CHORE");
+        String eventId = createEventList(owner, "Trip");
 
         MvcResult created = mockMvc.perform(post("/api/v1/lists/{listId}/items", choreId).session(owner)
                 .contentType("application/json")
@@ -281,6 +283,24 @@ class ItemControllerTests {
             .andReturn();
         String itemId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
 
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", todoId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Call optician","ownerLabel":"Caller","assistantLabels":"Reminder bot"}
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.ownerLabel").value("Caller"))
+            .andExpect(jsonPath("$.assistantLabels").value("Reminder bot"));
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", eventId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Prepare room","dueDate":"2027-01-01T09:00:00Z","ownerLabel":"Host","assistantLabels":"Setup crew"}
+                    """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.ownerLabel").value("Host"))
+            .andExpect(jsonPath("$.assistantLabels").value("Setup crew"));
+
         mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
                 .contentType("application/json")
                 .content("""
@@ -289,6 +309,38 @@ class ItemControllerTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.ownerLabel").value("Plant owner"))
             .andExpect(jsonPath("$.assistantLabels").value("Local assistant"));
+    }
+
+    @Test
+    void wishAndGroceryItemsRejectResponsibilityLabels() throws Exception {
+        MockHttpSession owner = register("owner");
+        String wishId = createList(owner, "Birthday", "WISH");
+        String groceryId = createList(owner, "Groceries", "GROCERY");
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", wishId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Book","ownerLabel":"Gift owner"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", groceryId).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Oat milk","quantity":"2","ownerLabel":"Shopper","assistantLabels":"Pantry bot"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
+
+        String groceryItem = createItem(owner, groceryId, "Apples");
+        mockMvc.perform(put("/api/v1/items/{itemId}", groceryItem).session(owner)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Apples","quantity":"6","assistantLabels":"Pantry bot"}
+                    """))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("validation_failed"));
     }
 
     @Test
