@@ -75,7 +75,9 @@ public class ListService {
                 sourceItem.getDueDate(),
                 sourceItem.getRecurrenceRule(),
                 sourceItem.getQuantity(),
-                sourceItem.getCategory()
+                sourceItem.getCategory(),
+                sourceItem.getOwnerLabel(),
+                sourceItem.getAssistantLabels()
             );
             copied.setLastCompletedAt(sourceItem.getLastCompletedAt());
             itemRepository.save(copied);
