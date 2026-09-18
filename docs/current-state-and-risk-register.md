@@ -1,6 +1,6 @@
 # Current State and Risk Register
 
-Last updated: 2026-09-17 on current `main`.
+Last updated: 2026-09-18 on current `main`.
 
 This document describes what exists in the repository and the Alice deployment today. It intentionally includes weak points and deferred hardening work so the current state is not over-sold.
 
@@ -37,7 +37,7 @@ Implemented and verified MVP/post-MVP features include:
 - Due-date reminders with SMTP-or-in-app fallback and owner-scoped notifications.
 - Grocery quantity/category fields and clear-completed workflow.
 - Operational chore recurrence including daily, weekly, biweekly, monthly, quarterly, and annual intervals.
-- Optional item responsibility labels (`ownerLabel`, `assistantLabels`) for work-style `TODO`, `CHORE`, and `EVENT` items. These labels are coordination metadata only; list ownership and sharing remain the authorization model.
+- Optional item responsibility labels (`ownerLabel`, `assistantLabels`) for work-style `TODO`, `CHORE`, and `EVENT` items. These labels are coordination metadata only; list ownership and sharing remain the authorization model. The backend now rejects non-blank responsibility labels on `WISH` and `GROCERY` items, matching the frontend form contract.
 
 ## Current security controls
 
@@ -76,6 +76,7 @@ These are known and intentionally documented:
 
 Recent verified implementation gates:
 
+- GitHub Actions run `35335975768` passed on merged `main` commit `28349f7` for the responsibility-label list-type contract fix.
 - GitHub Actions run `35258643915` passed on merged `main` commit `f8920ab`, and GitHub Actions Node 20/runtime deprecation warnings were removed by upgrading official action majors.
 - Focused backend audit tests passed locally with `mvn -q -Dtest=AdminUsersControllerTests,AdminSettingsControllerTests,PublicShareTests test`.
 - GitHub Actions run `33962767179` passed on merged `main` commit `5a8c1f1` for the item responsibility implementation.

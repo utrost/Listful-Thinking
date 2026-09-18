@@ -57,6 +57,13 @@ The frontend shows responsibility fields for work-style item types:
 
 The backend stores the fields at item level so the data model stays simple and migration-safe, but API validation accepts non-blank responsibility labels only for the same work-style types shown by the UI.
 
+Current enforcement contract:
+
+- `TODO`, `CHORE`, and `EVENT` item create/update requests may include `ownerLabel` and `assistantLabels`.
+- `WISH` and `GROCERY` item create/update requests reject non-blank `ownerLabel` or `assistantLabels` with `validation_failed`.
+- Blank or omitted responsibility labels are allowed and are persisted as `null` after trimming.
+- Existing database columns remain nullable so old rows and unsupported list types do not need a data migration cleanup.
+
 `WISH` and `GROCERY` do not currently show these fields in the normal item form. Wishlist gift coordination still uses claim/purchased status; grocery lists focus on quantity, category, and shopping flow.
 
 ## Permissions and privacy
