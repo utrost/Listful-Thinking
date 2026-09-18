@@ -839,8 +839,8 @@ async function handleCreateItem() {
       recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined,
       quantity: fields.showQuantity ? itemForm.quantity || undefined : undefined,
       category: fields.showCategory ? itemForm.category || undefined : undefined,
-      ownerLabel: itemForm.ownerLabel || undefined,
-      assistantLabels: itemForm.assistantLabels || undefined
+      ownerLabel: fields.showResponsibility ? itemForm.ownerLabel || undefined : undefined,
+      assistantLabels: fields.showResponsibility ? itemForm.assistantLabels || undefined : undefined
     });
     resetItemForm();
     items.value = [created, ...items.value];
@@ -934,8 +934,8 @@ function itemPayloadFromEditForm(status: ItemEntry['status']) {
     recurrenceRule: fields.showRecurrenceRule ? editItemForm.recurrenceRule || undefined : undefined,
     quantity: fields.showQuantity ? editItemForm.quantity || undefined : undefined,
     category: fields.showCategory ? editItemForm.category || undefined : undefined,
-    ownerLabel: editItemForm.ownerLabel || undefined,
-    assistantLabels: editItemForm.assistantLabels || undefined
+    ownerLabel: fields.showResponsibility ? editItemForm.ownerLabel || undefined : undefined,
+    assistantLabels: fields.showResponsibility ? editItemForm.assistantLabels || undefined : undefined
   };
 }
 

@@ -55,7 +55,7 @@ The frontend shows responsibility fields for work-style item types:
 - `CHORE`
 - `EVENT`
 
-The backend stores the fields at item level so the data model stays simple and migration-safe. UI visibility decides where the fields are normally useful.
+The backend stores the fields at item level so the data model stays simple and migration-safe, but API validation accepts non-blank responsibility labels only for the same work-style types shown by the UI.
 
 `WISH` and `GROCERY` do not currently show these fields in the normal item form. Wishlist gift coordination still uses claim/purchased status; grocery lists focus on quantity, category, and shopping flow.
 
