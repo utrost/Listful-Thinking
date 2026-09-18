@@ -215,6 +215,17 @@ export interface NotificationEntry {
 let csrfToken: string | null = null;
 let csrfFetchRef: typeof fetch | null = null;
 
+export class ApiClientError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    public readonly backendMessage: string
+  ) {
+    super(backendMessage);
+    this.name = 'ApiClientError';
+  }
+}
+
 function isUnsafeMethod(method: string | undefined): boolean {
   return ['POST', 'PUT', 'PATCH', 'DELETE'].includes((method ?? 'GET').toUpperCase());
 }
@@ -260,8 +271,45 @@ async function csrfFetch(path: string, init: RequestInit = {}): Promise<Response
   });
 }
 
+async function parseApiError(response: Response): Promise<ApiClientError> {
+  let code = 'request_failed';
+  let message = `Request failed: ${response.status}`;
+  const contentType = response.headers?.get?.('content-type') ?? '';
+  if (contentType.includes('application/json')) {
+    try {
+      const payload = await response.json() as { code?: unknown; message?: unknown };
+      if (typeof payload.code === 'string' && payload.code.trim()) {
+        code = payload.code;
+      }
+      if (typeof payload.message === 'string' && payload.message.trim()) {
+        message = payload.message;
+      }
+    } catch {
+      // Keep the safe status fallback for malformed JSON responses.
+    }
+  }
+  return new ApiClientError(response.status, code, message);
+}
+
+async function fetchWithApiErrors(path: string, init: RequestInit = {}): Promise<Response> {
+  try {
+    return await csrfFetch(path, init);
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      throw error;
+    }
+    throw new ApiClientError(0, 'network_error', error instanceof Error ? error.message : 'Network request failed');
+  }
+}
+
+async function ensureOk(response: Response): Promise<void> {
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+}
+
 async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const response = await csrfFetch(path, {
+  const response = await fetchWithApiErrors(path, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -269,9 +317,7 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
     }
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 
   return response.json() as Promise<T>;
 }
@@ -307,22 +353,18 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return null;
   }
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 
   return response.json() as Promise<AuthUser>;
 }
 
 export async function logout(): Promise<void> {
-  const response = await csrfFetch('/api/v1/auth/logout', {
+  const response = await fetchWithApiErrors('/api/v1/auth/logout', {
     method: 'POST',
     credentials: 'include'
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 }
 
 export async function requestMagicLink(request: EmailLinkRequest): Promise<void> {
@@ -345,16 +387,14 @@ export async function consumePasswordReset(request: PasswordResetConsumeRequest)
 }
 
 async function requestNoContent(path: string, body: unknown): Promise<void> {
-  const response = await fetch(path, {
+  const response = await fetchWithApiErrors(path, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 }
 
 export async function getAdminSettings(): Promise<AdminSettings> {
@@ -420,14 +460,12 @@ export async function cloneList(id: string, request: CloneListRequest = {}): Pro
 }
 
 export async function deleteList(id: string): Promise<void> {
-  const response = await csrfFetch(`/api/v1/lists/${id}`, {
+  const response = await fetchWithApiErrors(`/api/v1/lists/${id}`, {
     method: 'DELETE',
     credentials: 'include'
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 }
 
 export async function getItems(listId: string): Promise<ItemEntry[]> {
@@ -449,25 +487,21 @@ export async function updateItem(itemId: string, request: ItemRequest): Promise<
 }
 
 export async function deleteItem(itemId: string): Promise<void> {
-  const response = await csrfFetch(`/api/v1/items/${itemId}`, {
+  const response = await fetchWithApiErrors(`/api/v1/items/${itemId}`, {
     method: 'DELETE',
     credentials: 'include'
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 }
 
 export async function clearCompletedItems(listId: string): Promise<void> {
-  const response = await csrfFetch(`/api/v1/lists/${listId}/items/completed`, {
+  const response = await fetchWithApiErrors(`/api/v1/lists/${listId}/items/completed`, {
     method: 'DELETE',
     credentials: 'include'
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 }
 
 export async function skipChoreItem(itemId: string): Promise<ItemEntry> {
@@ -495,14 +529,12 @@ export async function shareListWithUser(listId: string, request: ShareListReques
 }
 
 export async function revokeListShare(listId: string, username: string): Promise<void> {
-  const response = await csrfFetch(`/api/v1/lists/${listId}/shares/${encodeURIComponent(username)}`, {
+  const response = await fetchWithApiErrors(`/api/v1/lists/${listId}/shares/${encodeURIComponent(username)}`, {
     method: 'DELETE',
     credentials: 'include'
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 }
 
 export async function createPublicShare(listId: string, mode?: PublicShareMode): Promise<PublicShareToken> {
@@ -513,14 +545,12 @@ export async function createPublicShare(listId: string, mode?: PublicShareMode):
 }
 
 export async function revokePublicShare(listId: string): Promise<void> {
-  const response = await csrfFetch(`/api/v1/lists/${listId}/public-share`, {
+  const response = await fetchWithApiErrors(`/api/v1/lists/${listId}/public-share`, {
     method: 'DELETE',
     credentials: 'include'
   });
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
+  await ensureOk(response);
 }
 
 export async function getPublicShare(token: string): Promise<PublicListEntry> {

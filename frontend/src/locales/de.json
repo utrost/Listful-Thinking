@@ -23,6 +23,24 @@
     "check": "Backend prüfen",
     "status": "Backend-Status"
   },
+  "errors": {
+    "request_failed": "Die Anfrage ist fehlgeschlagen. Bitte versuche es erneut.",
+    "network_error": "Der Server ist nicht erreichbar. Bitte prüfe die Verbindung und versuche es erneut.",
+    "validation_failed": "Bitte prüfe die markierten Felder.",
+    "conflict": "Diese Änderung kollidiert mit dem aktuellen Listenstand. Bitte aktualisieren und erneut versuchen.",
+    "username_taken": "Dieser Benutzername ist bereits vergeben.",
+    "registration_disabled": "Selbstregistrierung ist gerade deaktiviert. Bitte einen Administrator, dein Konto anzulegen.",
+    "bad_credentials": "Benutzername oder Passwort ist ungültig.",
+    "malformed_json": "Die Anfrage konnte nicht gelesen werden. Bitte versuche es erneut.",
+    "internal_error": "Auf dem Server ist etwas schiefgelaufen. Bitte versuche es erneut.",
+    "payload_too_large": "Diese Anfrage ist zu groß.",
+    "csrf_required": "Deine Sitzung muss aktualisiert werden. Bitte Seite neu laden und erneut versuchen.",
+    "rate_limited": "Zu viele Anfragen. Bitte kurz warten und erneut versuchen.",
+    "item_already_claimed": "Dieser Eintrag ist bereits reserviert.",
+    "unauthorized": "Bitte melde dich erneut an.",
+    "forbidden": "Dafür hast du keine Berechtigung.",
+    "not_found": "Dieser Eintrag wurde nicht gefunden."
+  },
   "lists": {
     "title": "Deine Listen",
     "newTitle": "Neuer Listentitel",

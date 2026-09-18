@@ -10,7 +10,7 @@
         <button v-if="currentUser" type="button" class="secondary" @click="handleLogout">{{ t('auth.logout') }}</button>
       </div>
 
-      <p v-if="message" class="status">{{ message }}</p>
+      <p v-if="message" class="status" :role="messageKind === 'error' ? 'alert' : 'status'" :aria-live="messageKind === 'error' ? 'assertive' : 'polite'">{{ message }}</p>
 
       <section v-if="publicToken" class="panel public-panel">
         <h2>{{ publicList?.title ?? t('sharing.publicList') }}</h2>
@@ -26,7 +26,7 @@
               <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template></small>
             </span>
             <form v-if="publicList?.mode !== 'VIEW' && item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
-              <input v-model="guestName" :placeholder="t('sharing.guestName')" required />
+              <input v-model="guestName" :aria-label="t('sharing.guestName')" :placeholder="t('sharing.guestName')" required />
               <button type="submit">{{ publicList?.mode === 'SIGNUP' ? t('sharing.signup') : t('sharing.claim') }}</button>
             </form>
           </li>
@@ -36,9 +36,9 @@
       <section v-else-if="!currentUser" class="panel-grid">
         <form v-if="authSettings?.registrationAvailable ?? false" class="panel" @submit.prevent="handleRegister">
           <h2>{{ t('auth.register') }}</h2>
-          <label>{{ t('auth.username') }}<input v-model="registerForm.username" required minlength="3" /></label>
-          <label>{{ t('auth.email') }}<input v-model="registerForm.email" type="email" /></label>
-          <label>{{ t('auth.password') }}<input v-model="registerForm.password" type="password" required minlength="8" /></label>
+          <label>{{ t('auth.username') }}<input v-model="registerForm.username" :aria-label="t('auth.username')" required minlength="3" /></label>
+          <label>{{ t('auth.email') }}<input v-model="registerForm.email" :aria-label="t('auth.email')" type="email" /></label>
+          <label>{{ t('auth.password') }}<input v-model="registerForm.password" :aria-label="t('auth.password')" type="password" required minlength="8" /></label>
           <button type="submit">{{ t('auth.register') }}</button>
         </form>
         <section v-else-if="authSettings && !authSettings.registrationAvailable" class="panel">
@@ -48,16 +48,16 @@
 
         <form class="panel" @submit.prevent="handleLogin">
           <h2>{{ t('auth.login') }}</h2>
-          <label>{{ t('auth.username') }}<input v-model="loginForm.username" required /></label>
-          <label>{{ t('auth.password') }}<input v-model="loginForm.password" type="password" required /></label>
+          <label>{{ t('auth.username') }}<input v-model="loginForm.username" :aria-label="t('auth.username')" required /></label>
+          <label>{{ t('auth.password') }}<input v-model="loginForm.password" :aria-label="t('auth.password')" type="password" required /></label>
           <button type="submit">{{ t('auth.login') }}</button>
-          <label>{{ t('auth.email') }}<input v-model="emailAuthForm.email" type="email" /></label>
+          <label>{{ t('auth.email') }}<input v-model="emailAuthForm.email" :aria-label="t('auth.email')" type="email" /></label>
           <div class="button-row">
             <button type="button" class="secondary" @click="handleRequestMagicLink">{{ t('auth.magicLink') }}</button>
             <button type="button" class="secondary" @click="handleRequestPasswordReset">{{ t('auth.passwordReset') }}</button>
           </div>
           <template v-if="resetToken">
-            <label>{{ t('auth.newPassword') }}<input v-model="resetPasswordForm.password" type="password" minlength="8" /></label>
+            <label>{{ t('auth.newPassword') }}<input v-model="resetPasswordForm.password" :aria-label="t('auth.newPassword')" type="password" minlength="8" /></label>
             <button type="button" class="secondary" @click="handleConsumePasswordReset">{{ t('auth.setNewPassword') }}</button>
           </template>
         </form>
@@ -93,10 +93,10 @@
             <span>{{ t('admin.registrationEnabled') }}</span>
           </label>
           <form class="inline-form" @submit.prevent="handleAdminCreateUser">
-            <input v-model="adminUserForm.username" :placeholder="t('auth.username')" required minlength="3" />
-            <input v-model="adminUserForm.email" :placeholder="t('auth.email')" type="email" />
-            <input v-model="adminUserForm.password" :placeholder="t('auth.password')" type="password" required minlength="8" />
-            <select v-model="adminUserForm.role">
+            <input v-model="adminUserForm.username" :aria-label="t('auth.username')" :placeholder="t('auth.username')" required minlength="3" />
+            <input v-model="adminUserForm.email" :aria-label="t('auth.email')" :placeholder="t('auth.email')" type="email" />
+            <input v-model="adminUserForm.password" :aria-label="t('auth.password')" :placeholder="t('auth.password')" type="password" required minlength="8" />
+            <select v-model="adminUserForm.role" aria-label="Role">
               <option value="USER">USER</option>
               <option value="ADMIN">ADMIN</option>
             </select>
@@ -120,9 +120,9 @@
         </section>
 
         <form class="inline-form" @submit.prevent="handleCreateList">
-          <input v-model="listForm.title" :placeholder="t('lists.newTitle')" required />
-          <input v-model="listForm.description" :placeholder="t('lists.description')" />
-          <select v-model="listForm.type">
+          <input v-model="listForm.title" :aria-label="t('lists.newTitle')" :placeholder="t('lists.newTitle')" required />
+          <input v-model="listForm.description" :aria-label="t('lists.description')" :placeholder="t('lists.description')" />
+          <select v-model="listForm.type" aria-label="List type">
             <option value="WISH">WISH</option>
             <option value="TODO">TODO</option>
             <option value="GROCERY">GROCERY</option>
@@ -134,6 +134,7 @@
             v-model="listForm.targetDate"
             type="datetime-local"
             :required="newListRules.requireTargetDate"
+            :aria-label="t('lists.targetDate')"
             :placeholder="t('lists.targetDate')"
           />
           <button type="submit">{{ t('lists.create') }}</button>
@@ -166,9 +167,9 @@
               </div>
             </div>
             <form v-if="editingList" class="inline-form edit-list-form" @submit.prevent="handleSaveEditedList">
-              <input v-model="editListForm.title" :placeholder="t('lists.newTitle')" required />
-              <input v-model="editListForm.description" :placeholder="t('lists.description')" />
-              <select v-model="editListForm.type">
+              <input v-model="editListForm.title" :aria-label="t('lists.newTitle')" :placeholder="t('lists.newTitle')" required />
+              <input v-model="editListForm.description" :aria-label="t('lists.description')" :placeholder="t('lists.description')" />
+              <select v-model="editListForm.type" aria-label="List type">
                 <option value="WISH">WISH</option>
                 <option value="TODO">TODO</option>
                 <option value="GROCERY">GROCERY</option>
@@ -180,6 +181,7 @@
                 v-model="editListForm.targetDate"
                 type="datetime-local"
                 :required="editListRules.requireTargetDate"
+                :aria-label="t('lists.targetDate')"
                 :placeholder="t('lists.targetDate')"
               />
               <button type="submit">{{ t('lists.save') }}</button>
@@ -190,7 +192,7 @@
             <section v-if="selectedList.access === 'OWNER'" class="share-panel">
               <h4>{{ t('sharing.title') }}</h4>
               <div class="button-row">
-                <select v-model="publicShareMode">
+                <select v-model="publicShareMode" aria-label="Public share mode">
                   <option value="VIEW">{{ t('sharing.modes.VIEW') }}</option>
                   <option v-if="selectedList.type === 'WISH'" value="WISH_CLAIM">{{ t('sharing.modes.WISH_CLAIM') }}</option>
                   <option v-if="selectedList.type !== 'WISH'" value="SIGNUP">{{ t('sharing.modes.SIGNUP') }}</option>
@@ -200,8 +202,8 @@
               </div>
               <p v-if="selectedList.publicList && selectedList.shareToken" class="copyable-link">{{ publicShareUrl(selectedList.shareToken) }}</p>
               <form class="inline-form" @submit.prevent="handleShareList">
-                <input v-model="shareForm.username" :placeholder="t('sharing.username')" required />
-                <select v-model="shareForm.permission">
+                <input v-model="shareForm.username" :aria-label="t('sharing.username')" :placeholder="t('sharing.username')" required />
+                <select v-model="shareForm.permission" aria-label="Share permission">
                   <option value="READ">{{ t('sharing.readOnly') }}</option>
                   <option value="CONTRIBUTE">{{ t('sharing.contribute') }}</option>
                 </select>
@@ -216,19 +218,19 @@
             </section>
 
             <form v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" class="inline-form" @submit.prevent="handleCreateItem">
-              <input v-model="itemForm.name" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" />
-              <input v-if="currentItemFields.showUrl" v-model="itemForm.url" placeholder="URL" @change="handleScrapeItemUrl" />
+              <input v-model="itemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" />
+              <input v-if="currentItemFields.showUrl" v-model="itemForm.url" aria-label="URL" placeholder="URL" @change="handleScrapeItemUrl" />
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
-              <textarea v-if="currentItemFields.showUrl" v-model="itemForm.description" :placeholder="t('items.description')"></textarea>
-              <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :placeholder="t('items.imageUrl')" />
+              <textarea v-if="currentItemFields.showUrl" v-model="itemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea>
+              <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" />
               <img v-if="itemForm.imageUrl" class="item-image preview" :src="itemForm.imageUrl" :alt="itemForm.name || t('items.newName')" />
-              <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
-              <input v-if="currentItemFields.showQuantity" v-model="itemForm.quantity" :placeholder="t('items.quantity')" />
-              <input v-if="currentItemFields.showCategory" v-model="itemForm.category" :placeholder="t('items.category')" />
-              <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
-              <input v-if="currentItemFields.showResponsibility" v-model="itemForm.ownerLabel" :placeholder="t('items.ownerLabel')" />
-              <input v-if="currentItemFields.showResponsibility" v-model="itemForm.assistantLabels" :placeholder="t('items.assistantLabels')" />
-              <select v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule">
+              <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" />
+              <input v-if="currentItemFields.showQuantity" v-model="itemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" />
+              <input v-if="currentItemFields.showCategory" v-model="itemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" />
+              <input v-if="currentItemFields.showDueDate" v-model="itemForm.dueDate" type="datetime-local" :aria-label="t('items.dueDate')" :placeholder="t('items.dueDate')" />
+              <input v-if="currentItemFields.showResponsibility" v-model="itemForm.ownerLabel" :aria-label="t('items.ownerLabel')" :placeholder="t('items.ownerLabel')" />
+              <input v-if="currentItemFields.showResponsibility" v-model="itemForm.assistantLabels" :aria-label="t('items.assistantLabels')" :placeholder="t('items.assistantLabels')" />
+              <select v-if="currentItemFields.showRecurrenceRule" v-model="itemForm.recurrenceRule" aria-label="Recurrence">
                 <option v-for="option in recurrenceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
               </select>
               <button type="submit">{{ t('items.create') }}</button>
@@ -271,11 +273,11 @@
                 <ul class="item-list">
                   <li v-for="item in groupItems" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
                     <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @submit.prevent="handleSaveEditedItem(item)">
-                      <input v-model="editItemForm.name" :placeholder="t('items.newName')" required />
-                      <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :placeholder="t('items.quantity')" />
-                      <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :placeholder="t('items.category')" />
-                      <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.ownerLabel" :placeholder="t('items.ownerLabel')" />
-                      <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.assistantLabels" :placeholder="t('items.assistantLabels')" />
+                      <input v-model="editItemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" required />
+                      <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" />
+                      <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" />
+                      <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.ownerLabel" :aria-label="t('items.ownerLabel')" :placeholder="t('items.ownerLabel')" />
+                      <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.assistantLabels" :aria-label="t('items.assistantLabels')" :placeholder="t('items.assistantLabels')" />
                       <button type="submit">{{ t('items.save') }}</button>
                       <button type="button" class="secondary subtle" @click="handleCancelEditItem">{{ t('items.cancel') }}</button>
                     </form>
@@ -285,10 +287,10 @@
                       <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                       <small>{{ item.status }}</small>
                     </span>
-                    <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
-                    <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
-                    <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
-                    <button v-if="selectedList.access === 'OWNER'" type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
+                    <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN'" type="button" class="secondary subtle" :aria-label="`${t('items.done')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
+                    <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" :aria-label="`${t('items.reopen')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                    <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" :aria-label="`${t('items.edit')}: ${item.name}`" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
+                    <button v-if="selectedList.access === 'OWNER'" type="button" class="danger" :aria-label="`${t('items.delete')}: ${item.name}`" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
                   </li>
                 </ul>
               </section>
@@ -298,17 +300,17 @@
               <li v-for="item in displayedItems" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
                 <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
                 <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @submit.prevent="handleSaveEditedItem(item)">
-                  <input v-model="editItemForm.name" :placeholder="t('items.newName')" required />
-                  <textarea v-if="currentItemFields.showUrl" v-model="editItemForm.description" :placeholder="t('items.description')"></textarea>
-                  <input v-if="currentItemFields.showUrl" v-model="editItemForm.url" placeholder="URL" />
-                  <input v-if="currentItemFields.showImageUrl" v-model="editItemForm.imageUrl" :placeholder="t('items.imageUrl')" />
-                  <input v-if="currentItemFields.showPrice" v-model.number="editItemForm.price" type="number" min="0" step="0.01" :placeholder="t('items.price')" />
-                  <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :placeholder="t('items.quantity')" />
-                  <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :placeholder="t('items.category')" />
-                  <input v-if="currentItemFields.showDueDate" v-model="editItemForm.dueDate" type="datetime-local" :placeholder="t('items.dueDate')" />
-                  <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.ownerLabel" :placeholder="t('items.ownerLabel')" />
-                  <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.assistantLabels" :placeholder="t('items.assistantLabels')" />
-                  <select v-if="currentItemFields.showRecurrenceRule" v-model="editItemForm.recurrenceRule">
+                  <input v-model="editItemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" required />
+                  <textarea v-if="currentItemFields.showUrl" v-model="editItemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea>
+                  <input v-if="currentItemFields.showUrl" v-model="editItemForm.url" aria-label="URL" placeholder="URL" />
+                  <input v-if="currentItemFields.showImageUrl" v-model="editItemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" />
+                  <input v-if="currentItemFields.showPrice" v-model.number="editItemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" />
+                  <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" />
+                  <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" />
+                  <input v-if="currentItemFields.showDueDate" v-model="editItemForm.dueDate" type="datetime-local" :aria-label="t('items.dueDate')" :placeholder="t('items.dueDate')" />
+                  <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.ownerLabel" :aria-label="t('items.ownerLabel')" :placeholder="t('items.ownerLabel')" />
+                  <input v-if="currentItemFields.showResponsibility" v-model="editItemForm.assistantLabels" :aria-label="t('items.assistantLabels')" :placeholder="t('items.assistantLabels')" />
+                  <select v-if="currentItemFields.showRecurrenceRule" v-model="editItemForm.recurrenceRule" aria-label="Recurrence">
                     <option v-for="option in recurrenceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                   </select>
                   <button type="submit">{{ t('items.save') }}</button>
@@ -322,14 +324,14 @@
                   <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                   <small>{{ item.status }}<template v-if="item.price"> · {{ item.price }} €</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ item.lastCompletedAt }}</template></small>
                 </span>
-                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
-                <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
-                <button v-if="selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status !== 'PURCHASED'" type="button" class="secondary subtle" @click="handleSetWishStatus(item, 'PURCHASED')">{{ t('items.markPurchased') }}</button>
-                <button v-else-if="selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status === 'PURCHASED'" type="button" class="secondary subtle" @click="handleSetWishStatus(item, 'OPEN')">{{ t('items.reopenWish') }}</button>
-                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.recurrenceRule" type="button" class="secondary subtle" @click="handleSkipChore(item)">{{ t('items.skipOccurrence') }}</button>
-                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.dueDate" type="button" class="secondary subtle" @click="handlePostponeChore(item)">{{ t('items.postpone') }}</button>
-                <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
-                <button v-if="selectedList.access === 'OWNER'" type="button" class="danger" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
+                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" :aria-label="`${t('items.done')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
+                <button v-else-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" :aria-label="`${t('items.reopen')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                <button v-if="selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status !== 'PURCHASED'" type="button" class="secondary subtle" :aria-label="`${t('items.markPurchased')}: ${item.name}`" @click="handleSetWishStatus(item, 'PURCHASED')">{{ t('items.markPurchased') }}</button>
+                <button v-else-if="selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status === 'PURCHASED'" type="button" class="secondary subtle" :aria-label="`${t('items.reopenWish')}: ${item.name}`" @click="handleSetWishStatus(item, 'OPEN')">{{ t('items.reopenWish') }}</button>
+                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.recurrenceRule" type="button" class="secondary subtle" :aria-label="`${t('items.skipOccurrence')}: ${item.name}`" @click="handleSkipChore(item)">{{ t('items.skipOccurrence') }}</button>
+                <button v-if="(selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.dueDate" type="button" class="secondary subtle" :aria-label="`${t('items.postpone')}: ${item.name}`" @click="handlePostponeChore(item)">{{ t('items.postpone') }}</button>
+                <button v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" type="button" class="secondary subtle" :aria-label="`${t('items.edit')}: ${item.name}`" @click="handleStartEditItem(item)">{{ t('items.edit') }}</button>
+                <button v-if="selectedList.access === 'OWNER'" type="button" class="danger" :aria-label="`${t('items.delete')}: ${item.name}`" @click="handleDeleteItem(item.id)">{{ t('items.delete') }}</button>
               </li>
             </ul>
           </section>
@@ -340,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   createItem,
@@ -380,6 +382,7 @@ import {
   updateItem,
   updateAdminSettings,
   updateAdminUser,
+  ApiClientError,
   type AuthUser,
   type AuthSettings,
   type AdminSettings,
@@ -396,7 +399,7 @@ import {
 import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
 import { defaultItemReviewState, reviewDisplayedItems, type ItemReviewState } from './itemReview';
 
-const { t } = useI18n();
+const { locale, t } = useI18n();
 const currentUser = ref<AuthUser | null>(null);
 const lists = ref<ListEntry[]>([]);
 const selectedList = ref<ListEntry | null>(null);
@@ -414,6 +417,7 @@ const resetToken = window.location.pathname === '/reset-password' ? new URLSearc
 const publicList = ref<PublicListEntry | null>(null);
 const guestName = ref('');
 const message = ref('');
+const messageKind = ref<'status' | 'error'>('status');
 
 const registerForm = reactive({ username: '', email: '', password: '' });
 const loginForm = reactive({ username: '', password: '' });
@@ -459,6 +463,10 @@ const groceryGroups = computed(() => {
 });
 const activeAdminCount = computed(() => adminUsers.value.filter((user) => user.role === 'ADMIN' && user.active).length);
 let itemReviewNowInterval: number | undefined;
+
+watch(locale, (value) => {
+  document.documentElement.lang = value;
+}, { immediate: true });
 
 function cannotDeactivateAdminUser(user: AdminUserEntry) {
   return user.role === 'ADMIN' && user.active && activeAdminCount.value <= 1;
@@ -958,11 +966,20 @@ function itemPayloadFromItem(item: ItemEntry, status: ItemEntry['status']) {
 
 async function run(action: () => Promise<void>) {
   message.value = '';
+  messageKind.value = 'status';
   try {
     await action();
   } catch (error) {
-    message.value = error instanceof Error ? error.message : String(error);
+    messageKind.value = 'error';
+    message.value = localizedErrorMessage(error);
   }
+}
+
+function localizedErrorMessage(error: unknown): string {
+  if (error instanceof ApiClientError) {
+    return t(`errors.${error.code}`);
+  }
+  return error instanceof Error ? error.message : String(error);
 }
 
 function toIsoInstant(localDateTime: string): string | undefined {

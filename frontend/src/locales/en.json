@@ -23,6 +23,24 @@
     "check": "Check backend",
     "status": "Backend status"
   },
+  "errors": {
+    "request_failed": "The request failed. Please try again.",
+    "network_error": "The server could not be reached. Please check your connection and try again.",
+    "validation_failed": "Please check the highlighted fields.",
+    "conflict": "That change conflicts with the current list state. Refresh and try again.",
+    "username_taken": "That username is already taken.",
+    "registration_disabled": "Self-registration is currently disabled. Ask an administrator to create your account.",
+    "bad_credentials": "Invalid username or password.",
+    "malformed_json": "The request could not be read. Please try again.",
+    "internal_error": "Something went wrong on the server. Please try again.",
+    "payload_too_large": "That request is too large.",
+    "csrf_required": "Your session needs to be refreshed. Reload the page and try again.",
+    "rate_limited": "Too many requests. Please wait a moment and try again.",
+    "item_already_claimed": "That item is already claimed.",
+    "unauthorized": "Please log in again.",
+    "forbidden": "You do not have permission to do that.",
+    "not_found": "That item could not be found."
+  },
   "lists": {
     "title": "Your lists",
     "newTitle": "New list title",
