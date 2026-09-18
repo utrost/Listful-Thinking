@@ -165,6 +165,35 @@ class ListControllerTests {
     }
 
     @Test
+    void clonePreservesResponsibilityLabelsOnWorkStyleItems() throws Exception {
+        MockHttpSession owner = register("owner");
+        String sourceListId = createList(owner, "Chores", "Shared work", "CHORE");
+        String sourceItemId = createChoreWithResponsibilityLabels(owner, sourceListId);
+
+        MvcResult cloneResult = mockMvc.perform(post("/api/v1/lists/{id}/clone", sourceListId).session(owner)
+                .contentType("application/json")
+                .content("{}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.title").value("Chores copy"))
+            .andExpect(jsonPath("$.type").value("CHORE"))
+            .andReturn();
+        String cloneListId = JsonPath.read(cloneResult.getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", cloneListId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$", hasSize(1)))
+            .andExpect(jsonPath("$[0].id").value(org.hamcrest.Matchers.not(sourceItemId)))
+            .andExpect(jsonPath("$[0].name").value("Water plants"))
+            .andExpect(jsonPath("$[0].description").value("Keep balcony alive"))
+            .andExpect(jsonPath("$[0].status").value("OPEN"))
+            .andExpect(jsonPath("$[0].dueDate").value("2027-01-08T09:00:00Z"))
+            .andExpect(jsonPath("$[0].recurrenceRule").value("FREQ=WEEKLY"))
+            .andExpect(jsonPath("$[0].lastCompletedAt").isNotEmpty())
+            .andExpect(jsonPath("$[0].ownerLabel").value("Resident on plants"))
+            .andExpect(jsonPath("$[0].assistantLabels").value("Reminder bot; backup helper"));
+    }
+
+    @Test
     void nonOwnersCannotCloneListsByGuessingIds() throws Exception {
         MockHttpSession owner = register("owner");
         MockHttpSession other = register("other");
@@ -200,6 +229,25 @@ class ListControllerTests {
             .andExpect(status().isCreated())
             .andReturn();
         return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+    }
+
+    private String createChoreWithResponsibilityLabels(MockHttpSession session, String listId) throws Exception {
+        MvcResult created = mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(session)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Water plants","description":"Keep balcony alive","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY","ownerLabel":"Resident on plants","assistantLabels":"Reminder bot; backup helper"}
+                    """))
+            .andExpect(status().isCreated())
+            .andReturn();
+        String itemId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(session)
+                .contentType("application/json")
+                .content("""
+                    {"name":"Water plants","description":"Keep balcony alive","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY","ownerLabel":"Resident on plants","assistantLabels":"Reminder bot; backup helper"}
+                    """))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.lastCompletedAt").isNotEmpty());
+        return itemId;
     }
 
     private MockHttpSession register(String username) throws Exception {
