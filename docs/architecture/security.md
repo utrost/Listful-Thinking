@@ -17,7 +17,7 @@ Listful does not build SQL from user-provided strings. Database access uses Spri
 
 A servlet hardening filter rejects oversized API request bodies before JSON parsing and rate-limits sensitive POST endpoints per client IP, method, and path. The default runtime settings are:
 
-- `MAX_REQUEST_BODY_BYTES=65536`
+- `MAX_REQUEST_BODY_BYTES=5100000` (bounded to accommodate validated wishlist image data URLs)
 - `RATE_LIMIT_ENABLED=true`
 - `RATE_LIMIT_MAX_REQUESTS=60`
 - `RATE_LIMIT_WINDOW_SECONDS=60`

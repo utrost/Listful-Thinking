@@ -136,7 +136,7 @@ RATE_LIMIT_MAX_REQUESTS=60
 RATE_LIMIT_WINDOW_SECONDS=60
 RATE_LIMIT_MAX_BUCKETS=10000
 TRUST_FORWARDED_FOR=false
-MAX_REQUEST_BODY_BYTES=65536
+MAX_REQUEST_BODY_BYTES=5100000
 SCRAPER_ALLOW_PRIVATE_ADDRESSES=false
 CSRF_ENABLED=true
 ```
@@ -148,6 +148,7 @@ Common choices:
 - Keep `REGISTRATION_ENABLED=false` for a private instance after the first admin account exists; use the admin panel to create more users.
 - Set `SESSION_COOKIE_SECURE=true` only when the app is served over HTTPS. For HTTPS deployments, verify a login response sets the session cookie with the `Secure` attribute before exposing the instance beyond a private network.
 - Leave mail variables empty if you do not need email login/reset/reminders; in-app login and notifications still work.
+- `MAX_REQUEST_BODY_BYTES` is explicitly bounded but defaults high enough for wishlist image data URLs (up to 5,000,000 characters); browser uploads are limited to 3.5 MB before encoding.
 
 ## Build and run manually for development
 

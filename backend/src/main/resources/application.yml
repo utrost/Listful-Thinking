@@ -40,5 +40,5 @@ listful:
     rate-limit-window-seconds: ${RATE_LIMIT_WINDOW_SECONDS:60}
     rate-limit-max-buckets: ${RATE_LIMIT_MAX_BUCKETS:10000}
     trust-forwarded-for: ${TRUST_FORWARDED_FOR:false}
-    max-request-body-bytes: ${MAX_REQUEST_BODY_BYTES:65536}
+    max-request-body-bytes: ${MAX_REQUEST_BODY_BYTES:5100000}
     scraper-allow-private-addresses: ${SCRAPER_ALLOW_PRIVATE_ADDRESSES:false}

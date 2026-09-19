@@ -68,7 +68,7 @@ require_prod_env RATE_LIMIT_MAX_REQUESTS 60
 require_prod_env RATE_LIMIT_WINDOW_SECONDS 60
 require_prod_env RATE_LIMIT_MAX_BUCKETS 10000
 require_prod_env TRUST_FORWARDED_FOR false
-require_prod_env MAX_REQUEST_BODY_BYTES 65536
+require_prod_env MAX_REQUEST_BODY_BYTES 5100000
 require_prod_env SCRAPER_ALLOW_PRIVATE_ADDRESSES false
 require_prod_env CSRF_ENABLED true
 

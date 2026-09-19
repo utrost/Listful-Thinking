@@ -9,7 +9,7 @@ public class SecurityHardeningProperties {
     private long rateLimitWindowSeconds = 60;
     private int rateLimitMaxBuckets = 10_000;
     private boolean trustForwardedFor = false;
-    private long maxRequestBodyBytes = 65_536;
+    private long maxRequestBodyBytes = 5_100_000;
     private boolean csrfEnabled = true;
     private boolean scraperAllowPrivateAddresses = false;
 
