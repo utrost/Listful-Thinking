@@ -202,6 +202,7 @@ export interface ScrapeResponse {
   description: string | null;
   imageUrl: string | null;
   price: number | null;
+  priceCurrency: string | null;
 }
 
 export interface NotificationEntry {

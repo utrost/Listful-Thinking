@@ -142,7 +142,7 @@ describe('additional rendered application workflows', () => {
   });
 
   it('previews wishlist URLs and keeps scraped metadata editable before creation', async () => {
-    vi.mocked(scrapeUrl).mockResolvedValue({ title: 'Pocket notebook', description: 'A6 dotted', imageUrl: 'https://shop.test/notebook.jpg', price: 12.5 });
+    vi.mocked(scrapeUrl).mockResolvedValue({ title: 'Pocket notebook', description: 'A6 dotted', imageUrl: 'https://shop.test/notebook.jpg', price: 12.5, priceCurrency: 'EUR' });
     const wrapper = await mountSignedIn({ ...baseList, type: 'WISH', title: 'Wishlist' }, []);
 
     const form = formWithButton(wrapper, 'Add item');
