@@ -288,15 +288,16 @@ Request:
 Response:
 
 ```json
-{"title":"Product title","description":"Short description","imageUrl":"https://example.test/image.jpg","price":24.95}
+{"title":"Product title","description":"Short description","imageUrl":"https://example.test/image.jpg","price":24.95,"priceCurrency":"EUR"}
 ```
 
 Extraction priority:
 
-- Title: OpenGraph, Twitter card, then HTML `<title>`.
-- Description: OpenGraph, then standard description meta.
-- Image: OpenGraph, then Twitter card, resolved to an absolute URL where possible.
-- Price: `product:price:amount`, JSON-LD `offers.price`, then microdata `itemprop=price`.
+- Title and description: schema.org `Product` JSON-LD, then OpenGraph/Twitter and HTML fallbacks.
+- Image: schema.org `Product` JSON-LD, then OpenGraph/Twitter and common product-image selectors, resolved to an absolute URL where possible.
+- Price and currency: the first useful JSON-LD offer, then social metadata and microdata price fallbacks.
+
+The wishlist UI applies this response directly to the existing editable item form. A scrape failure is shown to the user and does not prevent manual item creation.
 
 Non-HTTP(S) URLs return `400 validation_failed`.
 

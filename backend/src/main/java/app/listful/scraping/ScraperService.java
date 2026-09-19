@@ -52,32 +52,38 @@ public class ScraperService {
     }
 
     ScrapeResponse extract(Document document) {
+        ProductMetadata product = jsonLdProduct(document);
+        PriceMetadata price = firstPrice(
+            new PriceMetadata(parsePrice(product.price()), product.priceCurrency()),
+            new PriceMetadata(parsePrice(meta(document, "meta[property=product:price:amount]")), null),
+            new PriceMetadata(parsePrice(attr(document, "[itemprop=price]", "content")), null),
+            new PriceMetadata(parsePrice(text(document, "[itemprop=price]")), null),
+            new PriceMetadata(parsePrice(amazonVisiblePrice(document)), null)
+        );
         return new ScrapeResponse(
             firstNonBlank(
+                product.name(),
                 meta(document, "meta[property=og:title]"),
                 meta(document, "meta[name=twitter:title]"),
                 text(document, "#productTitle"),
                 nonGenericPageTitle(text(document, "title"))
             ),
             firstNonBlank(
+                product.description(),
                 productDescription(document),
                 meta(document, "meta[property=og:description]"),
                 meta(document, "meta[name=description]")
             ),
             absoluteUrl(document, firstNonBlank(
+                product.image(),
                 meta(document, "meta[property=og:image]"),
                 meta(document, "meta[name=twitter:image]"),
                 attr(document, "#landingImage", "data-old-hires"),
                 attr(document, "#landingImage", "src"),
                 productGalleryImage(document)
             )),
-            firstPrice(
-                meta(document, "meta[property=product:price:amount]"),
-                jsonLdOfferPrice(document),
-                attr(document, "[itemprop=price]", "content"),
-                text(document, "[itemprop=price]"),
-                amazonVisiblePrice(document)
-            )
+            price.price(),
+            price.priceCurrency()
         );
     }
 
@@ -412,14 +418,13 @@ public class ScraperService {
         }
     }
 
-    private BigDecimal firstPrice(String... candidates) {
-        for (String candidate : candidates) {
-            BigDecimal price = parsePrice(candidate);
-            if (price != null) {
-                return price;
+    private PriceMetadata firstPrice(PriceMetadata... candidates) {
+        for (PriceMetadata candidate : candidates) {
+            if (candidate.price() != null) {
+                return candidate;
             }
         }
-        return null;
+        return PriceMetadata.EMPTY;
     }
 
     private String amazonVisiblePrice(Document document) {
@@ -481,55 +486,101 @@ public class ScraperService {
         }
     }
 
-    private String jsonLdOfferPrice(Document document) {
+    private ProductMetadata jsonLdProduct(Document document) {
         for (Element script : document.select("script[type=application/ld+json]")) {
             try {
                 JsonNode root = objectMapper.readTree(script.data());
-                String price = findOfferPrice(root);
-                if (price != null) {
-                    return price;
+                JsonNode product = findProduct(root);
+                if (product != null) {
+                    OfferMetadata offer = offerMetadata(product.get("offers"));
+                    return new ProductMetadata(
+                        textValue(product.get("name")),
+                        textValue(product.get("description")),
+                        firstImage(product.get("image")),
+                        offer.price(),
+                        offer.priceCurrency()
+                    );
                 }
             } catch (IOException ignored) {
                 // Bad JSON-LD should not make otherwise useful metadata fail.
             }
         }
-        return null;
+        return ProductMetadata.EMPTY;
     }
 
-    private String findOfferPrice(JsonNode node) {
+    private JsonNode findProduct(JsonNode node) {
         if (node == null || node.isNull()) {
             return null;
         }
+        if (isProduct(node.get("@type"))) {
+            return node;
+        }
         if (node.isArray()) {
             for (JsonNode child : node) {
-                String price = findOfferPrice(child);
-                if (price != null) {
-                    return price;
+                JsonNode product = findProduct(child);
+                if (product != null) {
+                    return product;
                 }
-            }
-        }
-        JsonNode offers = node.get("offers");
-        if (offers != null) {
-            if (offers.isArray()) {
-                for (JsonNode offer : offers) {
-                    String price = textValue(offer.get("price"));
-                    if (price != null) {
-                        return price;
-                    }
-                }
-            }
-            String price = textValue(offers.get("price"));
-            if (price != null) {
-                return price;
             }
         }
         for (JsonNode child : node) {
-            String price = findOfferPrice(child);
-            if (price != null) {
-                return price;
+            JsonNode product = findProduct(child);
+            if (product != null) {
+                return product;
             }
         }
         return null;
+    }
+
+    private boolean isProduct(JsonNode type) {
+        if (type == null || type.isNull()) {
+            return false;
+        }
+        if (type.isArray()) {
+            for (JsonNode candidate : type) {
+                if (isProduct(candidate)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        String value = textValue(type);
+        return value != null && (value.equalsIgnoreCase("Product") || value.toLowerCase(Locale.ROOT).endsWith("/product"));
+    }
+
+    private String firstImage(JsonNode image) {
+        if (image == null || image.isNull()) {
+            return null;
+        }
+        if (image.isArray()) {
+            for (JsonNode candidate : image) {
+                String value = firstImage(candidate);
+                if (value != null) {
+                    return value;
+                }
+            }
+            return null;
+        }
+        if (image.isObject()) {
+            return firstNonBlank(textValue(image.get("url")), textValue(image.get("contentUrl")));
+        }
+        return textValue(image);
+    }
+
+    private OfferMetadata offerMetadata(JsonNode offers) {
+        if (offers == null || offers.isNull()) {
+            return OfferMetadata.EMPTY;
+        }
+        if (offers.isArray()) {
+            for (JsonNode offer : offers) {
+                OfferMetadata metadata = offerMetadata(offer);
+                if (parsePrice(metadata.price()) != null) {
+                    return metadata;
+                }
+            }
+            return OfferMetadata.EMPTY;
+        }
+        return new OfferMetadata(textValue(offers.get("price")), textValue(offers.get("priceCurrency")));
     }
 
     private String textValue(JsonNode node) {
@@ -537,6 +588,18 @@ public class ScraperService {
             return null;
         }
         return node.isNumber() ? node.asText() : blankToNull(node.asText(null));
+    }
+
+    private record ProductMetadata(String name, String description, String image, String price, String priceCurrency) {
+        private static final ProductMetadata EMPTY = new ProductMetadata(null, null, null, null, null);
+    }
+
+    private record OfferMetadata(String price, String priceCurrency) {
+        private static final OfferMetadata EMPTY = new OfferMetadata(null, null);
+    }
+
+    private record PriceMetadata(BigDecimal price, String priceCurrency) {
+        private static final PriceMetadata EMPTY = new PriceMetadata(null, null);
     }
 
     private record Header(String name, String value) {}

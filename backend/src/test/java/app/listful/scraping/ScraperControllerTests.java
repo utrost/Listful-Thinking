@@ -89,14 +89,59 @@ class ScraperControllerTests {
     }
 
     @Test
-    void extractsJsonLdOfferPriceWhenNoOpenGraphPriceExists() throws Exception {
+    void prefersJsonLdProductMetadataAcrossScriptsAndGraphNodes() throws Exception {
         mvc.perform(post("/api/v1/utils/scrape")
                 .session(session)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"url\":\"" + baseUrl() + "/jsonld\"}"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.title").value("Plotter Paper"))
-            .andExpect(jsonPath("$.price").value(12.50));
+            .andExpect(jsonPath("$.title").value("Plotter Paper JSON-LD"))
+            .andExpect(jsonPath("$.description").value("Heavyweight paper for precise plots."))
+            .andExpect(jsonPath("$.imageUrl").value(baseUrl() + "/images/plotter-primary.jpg"))
+            .andExpect(jsonPath("$.price").value(12.50))
+            .andExpect(jsonPath("$.priceCurrency").value("EUR"));
+    }
+
+    @Test
+    void usesFirstUsefulImageAndOfferFromJsonLdProduct() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/jsonld-multiple\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.imageUrl").value(baseUrl() + "/images/first-useful.jpg"))
+            .andExpect(jsonPath("$.price").value(18.75))
+            .andExpect(jsonPath("$.priceCurrency").value("GBP"));
+    }
+
+    @Test
+    void omitsJsonLdCurrencyWhenJsonLdPriceIsInvalidAndFallbackPriceIsSelected() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/invalid-jsonld-price\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.price").value(27.50))
+            .andExpect(jsonPath("$.priceCurrency").doesNotExist());
+    }
+
+    @Test
+    void extractsPlainHtmlFallbacksWhenStructuredMetadataIsMissing() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/html-fallback\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Canvas Tool Roll"))
+            .andExpect(jsonPath("$.description").value("A sturdy roll for hand tools."))
+            .andExpect(jsonPath("$.imageUrl").value(baseUrl() + "/images/tool-roll.jpg"))
+            .andExpect(jsonPath("$.price").value(31.40));
+    }
+
+    @Test
+    void returnsNullFieldsWhenPageHasNoProductMetadata() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/missing\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").doesNotExist())
+            .andExpect(jsonPath("$.description").doesNotExist())
+            .andExpect(jsonPath("$.imageUrl").doesNotExist())
+            .andExpect(jsonPath("$.price").doesNotExist())
+            .andExpect(jsonPath("$.priceCurrency").doesNotExist());
     }
 
     @Test
@@ -165,8 +210,33 @@ class ScraperControllerTests {
         server.createContext("/jsonld", exchange -> respond(exchange, """
             <!doctype html><html><head>
               <title>Plotter Paper</title>
-              <script type=\"application/ld+json\">{"@type":"Product","name":"Plotter Paper","offers":{"@type":"Offer","price":"12.50"}}</script>
+              <meta property=\"og:title\" content=\"Plotter Paper OpenGraph\">
+              <script type=\"application/ld+json\">{"@type":"BreadcrumbList","name":"Stationery"}</script>
+              <script type=\"application/ld+json\">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"Shop"},{"@type":["Thing","Product"],"name":"Plotter Paper JSON-LD","description":"Heavyweight paper for precise plots.","image":["","/images/plotter-primary.jpg","/images/plotter-secondary.jpg"],"offers":{"@type":"Offer","price":"12.50","priceCurrency":"EUR"}}]}</script>
             </head><body><span itemprop=\"price\">99.99</span></body></html>
+            """));
+        server.createContext("/jsonld-multiple", exchange -> respond(exchange, """
+            <!doctype html><html><head>
+              <script type=\"application/ld+json\">[{"@type":"Product","name":"Tool Bag","image":[null,"","/images/first-useful.jpg","/images/second.jpg"],"offers":[{"@type":"Offer","price":"","priceCurrency":"USD"},{"@type":"Offer","price":"18.75","priceCurrency":"GBP"},{"@type":"Offer","price":"20.00","priceCurrency":"EUR"}]}]</script>
+            </head><body></body></html>
+            """));
+        server.createContext("/invalid-jsonld-price", exchange -> respond(exchange, """
+            <!doctype html><html><head>
+              <meta property="product:price:amount" content="27.50">
+              <script type="application/ld+json">{"@type":"Product","offers":{"@type":"Offer","price":"not a price","priceCurrency":"USD"}}</script>
+            </head><body></body></html>
+            """));
+        server.createContext("/html-fallback", exchange -> respond(exchange, """
+            <!doctype html><html><head>
+              <title>Canvas Tool Roll</title>
+              <meta name=\"description\" content=\"A sturdy roll for hand tools.\">
+            </head><body>
+              <main class=\"product\"><img class=\"product-image\" src=\"/images/tool-roll.jpg\"></main>
+              <span itemprop=\"price\">31,40 €</span>
+            </body></html>
+            """));
+        server.createContext("/missing", exchange -> respond(exchange, """
+            <!doctype html><html><head><title> </title></head><body><p>Nothing useful here.</p></body></html>
             """));
         server.createContext("/amazon", exchange -> respond(exchange, """
             <!doctype html><html><head><title>Amazon.de</title></head><body>

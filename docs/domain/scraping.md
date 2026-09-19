@@ -70,46 +70,49 @@ Fields filled by async enrichment:
 
 Title:
 
-1. `meta[property=og:title]`
-2. `meta[name=twitter:title]`
-3. Amazon-style `#productTitle`
-4. `<title>`, excluding generic `Amazon.de` / `Amazon.com`
+1. schema.org `Product` JSON-LD `name`
+2. `meta[property=og:title]`
+3. `meta[name=twitter:title]`
+4. Amazon-style `#productTitle`
+5. `<title>`, excluding generic `Amazon.de` / `Amazon.com`
 
 Description:
 
-1. Product-body descriptions when present:
+1. schema.org `Product` JSON-LD `description`
+2. Product-body descriptions when present:
    - `[itemprop=description]`
    - `.productView-description`
    - `.product-description`
    - `.product-detail-description`
    - `#productDescription`
-2. `meta[property=og:description]`
-3. `meta[name=description]`
+3. `meta[property=og:description]`
+4. `meta[name=description]`
 
-Product-body descriptions are preferred over generic shop-wide OpenGraph descriptions, because some storefronts expose precise product copy in the body while their social description remains a generic brand blurb.
+JSON-LD and product-body descriptions are preferred over generic shop-wide OpenGraph descriptions, because some storefronts expose precise product copy there while their social description remains a generic brand blurb.
 
 Image:
 
-1. `meta[property=og:image]`
-2. `meta[name=twitter:image]`
-3. Amazon-style `#landingImage[data-old-hires]`
-4. Amazon-style `#landingImage[src]`
-5. Generic/product gallery fallback:
+1. schema.org `Product` JSON-LD `image`
+2. `meta[property=og:image]`
+3. `meta[name=twitter:image]`
+4. Amazon-style `#landingImage[data-old-hires]`
+5. Amazon-style `#landingImage[src]`
+6. Generic/product gallery fallback:
    - `img[itemprop=image]`
    - `.product img[src]`
    - `.product-detail img[src]`
    - `.os_detail_galmain[src]`
-6. For gallery images inside a link, prefer the enclosing `a[href]` when it points to a likely image file (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`). This lets Fotoimpex-style thumbnail galleries resolve to the larger product image.
+7. For gallery images inside a link, prefer the enclosing `a[href]` when it points to a likely image file (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`). This lets Fotoimpex-style thumbnail galleries resolve to the larger product image.
 
 Price:
 
-1. `meta[property=product:price:amount]`
-2. JSON-LD `offers.price`
+1. JSON-LD `offers.price`, with its corresponding `offers.priceCurrency` when present
+2. `meta[property=product:price:amount]`
 3. `[itemprop=price][content]`
 4. `[itemprop=price]` text
 5. Amazon-style visible `.a-price` fallback
 
-Price text is normalized after extraction by removing non-number/currency punctuation and converting comma decimals to dot decimals.
+Price text is normalized after extraction by removing non-number/currency punctuation and converting comma decimals to dot decimals. JSON-LD `priceCurrency` is emitted only when its corresponding JSON-LD price is selected; fallback prices do not inherit an unrelated JSON-LD currency.
 
 ## Observed shop status
 
