@@ -217,13 +217,15 @@
               </ul>
             </section>
 
-            <form v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" class="inline-form" @submit.prevent="handleCreateItem">
+            <form v-if="selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE'" class="inline-form" @paste="currentItemFields.showImageUrl && handleImagePaste($event, itemForm)" @submit.prevent="handleCreateItem">
               <input v-model="itemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" />
               <input v-if="currentItemFields.showUrl" v-model="itemForm.url" aria-label="URL" placeholder="URL" @change="handleScrapeItemUrl" />
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
               <textarea v-if="currentItemFields.showUrl" v-model="itemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea>
               <input v-if="currentItemFields.showImageUrl" v-model="itemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" />
-              <img v-if="itemForm.imageUrl" class="item-image preview" :src="itemForm.imageUrl" :alt="itemForm.name || t('items.newName')" />
+              <input v-if="currentItemFields.showImageUrl" type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, itemForm)" />
+              <img v-if="currentItemFields.showImageUrl && itemForm.imageUrl" class="item-image preview" :src="itemForm.imageUrl" :alt="itemForm.name || t('items.newName')" />
+              <button v-if="currentItemFields.showImageUrl && itemForm.imageUrl" type="button" class="secondary subtle" @click="itemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
               <input v-if="currentItemFields.showPrice" v-model.number="itemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" />
               <input v-if="currentItemFields.showQuantity" v-model="itemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" />
               <input v-if="currentItemFields.showCategory" v-model="itemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" />
@@ -299,11 +301,14 @@
             <ul v-else class="item-list">
               <li v-for="item in displayedItems" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
                 <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
-                <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @submit.prevent="handleSaveEditedItem(item)">
+                <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @paste="currentItemFields.showImageUrl && handleImagePaste($event, editItemForm)" @submit.prevent="handleSaveEditedItem(item)">
                   <input v-model="editItemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" required />
                   <textarea v-if="currentItemFields.showUrl" v-model="editItemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea>
                   <input v-if="currentItemFields.showUrl" v-model="editItemForm.url" aria-label="URL" placeholder="URL" />
                   <input v-if="currentItemFields.showImageUrl" v-model="editItemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" />
+                  <input v-if="currentItemFields.showImageUrl" type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, editItemForm)" />
+                  <img v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" class="item-image preview" :src="editItemForm.imageUrl" :alt="editItemForm.name || t('items.newName')" />
+                  <button v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" type="button" class="secondary subtle" @click="editItemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
                   <input v-if="currentItemFields.showPrice" v-model.number="editItemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" />
                   <input v-if="currentItemFields.showQuantity" v-model="editItemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" />
                   <input v-if="currentItemFields.showCategory" v-model="editItemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" />
@@ -431,6 +436,9 @@ const editListForm = reactive<{ title: string; description: string; type: ListTy
 const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
 const editingItemId = ref<string | null>(null);
 const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
+const acceptedImageTypes = 'image/png,image/jpeg,image/webp,image/gif';
+const acceptedImageTypeSet = new Set(acceptedImageTypes.split(','));
+const maxImageFileBytes = 3_500_000;
 const itemReviewForm = reactive<ItemReviewState>(defaultItemReviewState());
 const itemReviewNow = ref(new Date());
 const recurrenceOptions = computed(() => [
@@ -831,6 +839,35 @@ async function handleScrapeItemUrl() {
       itemForm.price = scraped.price;
     }
   });
+}
+
+type ImageForm = { imageUrl: string };
+
+function setImageFromFile(file: File | undefined, form: ImageForm) {
+  if (!file || !acceptedImageTypeSet.has(file.type)) return;
+  if (file.size > maxImageFileBytes) {
+    messageKind.value = 'error';
+    message.value = t('items.imageTooLarge');
+    return;
+  }
+  const reader = new FileReader();
+  reader.addEventListener('load', () => {
+    if (typeof reader.result === 'string') form.imageUrl = reader.result;
+  });
+  reader.readAsDataURL(file);
+}
+
+function handleImagePaste(event: ClipboardEvent, form: ImageForm) {
+  const file = Array.from(event.clipboardData?.files ?? []).find((candidate) => acceptedImageTypeSet.has(candidate.type));
+  if (!file) return;
+  event.preventDefault();
+  setImageFromFile(file, form);
+}
+
+function handleImageFileInput(event: Event, form: ImageForm) {
+  const input = event.target as HTMLInputElement;
+  setImageFromFile(input.files?.[0], form);
+  input.value = '';
 }
 
 async function handleCreateItem() {

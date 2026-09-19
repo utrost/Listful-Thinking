@@ -63,6 +63,11 @@ class SecurityHardeningTests {
     }
 
     @Test
+    void defaultRequestBodyLimitAccommodatesTheBoundedImageDataUrl() {
+        assertThat(new SecurityHardeningProperties().getMaxRequestBodyBytes()).isEqualTo(5_100_000);
+    }
+
+    @Test
     void sqlInjectionPayloadsDoNotAuthenticateOrResolveShareTokens() throws Exception {
         MockHttpSession owner = register("owner", "correct horse battery staple");
         register("victim", "victim password");

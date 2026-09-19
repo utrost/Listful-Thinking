@@ -46,7 +46,7 @@ Implemented controls:
 - Passwords are stored as salted BCrypt hashes. Regression tests prove plaintext is not persisted and same plaintext produces different hashes.
 - One-time magic-login and password-reset tokens are stored hashed, expire after 30 minutes, and cannot be reused.
 - SQL-injection-shaped login usernames and public-share tokens are covered by regression tests; data access uses Spring Data/JPA derived queries or named parameters rather than string-built SQL.
-- API body size limit: default `MAX_REQUEST_BODY_BYTES=65536`.
+- API body size limit: default `MAX_REQUEST_BODY_BYTES=5100000`, sized for bounded wishlist image data URLs.
 - Sensitive POST endpoint rate limiting: default 60 requests / 60 seconds / client+path+method window, with bounded bucket map.
 - `X-Forwarded-For` is ignored by default; `TRUST_FORWARDED_FOR=true` is only for trusted reverse proxies that strip spoofed inbound headers.
 - Browser-style authenticated mutations require the app CSRF token header `X-CSRF-TOKEN` when browser request metadata such as `Origin` or `Sec-Fetch-Site` is present.
