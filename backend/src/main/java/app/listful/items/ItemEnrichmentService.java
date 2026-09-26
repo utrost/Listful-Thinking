@@ -44,26 +44,42 @@ public class ItemEnrichmentService {
             markFailed(itemId, url);
             return;
         }
-        try {
-            transaction.executeWithoutResult(status -> itemRepository.findById(itemId)
+        updateImport(() -> transaction.executeWithoutResult(status -> itemRepository.findById(itemId)
                 .filter(item -> !item.isDeleted() && item.getList().isActive() && url.equals(item.getUrl()) && "PENDING".equals(item.getImportStatus()))
                 .ifPresent(item -> {
                     applyMetadata(item, metadata);
                     if (PLACEHOLDER_NAME.equals(item.getName())) item.setName(fallbackName(url));
                     item.setImportStatus("READY");
-                }));
-        } catch (org.springframework.orm.ObjectOptimisticLockingFailureException concurrentEdit) {
-            // A user's edit wins; never overwrite it with a late background response.
-        }
+                })), itemId);
     }
 
     public void markFailed(String itemId, String url) {
-        transaction.executeWithoutResult(status -> itemRepository.findById(itemId)
+        updateImport(() -> transaction.executeWithoutResult(status -> itemRepository.findById(itemId)
             .filter(item -> !item.isDeleted() && item.getList().isActive() && url.equals(item.getUrl()) && "PENDING".equals(item.getImportStatus()))
             .ifPresent(item -> {
                 if (PLACEHOLDER_NAME.equals(item.getName())) item.setName(fallbackName(url));
                 item.setImportStatus("FAILED");
-            }));
+            })), itemId);
+    }
+
+    private void updateImport(Runnable write, String itemId) {
+        for (int attempt = 0; attempt < 5; attempt++) {
+            try {
+                write.run();
+                return;
+            } catch (org.springframework.dao.OptimisticLockingFailureException concurrentEdit) {
+                // The user's edit wins. Do not replay a stale metadata write.
+                return;
+            } catch (org.springframework.dao.TransientDataAccessException contention) {
+                // Retry in a fresh transaction, re-reading lifecycle and pending state.
+                if (attempt == 4) {
+                    logger.warn("Metadata persistence remains busy for item {}; pending state is recoverable on restart", itemId);
+                    return;
+                }
+                try { Thread.sleep(50L * (attempt + 1)); }
+                catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); return; }
+            }
+        }
     }
 
     private String fallbackName(String url) {

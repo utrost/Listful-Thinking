@@ -123,7 +123,7 @@ Run `scripts/smoke.sh` (now includes an isolated database restore), `python3 scr
 
 The candidate combines all September review repairs, email recovery fixes, the workspace redesign and roadmap milestones 2–4. See [release notes](releases/0.2.0-rc.1.md).
 
-- Backend: 118 tests passed, including 10 planning/lifecycle tests covering DST boundaries, authorization, reminder suppression, Trash recovery, public-link revocation, concurrent archive writes and fresh templates.
+- Backend: 120 tests passed, including 10 planning/lifecycle tests covering DST boundaries, authorization, reminder suppression, Trash recovery, public-link revocation, concurrent archive writes and fresh templates. Two additional import tests verify contention retries in fresh transactions and preservation of concurrent user edits.
 - Frontend: 63 tests passed; the candidate Docker build passed TypeScript checking and production compilation. Production npm audit reports zero vulnerabilities.
 - Browser acceptance: desktop/mobile Playwright covers the existing experience plus Today, stale completion rejection, archive/Undo, persistent list/item recovery and template creation/use/recovery. **20 passed, 6 deliberate duplicate-platform skips**, with no failures.
 - Full Docker API smoke passed, including non-root runtime, revision-checked updates, explicit unavailable-email behavior, backup integrity and restored-container login/list access.
