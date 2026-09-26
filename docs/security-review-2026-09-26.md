@@ -39,3 +39,9 @@ npm --prefix frontend audit --omit=dev
 ```
 
 The advisory query sends public package names/versions only, never list content, source files, credentials or database contents. Counts are a dated observation, not a guarantee against future advisories. Primary references: [Spring's managed dependency inventory](https://docs.spring.io/spring-boot/3.5/appendix/dependency-versions/coordinates.html), [Apache Tomcat security advisories](https://tomcat.apache.org/security-10.html), and the [OSV API](https://google.github.io/osv.dev/api/).
+
+## Container verification
+
+Trivy 0.74.0 scanned the packaged Docker archive using a freshly updated advisory database. It reported no known vulnerabilities for the Alpine 3.24.2 packages or bundled Java libraries. The image runs Temurin 17.0.20.1+1, matching the current published Java 17 release. A separate inspection queried all 46 Maven metadata records embedded in bundled JARs and returned no advisory matches, supplementing the resolved 77-component SBOM scan. These checks concern known published advisories at the time of review.
+
+The restore smoke uses a fresh application-owned Docker volume rather than relying on the host runner's UID or world-writable backup files. This is verified in CI as well as locally.

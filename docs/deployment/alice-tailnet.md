@@ -4,7 +4,15 @@ This document records the current private deployment contract for the Listful Th
 
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
-## Latest deployment — 0.2.0-rc.1, 2026-09-26 19:46 UTC
+## Latest deployment — 0.2.0-rc.2 privacy/security fixes, 2026-09-26
+
+Image `listful-thinking:v0.2.0-rc.2`, also tagged `listful-thinking:alice`, ID `sha256:e20e3b4c1c97a411c8ac8fae65dc153a84c62c8edc2642ffe65a4a4f1e105c1e`.
+
+See the [security review](../security-review-2026-09-26.md) and [RC2 notes](../releases/0.2.0-rc.2.md). V15→V16 migration was verified on a separate copy before deployment. Live readiness, SQLite integrity/foreign keys, original counts (1 account, 1 list, 3 items), non-root runtime, preserved binding/volume and enabled email recovery passed. SQLite is mode 0600 and its directory is 0700. Desktop/mobile login/recovery UI, cache headers and layout passed. SMTP hostname-verified STARTTLS and authentication passed without sending email.
+
+The private snapshot and deployment record are in `data/deployments/20260926T201735Z/`. The previous image/container is retained stopped with restart disabled. Rollback to RC1 requires that image and its matching V15 snapshot. Existing SMTP configuration and the Tailscale-address binding were preserved.
+
+## Previous deployment — 0.2.0-rc.1, 2026-09-26 19:46 UTC
 
 Image `listful-thinking:v0.2.0-rc.1`, also tagged `listful-thinking:alice`, ID `sha256:d438e808352f0e3a6e8ac258fd97cdb52884fb408b8293de794fc8b46d082c2e`.
 
