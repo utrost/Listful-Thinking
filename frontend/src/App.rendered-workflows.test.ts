@@ -139,7 +139,7 @@ describe('rendered application workflows', () => {
 
     await wrapper.get('input[aria-label="Username to share with"]').setValue('martha');
     await wrapper.get('select[aria-label="Share permission"]').setValue('CONTRIBUTE');
-    await formWithButton(wrapper, 'Share read-only').trigger('submit');
+    await formWithButton(wrapper, 'Invite to list').trigger('submit');
     await flushPromises();
 
     expect(shareListWithUser).toHaveBeenCalledWith('list-1', { username: 'martha', permission: 'CONTRIBUTE' });

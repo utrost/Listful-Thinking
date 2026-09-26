@@ -174,7 +174,7 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
             return true;
         }
 
-        String key = clientIp(request) + " " + request.getMethod() + " " + request.getRequestURI() + " " + windowStartedAt;
+        String key = clientIp(request) + " " + request.getMethod() + " " + rateLimitPath(request) + " " + windowStartedAt;
         WindowCounter counter = counters.compute(key, (ignored, existing) -> {
             if (existing == null || existing.windowStartedAt != windowStartedAt) {
                 return new WindowCounter(windowStartedAt);
@@ -183,6 +183,14 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
             return existing;
         });
         return counter.requests.get() > properties.getRateLimitMaxRequests();
+    }
+
+    private String rateLimitPath(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        if (path.startsWith("/api/v1/share/")) return "/api/v1/share/claims";
+        if (path.matches("/api/v1/lists/[^/]+/items")) return "/api/v1/lists/items";
+        if (path.matches("/api/v1/items/[^/]+/import")) return "/api/v1/items/import";
+        return path;
     }
 
     private boolean isSensitiveEndpoint(HttpServletRequest request) {
@@ -197,6 +205,8 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
             || path.equals("/api/v1/auth/password-reset")
             || path.equals("/api/v1/auth/password-reset/consume")
             || path.equals("/api/v1/utils/scrape")
+            || path.matches("/api/v1/lists/[^/]+/items")
+            || path.matches("/api/v1/items/[^/]+/import")
             || (path.startsWith("/api/v1/share/") && path.contains("/items/") && path.endsWith("/claim"));
     }
 

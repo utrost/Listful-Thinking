@@ -95,7 +95,7 @@ public class AuthController {
 
     @GetMapping("/settings")
     public AuthSettingsResponse settings() {
-        return new AuthSettingsResponse(authService.registrationAvailable());
+        return new AuthSettingsResponse(authService.registrationAvailable(), authService.emailRecoveryAvailable());
     }
 
     @GetMapping("/me")
@@ -123,6 +123,12 @@ public class AuthController {
     ResponseEntity<ApiError> badCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(new ApiError("bad_credentials", message("auth.bad_credentials")));
+    }
+
+    @ExceptionHandler(EmailDeliveryException.class)
+    ResponseEntity<ApiError> emailDeliveryFailed(EmailDeliveryException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(new ApiError(ex.getMessage(), "Email recovery is currently unavailable."));
     }
 
     private String message(String code) {

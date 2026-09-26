@@ -16,7 +16,13 @@ public class SecurityAuditService {
         this.repository = repository;
     }
 
+    public static String redactPath(String path) {
+        return path == null ? null : path.replaceAll("(/api/v1/share/)[^/;?]+", "$1[redacted]")
+            .replaceAll("([?&]token=)[^&]*", "$1[redacted]");
+    }
+
     public void record(String type, String actorId, String clientIp, String path, String details) {
+        path = redactPath(path);
         String safeDetails = details == null ? null : details.substring(0, Math.min(details.length(), 2000));
         try {
             repository.save(new SecurityEvent(type, actorId, clientIp, path, safeDetails, Instant.now()));

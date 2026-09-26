@@ -115,8 +115,18 @@ The app records structured security events for filter-level rejects such as over
 ## Current weak points and future hardening
 
 - Alice currently runs as a private Tailnet HTTP deployment. Internet-facing use should add HTTPS/TLS termination, verify live HSTS, and set `SESSION_COOKIE_SECURE=true`.
-- Public share tokens are high-entropy and revocable, but stored raw at rest; migrate to hashed public-token storage before broader exposure.
-- Audit logging currently covers filter-level rejects. Extend it to admin changes, auth lifecycle, user lifecycle, and public token generation/revocation.
+- Public tokens are hashed at rest. Public bearer parameters are redacted from application audit paths; migration V14 redacts historical database audit paths. Operators must separately rotate affected links and handle older external log archives.
+- Audit logging covers filter rejects, admin user/settings changes, and public link changes. Auth lifecycle audit coverage remains a follow-up.
 - CI includes OSV dependency scanning, but release images/JARs are not signed and no SBOM artifact is published.
 - GitHub Actions currently pass but emit upstream deprecation warnings for some action runtimes; upgrade action majors as maintenance work.
 - Backups, host encryption, and host firewall policy are deployment-environment responsibilities, not enforced by this application repository.
+
+## Session and edit lifecycle
+
+Successful registration, login, and magic login rotate an existing session ID and clear its CSRF token. Password reset changes the credential hash, invalidates all outstanding account tokens, and causes old sessions to fail the next active-session check. The API client clears its CSRF cache at auth boundaries and retries a recognized CSRF rejection once.
+
+Shared email addresses are supported. Email-only recovery sends a link only for an unambiguous active account; a username selects the account when a family shares an email address. Responses remain neutral.
+
+Item PUT requests require `If-Match: "<version>"` using the version returned by the item API. Missing/stale revisions return `409 stale_item`. Hibernate version checks also protect against changes between checking and committing, and public claims increment the revision. API clients must reload and reconcile rather than silently retry stale edits.
+
+Import workers are limited to two concurrent jobs and a queue of 32. Creating items and retrying imports are rate-limited; queue rejection produces a retryable import state. Public claim requests share a normalized rate bucket instead of one bucket per token/item.

@@ -18,6 +18,17 @@ class HealthControllerTests {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private org.springframework.jdbc.core.JdbcTemplate database;
+
+    @Test
+    void readinessReportsDatabaseFailures() throws Exception {
+        org.mockito.Mockito.when(database.queryForObject("SELECT COUNT(*) FROM flyway_schema_history", Integer.class))
+            .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("offline"));
+        mockMvc.perform(get("/api/v1/health/ready")).andExpect(status().isServiceUnavailable());
+        mockMvc.perform(get("/api/v1/health")).andExpect(status().isOk());
+    }
+
     @Test
     void healthReturnsOk() throws Exception {
         mockMvc.perform(get("/api/v1/health"))

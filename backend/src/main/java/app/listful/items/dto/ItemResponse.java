@@ -18,6 +18,9 @@ public record ItemResponse(
     String reservedByGuest,
     String lastCompletedAt,
     String ownerLabel,
-    String assistantLabels
+    String assistantLabels,
+    long version,
+    String priceCurrency,
+    String importStatus
 ) {
 }

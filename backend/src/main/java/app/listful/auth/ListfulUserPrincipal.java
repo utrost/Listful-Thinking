@@ -9,9 +9,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 public class ListfulUserPrincipal implements UserDetails {
     private final User user;
+    private final String credentialHash;
 
     public ListfulUserPrincipal(User user) {
         this.user = user;
+        this.credentialHash = user.getPasswordHash();
     }
 
     public User user() {
@@ -25,7 +27,7 @@ public class ListfulUserPrincipal implements UserDetails {
 
     @Override
     public String getPassword() {
-        return user.getPasswordHash();
+        return credentialHash;
     }
 
     @Override

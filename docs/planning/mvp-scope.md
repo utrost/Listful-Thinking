@@ -42,7 +42,7 @@
 
 ### Reminders
 
-- Daily due/upcoming check.
+- Minute-based due/overdue scan with durable occurrence deduplication.
 - SMTP email if fully configured.
 - In-app notification fallback.
 

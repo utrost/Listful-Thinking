@@ -39,7 +39,7 @@ public class ListSharingService {
 
     @Transactional
     public ListShareResponse shareWithUser(User actor, String listId, ShareListRequest request) {
-        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        ListEntity list = listAccessService.requireShareableList(actor, listId);
         User sharedUser = userRepository.findByUsername(request.username())
             .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if (sharedUser.getId().equals(actor.getId())) {
@@ -50,7 +50,7 @@ public class ListSharingService {
 
     @Transactional
     public void revoke(User actor, String listId, String username) {
-        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        ListEntity list = listAccessService.requireShareableList(actor, listId);
         User sharedUser = userRepository.findByUsername(username)
             .orElseThrow(() -> new ResourceNotFoundException("Share not found"));
         ListShareId id = new ListShareId(list.getId(), sharedUser.getId());

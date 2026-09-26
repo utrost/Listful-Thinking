@@ -62,6 +62,20 @@ class SecurityHardeningTests {
         settingRepository.deleteAll();
     }
 
+
+    @Test
+    void rejectedPublicRequestsNeverPersistBearerTokens() throws Exception {
+        String bearer = "sensitive-bearer-that-must-not-be-logged";
+        mockMvc.perform(post("/api/v1/share/" + bearer + "/items/test/claim")
+            .contentType("application/json").content("x".repeat(200)))
+            .andExpect(status().isPayloadTooLarge());
+        assertThat(securityEventRepository.findAll()).isNotEmpty();
+        assertThat(securityEventRepository.findAll()).allSatisfy(event ->
+            assertThat(event.getPath()).doesNotContain(bearer));
+        assertThat(SecurityAuditService.redactPath("/api/v1/share/" + bearer + "/items/test/claim"))
+            .isEqualTo("/api/v1/share/[redacted]/items/test/claim");
+    }
+
     @Test
     void defaultRequestBodyLimitAccommodatesTheBoundedImageDataUrl() {
         assertThat(new SecurityHardeningProperties().getMaxRequestBodyBytes()).isEqualTo(5_100_000);

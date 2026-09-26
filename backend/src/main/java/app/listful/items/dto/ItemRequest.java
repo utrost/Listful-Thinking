@@ -21,7 +21,8 @@ public record ItemRequest(
     @Size(max = 255) String quantity,
     @Size(max = 255) String category,
     @Size(max = 255) String ownerLabel,
-    @Size(max = 255) String assistantLabels
+    @Size(max = 255) String assistantLabels,
+    @jakarta.validation.constraints.Pattern(regexp = "[A-Z]{3}") String priceCurrency
 ) {
     public static final int MAX_IMAGE_URL_LENGTH = 2_000;
     public static final int MAX_IMAGE_DATA_URL_LENGTH = 5_000_000;

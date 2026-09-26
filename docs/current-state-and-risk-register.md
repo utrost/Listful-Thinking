@@ -1,6 +1,16 @@
 # Current State and Risk Register
 
-Last updated: 2026-09-18 on current `main`.
+Last updated: 2026-09-26 for the 0.2.0-rc.1 candidate.
+
+## Planning candidate baseline
+
+The [planning candidate](planning/release-candidate-0.2.md) adds timezone-aware Today & upcoming, paused archives, recoverable deletion/Trash and personal templates. Migration V15 follows V14; back up before upgrade. The [workspace concept](design/user-experience.md) is implemented. The existing deployed baseline has verified real SMTP authentication and magic-link login. See the [deployment record](deployment/alice-tailnet.md) for the live version.
+
+## September review remediation
+
+The [review](review-2026-09-26.md) records the pre-fix baseline at `7778df4`. The current work adds session rotation/reset revocation, audit redaction, shared-email recovery, shared-user UI fixes, CSRF refresh, item revisions, guarded list conversion, bounded import states, reminder catch-up/deduplication, mobile layout repairs, and verified backup/restore tooling. Migration V14 is forward-only; back up before upgrading. Older external audit logs are not rewritten by the database migration.
+
+The previously failing full container smoke script has been repaired and includes restored login/list checks; it is now a CI job. Historical verification below describes earlier commits, not the current checkout. See [remediation status](review-remediation-2026-09-26.md) for current checks and remaining scope.
 
 This document describes what exists in the repository and the Alice deployment today. It intentionally includes weak points and deferred hardening work so the current state is not over-sold.
 
@@ -70,7 +80,7 @@ These are known and intentionally documented:
 6. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
 7. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.
 8. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
-9. **Backups/encryption are outside this repository.** The app uses a persistent SQLite volume; backup retention, backup encryption, and host hardening belong to the deployment environment.
+9. **Backup scheduling/encryption are operator responsibilities.** The repository now provides a consistent SQLite snapshot helper and restore verification; retention, encryption, and host hardening remain deployment responsibilities.
 
 ## Verification evidence
 

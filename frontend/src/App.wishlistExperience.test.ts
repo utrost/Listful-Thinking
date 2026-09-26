@@ -50,6 +50,17 @@ describe('wishlist links and status controls', () => {
     document.body.innerHTML = '';
   });
 
+  it('explains an active one-time link after reload and displays zero prices with their currency', async () => {
+    vi.mocked(getLists).mockResolvedValue([{ ...wishList, shareToken: null }]);
+    vi.mocked(getItems).mockResolvedValue([{ ...wishItem, price: 0, priceCurrency: 'USD' }]);
+    const wrapper = mount(App, { global: { plugins: [i18n] } });
+    await flushPromises();
+    expect(wrapper.text()).toContain('A public link is active');
+    expect(button(wrapper, 'Replace public link')).toBeTruthy();
+    expect(wrapper.find('.copyable-link').exists()).toBe(false);
+    expect(wrapper.text()).toContain('$0.00');
+  });
+
   it('renders a safe product link and lets the owner mark and reopen a purchased wish', async () => {
     vi.mocked(updateItem)
       .mockResolvedValueOnce({ ...wishItem, status: 'PURCHASED' })
@@ -65,13 +76,13 @@ describe('wishlist links and status controls', () => {
     await button(wrapper, 'Mark purchased')!.trigger('click');
     await flushPromises();
     expect(updateItem).toHaveBeenLastCalledWith('item-1', expect.objectContaining({ status: 'PURCHASED' }));
-    expect(wrapper.text()).toContain('PURCHASED');
+    expect(wrapper.text()).toContain('Purchased');
     expect(button(wrapper, 'Reopen wish')).toBeTruthy();
 
     await button(wrapper, 'Reopen wish')!.trigger('click');
     await flushPromises();
     expect(updateItem).toHaveBeenLastCalledWith('item-1', expect.objectContaining({ status: 'OPEN' }));
-    expect(wrapper.text()).toContain('OPEN');
+    expect(wrapper.text()).toContain('Open');
   });
 
   it.each([

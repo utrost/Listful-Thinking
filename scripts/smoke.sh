@@ -11,6 +11,7 @@ admin_cookie="$workdir/admin.cookies"
 user_cookie="$workdir/user.cookies"
 
 cleanup() {
+  docker rm -f "${project}-restore" >/dev/null 2>&1 || true
   if [ "${LISTFUL_KEEP_SMOKE:-false}" = "true" ]; then
     echo "Keeping smoke stack '$project' for debugging. Remove with: docker compose -p '$project' -f '$compose_file' down -v"
     echo "Temporary smoke files kept in: $workdir"
@@ -53,7 +54,14 @@ expect_status_json() {
 }
 
 curl_json() {
-  curl -fsS "$@"
+  local request_url="${!#}"
+  if [[ " $* " == *" -X PUT "* && "$request_url" == */api/v1/items/* ]]; then
+    local revision
+    revision="$(curl -fsS -b "$admin_cookie" "$request_url" | json_field version)"
+    curl -fsS -H "If-Match: \"${revision}\"" "$@"
+  else
+    curl -fsS "$@"
+  fi
 }
 
 require_command docker
@@ -73,6 +81,7 @@ services:
       SYSTEM_LANG: en
       REGISTRATION_ENABLED: "true"
       RATE_LIMIT_WINDOW_SECONDS: "3600"
+      MAX_REQUEST_BODY_BYTES: "65536"
       TRUST_FORWARDED_FOR: "true"
       PUBLIC_BASE_URL: "http://localhost:${port}"
       MAIL_HOST: ""
@@ -90,7 +99,7 @@ docker compose -p "$project" -f "$compose_file" down -v --remove-orphans >/dev/n
 docker compose -p "$project" -f "$compose_file" up --build -d
 
 for attempt in $(seq 1 90); do
-  if curl -fsS "$base_url/api/v1/health" >/dev/null 2>&1; then
+  if curl -fsS "$base_url/api/v1/health/ready" >/dev/null 2>&1; then
     break
   fi
   if [ "$attempt" = 90 ]; then
@@ -129,12 +138,12 @@ curl_json -b "$admin_cookie" -X PUT -H 'Content-Type: application/json' \
 
 curl -fsS "$base_url/magic-login?token=smoke" >/dev/null
 curl -fsS "$base_url/reset-password?token=smoke" >/dev/null
-curl_json -H 'Content-Type: application/json' \
+expect_status_json 503 'data["code"] == "email_unavailable"' -H 'Content-Type: application/json' \
   -d '{"email":"nobody@example.test"}' \
-  "$base_url/api/v1/auth/magic-link" >/dev/null
-curl_json -H 'Content-Type: application/json' \
+  "$base_url/api/v1/auth/magic-link"
+expect_status_json 503 'data["code"] == "email_unavailable"' -H 'Content-Type: application/json' \
   -d '{"email":"nobody@example.test"}' \
-  "$base_url/api/v1/auth/password-reset" >/dev/null
+  "$base_url/api/v1/auth/password-reset"
 
 oversized_username="$(python3 -c 'print("a" * 70000)')"
 expect_status_json 413 'data["code"] == "payload_too_large"' \
@@ -283,4 +292,25 @@ curl_json -H 'Content-Type: application/json' \
 sqlite_path="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'test -f /app/data/listful-thinking.sqlite && echo present')"
 [ "$sqlite_path" = "present" ] || { echo "SQLite database missing in /app/data" >&2; exit 1; }
 
-echo "Smoke OK: health, non-root runtime, admin/users/settings, list clone, list/item responsibility/chore recurrence/grocery clear-completed/public claim/signup, SQLite volume"
+# Exercise a real restore into a separate container before accepting a release.
+docker compose -p "$project" -f "$compose_file" stop listful-thinking >/dev/null
+container_id="$(docker compose -p "$project" -f "$compose_file" ps -aq listful-thinking)"
+docker cp "$container_id:/app/data/listful-thinking.sqlite" "$workdir/source.sqlite" >/dev/null
+mkdir "$workdir/restore"
+python3 "$repo_root/scripts/backup-db.py" "$workdir/source.sqlite" "$workdir/restore/listful-thinking.sqlite"
+# The disposable restore container retains the image's non-root user.
+chmod 777 "$workdir/restore"
+chmod 666 "$workdir/restore/listful-thinking.sqlite"
+docker run -d --name "${project}-restore" -p "127.0.0.1:${port}:8080" \
+  -v "$workdir/restore:/app/data" listful-thinking:smoke >/dev/null
+for attempt in $(seq 1 60); do
+  if curl -fsS "$base_url/api/v1/health/ready" >/dev/null 2>&1; then break; fi
+  [ "$attempt" -lt 60 ] || { echo 'Restore did not become ready' >&2; exit 1; }
+  sleep 1
+done
+curl_json -c "$admin_cookie" -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"correct horse battery staple"}' \
+  "$base_url/api/v1/auth/login" | assert_json 'data["role"] == "ADMIN"'
+curl_json -b "$admin_cookie" "$base_url/api/v1/lists/$list_id" \
+  | assert_json 'data["title"] == "Birthday 2027"'
+echo "Smoke OK: auth, sharing, items, non-root runtime, SQLite backup and restored login/list"

@@ -37,7 +37,7 @@ class ItemRequestValidationTests {
 
     private int violationsFor(String imageUrl) {
         ItemRequest request = new ItemRequest(
-            "Camera", null, null, imageUrl, null, null, null, null, null, null, null, null
+            "Camera", null, null, imageUrl, null, null, null, null, null, null, null, null, null
         );
         return validator.validate(request).size();
     }

@@ -2,7 +2,8 @@
   "app": {
     "title": "Listful Thinking",
     "tagline": "Wishlists, chores, and event lists for self-hosters.",
-    "intro": "A lightweight single-container app with SQLite persistence and public guest sharing."
+    "intro": "Your wishes, plans, and everyday lists, together.",
+    "working": "Working…"
   },
   "auth": {
     "register": "Register",
@@ -15,9 +16,13 @@
     "passwordReset": "Reset password",
     "newPassword": "New password",
     "setNewPassword": "Set new password",
-    "emailSent": "If that email exists, a link has been sent.",
+    "emailSent": "If that email exists and identifies the account, a link has been sent. For a shared email address, enter your username too.",
     "passwordUpdated": "Password updated. You can log in now.",
-    "registrationDisabled": "Self-registration is currently disabled. Ask an administrator to create your account."
+    "registrationDisabled": "Self-registration is currently disabled. Ask an administrator to create your account.",
+    "recovery": "Account recovery",
+    "recoveryHelp": "Enter your account email. No password is needed. For a shared email address, also enter your username.",
+    "optionalUsername": "Username (optional)",
+    "validEmailRequired": "Enter a valid account email address."
   },
   "health": {
     "check": "Check backend",
@@ -39,7 +44,12 @@
     "item_already_claimed": "That item is already claimed.",
     "unauthorized": "Please log in again.",
     "forbidden": "You do not have permission to do that.",
-    "not_found": "That item could not be found."
+    "not_found": "That item could not be found.",
+    "stale_item": "This item changed in another session. Reload the list and review the latest version before saving.",
+    "list_type_in_use": "Empty the list before changing its type.",
+    "email_unavailable": "Email recovery is unavailable. Ask the administrator to configure outgoing email.",
+    "email_delivery_failed": "The email could not be sent. Please try again later or contact the administrator.",
+    "list_inactive": "Restore the archived list before making changes. Templates cannot be shared."
   },
   "lists": {
     "title": "Your lists",
@@ -53,7 +63,15 @@
     "cancel": "Cancel",
     "deleteConfirm": "Confirm delete",
     "deleteCancel": "Keep list",
-    "delete": "Delete list"
+    "delete": "Delete list",
+    "type": "List type",
+    "types": {
+      "WISH": "Wishlist",
+      "TODO": "To-do",
+      "GROCERY": "Groceries",
+      "CHORE": "Chores",
+      "EVENT": "Event"
+    }
   },
   "items": {
     "newName": "New item name",
@@ -111,7 +129,18 @@
     "reopen": "Reopen",
     "markPurchased": "Mark purchased",
     "reopenWish": "Reopen wish",
-    "delete": "Delete"
+    "delete": "Delete",
+    "currency": "Currency (EUR, USD…)",
+    "deleteWarning": "Move this item to Trash? You can restore it later.",
+    "clearWarning": "Move all completed grocery items to Trash? You can undo this.",
+    "importPending": "Importing product details…",
+    "retryImport": "Retry import",
+    "statuses": {
+      "OPEN": "Open",
+      "DONE": "Done",
+      "CLAIMED": "Reserved",
+      "PURCHASED": "Purchased"
+    }
   },
   "sharing": {
     "title": "Sharing",
@@ -130,7 +159,15 @@
       "VIEW": "Read-only public view",
       "WISH_CLAIM": "Wishlist claiming",
       "SIGNUP": "Signup sheet"
-    }
+    },
+    "mode": "Public share mode",
+    "permission": "Share permission",
+    "replacePublic": "Replace public link",
+    "replaceWarning": "Replace this public link? Previously shared links will stop working.",
+    "activeLinkHint": "A public link is active. Copy a new link now: it is shown only once. Replacing it invalidates the previous link.",
+    "copyLink": "Copy link",
+    "openLink": "Open link",
+    "copied": "Link copied."
   },
   "notifications": {
     "title": "Notifications",
@@ -147,6 +184,125 @@
     "activate": "Activate",
     "deactivate": "Deactivate",
     "lastActiveAdminHint": "At least one active admin must remain.",
-    "lists": "All lists"
+    "lists": "All lists",
+    "role": "Role"
+  },
+  "ux": {
+    "language": "Language",
+    "backToLists": "Back to lists",
+    "administration": "Administration",
+    "adminHelp": "Manage accounts and instance settings here. Your everyday lists live in the main workspace.",
+    "listsHelp": "A little less to remember. A place for every list.",
+    "newList": "+ New list",
+    "findList": "Find a list",
+    "chooseList": "Choose a list",
+    "noListsFound": "No lists match that name.",
+    "itemCount": "{open} open · {total} total",
+    "listSections": "List sections",
+    "readOnlyHelp": "Shared with you: you can view this list. Ask the owner if you need to make changes.",
+    "contributorHelp": "Shared with you: you can add and update items. The owner manages sharing and list settings.",
+    "settingsHelp": "Change this list’s details, make a copy, or delete it.",
+    "typeLocked": "The list type is fixed while it contains items. Create a new list for a different purpose.",
+    "sharingHelp": "Choose who can see this list and what they can do. A public link works without an account.",
+    "publicLink": "Share a link",
+    "invitePeople": "Invite someone with an account",
+    "inviteHelp": "Read-only lets people view items. Contributors can also add and update them.",
+    "invite": "Invite to list",
+    "addToList": "Add to this list",
+    "productUrl": "Product link (optional)",
+    "moreDetails": "More details (optional)",
+    "filterSort": "Filter & sort",
+    "emptyItems": "A fresh start.",
+    "emptyItemsHelp": "Add your first item above. You can keep it simple and add details later.",
+    "emptyReadOnly": "Nothing here yet. The owner can add items to this list.",
+    "noResults": "No matching items.",
+    "noResultsHelp": "Try another search or reset your filters.",
+    "resetFilters": "Reset search & filters",
+    "welcome": "Make room for what matters",
+    "firstList": "Start with one list.",
+    "firstListHelp": "A wishlist, the weekly shop, or those little jobs you don’t want to forget. Pick a purpose and give it a name.",
+    "actions": "More",
+    "listCreated": "List created. Add your first item below.",
+    "itemAdded": "Item added to your list.",
+    "sharedWithYou": "Shared with you",
+    "publicViewHelp": "Browse this list. This link gives you viewing access.",
+    "publicClaimHelp": "Choose an available item and enter your name to reserve it. Others will see that it’s taken.",
+    "purpose": {
+      "WISH": "Keep things you’d love. Add a name or paste a product link to get started.",
+      "TODO": "Get it out of your head. Add a task, then mark it done when you’re finished.",
+      "GROCERY": "Plan your next shop. Add items and quantities; use categories to group your aisles.",
+      "CHORE": "Share the everyday jobs. Add due dates and repeating schedules in More details.",
+      "EVENT": "Bring a plan together. Set the event date, then add tasks and people responsible."
+    },
+    "views": {
+      "items": "Items",
+      "sharing": "Sharing",
+      "settings": "List settings"
+    },
+    "repeat": "Repeat",
+    "resetHelp": "Choose a password with at least 8 characters. You can then return to sign in."
+  },
+  "planning": {
+    "navigation": "Workspace navigation",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "timezone": "Dates use your timezone: {zone}.",
+    "clearDay": "Room to breathe.",
+    "clearDayHelp": "No dated work is due in this period. Your undated items are still in Your lists.",
+    "nothingDue": "Nothing due here.",
+    "repeats": "Repeating task",
+    "useTemplate": "Use template",
+    "preview": "Open list",
+    "restore": "Restore",
+    "deleteTemplate": "Delete template",
+    "instanceTitle": "New list name",
+    "freshCopy": "A fresh private list: items start open, reservations and completion history are cleared, and old item dates are not copied. Set new dates after creating it.",
+    "createFromTemplate": "Create from template",
+    "deletedItems": "Deleted items",
+    "restoreArchivedFirst": "Restore the archived list first.",
+    "undo": "Undo",
+    "dismiss": "Dismiss",
+    "archivedPreview": "Archived: this list is paused and read-only. Restore it from List settings to continue. Its old public link has been revoked.",
+    "templatePreview": "Template blueprint: edit its reusable items here. Templates stay private and do not send reminders. Use Templates to create a fresh working list.",
+    "archiveList": "Archive list",
+    "saveTemplate": "Save as template",
+    "templateTitle": "Template name",
+    "movedToTrash": "“{name}” moved to Trash.",
+    "itemsTrashed": "{count} completed items moved to Trash.",
+    "listArchived": "“{name}” archived.",
+    "restored": "Restored. Deleted or archived public links stay revoked.",
+    "templateSaved": "Template saved. Use it whenever you need a fresh list.",
+    "createdFromTemplate": "Your fresh list is ready. Set any dates you need before using reminders.",
+    "deleteTemplateConfirm": "Move this template to Trash? Existing lists created from it are kept.",
+    "templateTrashed": "Template moved to Trash.",
+    "loadFailed": "This view could not be loaded. Use Refresh to try again.",
+    "views": {
+      "lists": "Your lists",
+      "today": "Today & upcoming",
+      "archive": "Archive",
+      "templates": "Templates",
+      "trash": "Trash"
+    },
+    "help": {
+      "today": "A view of dated work across your own and shared lists. Today is your local calendar day; upcoming covers the following seven days.",
+      "archive": "Keep finished or paused lists without cluttering your active workspace. Archived lists send no reminders and are hidden from collaborators until restored.",
+      "templates": "Reusable starting points for trips, shopping and events. Each use creates an independent private list.",
+      "trash": "Deleted lists and items stay here until you restore them. There is no automatic deletion in this release. Public links are not re-enabled by restoring."
+    },
+    "empty": {
+      "archive": "No archived lists yet.",
+      "templates": "Start with a list you already love.",
+      "trash": "Nothing in Trash."
+    },
+    "emptyHelp": {
+      "archive": "Use Archive list in a list’s settings when you want to pause it.",
+      "templates": "Open a list’s settings and choose Save as template. Reuse it here for a fresh start.",
+      "trash": "Deleted lists, templates and items can be recovered here, even after refreshing or signing in again."
+    },
+    "groups": {
+      "overdue": "Overdue",
+      "today": "Today",
+      "upcoming": "Next 7 days"
+    }
   }
 }

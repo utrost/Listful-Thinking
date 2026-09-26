@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'release/**']
   pull_request:
 
 jobs:
@@ -14,6 +14,8 @@ jobs:
         run: |
           scripts/test-smoke-contract.sh
           scripts/test-compose-env-contract.sh
+          scripts/test-docs-contract.sh
+          python3 scripts/test-backup.py
 
   backend:
     runs-on: ubuntu-latest
@@ -85,3 +87,10 @@ jobs:
           scan-args: |-
             --lockfile=backend/pom.xml
             --lockfile=frontend/package-lock.json
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Full container smoke and restore verification
+        run: scripts/smoke.sh

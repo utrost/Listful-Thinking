@@ -35,6 +35,19 @@ public class Item {
     private String description;
 
     private BigDecimal price;
+    @jakarta.persistence.Version
+    private long version;
+    @Column(name = "price_currency")
+    private String priceCurrency;
+    @Column(name = "import_status", nullable = false)
+    private String importStatus = "NONE";
+
+    public long getVersion() { return version; }
+    public String getPriceCurrency() { return priceCurrency; }
+    public void setPriceCurrency(String value) { priceCurrency = value; }
+    public String getImportStatus() { return importStatus; }
+    public void setImportStatus(String value) { importStatus = value; }
+
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -61,6 +74,11 @@ public class Item {
 
     @Column(name = "assistant_labels")
     private String assistantLabels;
+
+    @Column(name = "deleted_at") private Instant deletedAt;
+    public boolean isDeleted() { return deletedAt != null; }
+    public Instant getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(Instant value) { deletedAt = value; }
 
     protected Item() {
     }

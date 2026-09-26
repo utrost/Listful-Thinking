@@ -64,6 +64,33 @@ class ReminderServiceTests {
         settingRepository.deleteAll();
     }
 
+
+    @Test
+    void aChangedDueTimeOnTheSameDayCreatesANewOccurrence() {
+        User owner = userRepository.save(new User("owner", null, "hash", UserRole.ADMIN, NOW));
+        ListEntity list = listRepository.save(new ListEntity(owner, "Tasks", null, ListType.TODO, NOW));
+        Item item = new Item(list, "Appointment", NOW);
+        item.setDueDate(NOW.plusSeconds(3600));
+        item = itemRepository.saveAndFlush(item);
+        reminderService.processDueReminders(NOW);
+        item.setDueDate(NOW.plusSeconds(7200));
+        itemRepository.saveAndFlush(item);
+        reminderService.processDueReminders(NOW);
+        assertThat(notificationRepository.findByUserIdAndReadAtIsNull(owner.getId())).hasSize(2);
+    }
+
+    @Test
+    void catchesUpOverdueItemsAfterDowntime() {
+        User owner = userRepository.save(new User("owner", null, "hash", UserRole.ADMIN, NOW.minusSeconds(90000)));
+        ListEntity list = listRepository.save(new ListEntity(owner, "Tasks", null, ListType.TODO, NOW));
+        Item item = new Item(list, "Missed reminder", NOW);
+        item.setDueDate(NOW.minusSeconds(7200));
+        itemRepository.save(item);
+        reminderService.processDueReminders(NOW);
+        reminderService.processDueReminders(NOW.plusSeconds(60));
+        assertThat(notificationRepository.findByUserIdAndReadAtIsNull(owner.getId())).hasSize(1);
+    }
+
     @Test
     void smtpAbsentCreatesInAppNotificationForUpcomingDueItem() {
         User owner = userRepository.save(new User("owner", "owner@example.test", "hash", UserRole.ADMIN, NOW.minusSeconds(3600)));
@@ -134,6 +161,7 @@ class ReminderServiceTests {
         itemRepository.save(item);
 
         reminderService.processDueReminders(NOW);
+        reminderService.processDueReminders(NOW.plusSeconds(60));
 
         assertThat(notificationRepository.findByUserIdAndReadAtIsNull(owner.getId())).isEmpty();
         verify(mailSender).send(any(SimpleMailMessage.class));

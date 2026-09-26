@@ -1,3 +1,5 @@
+> Implementation reference: [Reminders](reminders.md). The scheduler now runs every minute with overdue catch-up and durable per-occurrence deduplication. This page also contains original product design context.
+
 # Reminders and Notifications
 
 ## Goal

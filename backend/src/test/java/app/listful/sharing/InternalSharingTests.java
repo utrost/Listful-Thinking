@@ -134,23 +134,23 @@ class InternalSharingTests {
                 .content("{\"name\":\"Already bought\",\"status\":\"PURCHASED\"}"))
             .andExpect(status().isNotFound());
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(contributor)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(contributor)
                 .contentType("application/json")
                 .content("{\"name\":\"Bring chocolate cake\",\"status\":\"OPEN\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.name").value("Bring chocolate cake"));
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(contributor)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(contributor)
                 .contentType("application/json")
                 .content("{\"name\":\"Bring chocolate cake\",\"status\":\"PURCHASED\"}"))
             .andExpect(status().isNotFound());
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("{\"name\":\"Bring chocolate cake\",\"status\":\"PURCHASED\"}"))
             .andExpect(status().isOk());
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(contributor)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(contributor)
                 .contentType("application/json")
                 .content("{\"name\":\"Bring dark chocolate cake\"}"))
             .andExpect(status().isOk())

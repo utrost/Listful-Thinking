@@ -33,11 +33,14 @@ import org.springframework.test.web.servlet.MvcResult;
 @TestPropertySource(properties = {
     "spring.datasource.url=jdbc:sqlite:file:auth-controller-test?mode=memory&cache=shared",
     "spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect",
-    "listful.registration-enabled=false"
+    "listful.registration-enabled=false", "spring.mail.host=mail.test"
 })
 class AuthControllerTests {
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired private AuthService authService;
+    @Autowired private app.listful.domain.repository.AuthTokenRepository authTokenRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -149,10 +152,10 @@ class AuthControllerTests {
     }
 
     @Test
-    void publicAuthSettingsExposeOnlyWhetherSelfRegistrationIsAvailable() throws Exception {
+    void publicAuthSettingsExposeOnlyRegistrationAndEmailAvailability() throws Exception {
         mockMvc.perform(get("/api/v1/auth/settings"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.*", hasSize(1)))
+            .andExpect(jsonPath("$.*", hasSize(2)))
             .andExpect(jsonPath("$.registrationAvailable").value(true));
 
         MockHttpSession admin = registerAndReturnSession("admin", "admin@example.test", "password one");
@@ -250,6 +253,88 @@ class AuthControllerTests {
                 .content("{\"username\":\"uwe\",\"password\":\"new correct horse battery staple\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.username").value("uwe"));
+    }
+
+
+    @Test
+    void loginAndRegistrationRotateExistingSessions() throws Exception {
+        MockHttpSession anonymous = new MockHttpSession();
+        String original = anonymous.getId();
+        mockMvc.perform(post("/api/v1/auth/register").session(anonymous)
+            .contentType("application/json")
+            .content("{\"username\":\"owner\",\"password\":\"strong-password\"}"))
+            .andExpect(status().isCreated());
+        assertThat(anonymous.getId()).isNotEqualTo(original);
+        MockHttpSession loginSession = new MockHttpSession();
+        String beforeLogin = loginSession.getId();
+        mockMvc.perform(post("/api/v1/auth/login").session(loginSession)
+            .contentType("application/json")
+            .content("{\"username\":\"owner\",\"password\":\"strong-password\"}"))
+            .andExpect(status().isOk());
+        assertThat(loginSession.getId()).isNotEqualTo(beforeLogin);
+    }
+
+    @Test
+    void resetRevokesOldSessionsAndOutstandingMagicTokens() throws Exception {
+        MockHttpSession oldSession = registerAndReturnSession("owner", "owner@example.test", "strong-password");
+        mockMvc.perform(post("/api/v1/auth/magic-link").contentType("application/json")
+            .content("{\"email\":\"owner@example.test\"}")).andExpect(status().isNoContent());
+        String magic = extractToken(sentMail().getText());
+        org.mockito.Mockito.reset(mailSender);
+        mockMvc.perform(post("/api/v1/auth/password-reset").contentType("application/json")
+            .content("{\"email\":\"owner@example.test\"}")).andExpect(status().isNoContent());
+        String reset = extractToken(sentMail().getText());
+        mockMvc.perform(post("/api/v1/auth/password-reset/consume").contentType("application/json")
+            .content("{\"token\":\"%s\",\"password\":\"new-password\"}".formatted(reset)))
+            .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/auth/me").session(oldSession)).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/auth/magic-link/consume").contentType("application/json")
+            .content("{\"token\":\"%s\"}".formatted(magic))).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void sharedEmailRequiresUsernameWithoutRevealingAmbiguity() throws Exception {
+        MockHttpSession admin = registerAndReturnSession("owner", "family@example.test", "strong-password");
+        mockMvc.perform(post("/api/v1/admin/users").session(admin).contentType("application/json")
+            .content("{\"username\":\"member\",\"email\":\"family@example.test\",\"password\":\"strong-password\",\"role\":\"USER\"}"))
+            .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/auth/password-reset").contentType("application/json")
+            .content("{\"email\":\"family@example.test\"}")).andExpect(status().isNoContent());
+        org.mockito.Mockito.verifyNoInteractions(mailSender);
+        mockMvc.perform(post("/api/v1/auth/password-reset").contentType("application/json")
+            .content("{\"email\":\"family@example.test\",\"username\":\"member\"}")).andExpect(status().isNoContent());
+        assertThat(sentMail().getTo()).containsExactly("family@example.test");
+    }
+
+    @Test
+    void missingMailIsReportedForBothRecoveryEndpoints() throws Exception {
+        org.springframework.test.util.ReflectionTestUtils.setField(authService, "mailHost", "");
+        try {
+            mockMvc.perform(get("/api/v1/auth/settings"))
+                .andExpect(jsonPath("$.emailRecoveryAvailable").value(false));
+            for (String route : java.util.List.of("magic-link", "password-reset")) {
+                mockMvc.perform(post("/api/v1/auth/" + route).contentType("application/json")
+                    .content("{\"email\":\"unknown@example.test\"}"))
+                    .andExpect(status().isServiceUnavailable())
+                    .andExpect(jsonPath("$.code").value("email_unavailable"));
+            }
+        } finally {
+            org.springframework.test.util.ReflectionTestUtils.setField(authService, "mailHost", "mail.test");
+        }
+    }
+
+    @Test
+    void failedDeliveryDoesNotClaimSuccessOrLeaveUsableTokens() throws Exception {
+        register("uwe", "uwe@example.test", "correct horse battery staple");
+        org.mockito.Mockito.doThrow(new org.springframework.mail.MailSendException("offline"))
+            .when(mailSender).send(org.mockito.ArgumentMatchers.any(SimpleMailMessage.class));
+        for (String route : java.util.List.of("magic-link", "password-reset")) {
+            mockMvc.perform(post("/api/v1/auth/" + route).contentType("application/json")
+                .content("{\"email\":\"  uwe@example.test  \"}"))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.code").value("email_delivery_failed"));
+            assertThat(authTokenRepository.count()).isZero();
+        }
     }
 
     private SimpleMailMessage sentMail() {

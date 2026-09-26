@@ -43,6 +43,12 @@ public class ApiExceptionHandler {
             .body(new ApiError("malformed_json", "Request body is malformed."));
     }
 
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    ResponseEntity<ApiError> staleItem(Exception ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ApiError("stale_item", "This item changed. Reload it before saving."));
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiError> internalError(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

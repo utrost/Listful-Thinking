@@ -663,3 +663,13 @@ Tests:
 
 - Markdown guide links and section anchors remain valid.
 - Optional docs contract checks ensure every implemented list type has a guide section.
+
+## September continuation: milestones 2–4
+
+Implemented for [0.2.0-rc.1](release-candidate-0.2.md):
+
+- Cross-list Today & upcoming overview with local-day/DST grouping and access-aware completion.
+- Archive and persistent Trash with owner-only restoration, immediate Undo and no revived public links.
+- Personal named templates, editable blueprints and fresh private instances, including required new event dates.
+
+This completes the archive/template extensions left open in slices 17, 21 and 23. The overview is a separate planning view; it does not claim a full event board, structured task assignment, or a complete calendar recurrence engine. Release verification gates are recorded in the candidate document.

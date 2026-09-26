@@ -13,6 +13,7 @@ public record PublicItemResponse(
     String dueDate,
     String quantity,
     String category,
-    String reservedByGuest
+    String reservedByGuest,
+    String priceCurrency
 ) {
 }

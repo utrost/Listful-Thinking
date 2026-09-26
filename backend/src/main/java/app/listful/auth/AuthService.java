@@ -41,6 +41,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final String publicBaseUrl;
+    @Value("${spring.mail.host:}") private String mailHost;
+    public boolean emailRecoveryAvailable() { return mailHost != null && !mailHost.isBlank(); }
+
+    @Value("${listful.mail-from:}") private String mailFrom;
 
     public AuthService(
         UserRepository userRepository,
@@ -119,7 +123,7 @@ public class AuthService {
 
     @Transactional
     public void sendMagicLink(EmailLinkRequest request) {
-        sendTokenEmail(request.email(), AuthToken.MAGIC_LINK, "Your Listful Thinking magic link", "/magic-login");
+        sendTokenEmail(request, AuthToken.MAGIC_LINK, "Your Listful Thinking magic link", "/magic-login");
     }
 
     @Transactional
@@ -132,32 +136,42 @@ public class AuthService {
 
     @Transactional
     public void sendPasswordReset(EmailLinkRequest request) {
-        sendTokenEmail(request.email(), AuthToken.PASSWORD_RESET, "Your Listful Thinking password reset", "/reset-password");
+        sendTokenEmail(request, AuthToken.PASSWORD_RESET, "Your Listful Thinking password reset", "/reset-password");
     }
 
     @Transactional
     public void consumePasswordReset(PasswordResetConsumeRequest request) {
         AuthToken token = consumeToken(request.token(), AuthToken.PASSWORD_RESET);
         token.getUser().setPasswordHash(passwordEncoder.encode(request.password()));
+        authTokenRepository.deleteByUserId(token.getUser().getId());
     }
 
     public AuthUserResponse toResponse(User user) {
         return new AuthUserResponse(user.getId(), user.getUsername(), user.getEmail(), user.getRole().name());
     }
 
-    private void sendTokenEmail(String rawEmail, String purpose, String subject, String path) {
-        String email = normalizeEmail(rawEmail);
-        userRepository.findByEmail(email).ifPresent(user -> {
+    private void sendTokenEmail(EmailLinkRequest request, String purpose, String subject, String path) {
+        if (!emailRecoveryAvailable()) throw new EmailDeliveryException("email_unavailable");
+        String email = normalizeEmail(request.email());
+        var matches = userRepository.findAllByEmail(email).stream()
+            .filter(User::isActive)
+            .filter(user -> request.username() == null || request.username().isBlank()
+                || user.getUsername().equals(normalizeUsername(request.username())))
+            .toList();
+        if (matches.size() != 1) return;
+        java.util.Optional.of(matches.get(0)).ifPresent(user -> {
             String rawToken = newToken();
             authTokenRepository.save(new AuthToken(user, tokenHash(rawToken), purpose, Instant.now().plus(Duration.ofMinutes(30)), Instant.now()));
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(user.getEmail());
+            if (mailFrom != null && !mailFrom.isBlank()) message.setFrom(mailFrom);
             message.setSubject(subject);
             message.setText("Open this link to continue: " + publicBaseUrl + path + "?token=" + rawToken);
             try {
                 mailSender.send(message);
             } catch (MailException ex) {
-                logger.info("Auth email failed for user {}: {}", user.getId(), ex.getMessage());
+                logger.warn("Auth email delivery failed ({})", ex.getClass().getSimpleName());
+                throw new EmailDeliveryException("email_delivery_failed");
             }
         });
     }
@@ -192,13 +206,13 @@ public class AuthService {
     }
 
     private String normalizeUsername(String username) {
-        return username == null ? null : username.trim().toLowerCase();
+        return username == null ? null : username.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     private String normalizeEmail(String email) {
         if (email == null || email.isBlank()) {
             return null;
         }
-        return email.trim().toLowerCase();
+        return email.trim().toLowerCase(java.util.Locale.ROOT);
     }
 }

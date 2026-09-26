@@ -15,6 +15,7 @@ test.describe('Listful Thinking GUI smoke @gui @smoke', () => {
 
     await page.getByPlaceholder('New item name').fill('Oat milk');
     await page.getByRole('textbox', { name: 'Quantity' }).fill('2 cartons');
+    await page.locator('.item-details > summary').click();
     await page.getByRole('textbox', { name: 'Category' }).fill('Pantry');
     await page.getByRole('button', { name: 'Add item' }).click();
 

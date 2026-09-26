@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { bootstrapOrLoginAdmin, collectPageDiagnostics, createList } from './helpers';
 
 test.describe('Public wishlist sharing @gui @sharing', () => {
-  test('lets a guest claim an open wish from a public link @smoke @regression', async ({ page, context }, testInfo) => {
+  test('lets a guest claim an open wish from a public link @smoke @regression', async ({ page, browser }, testInfo) => {
     test.skip(testInfo.project.name.includes('mobile'), 'public sharing is covered once on desktop; mobile has a separate owner workflow smoke');
 
     const diagnostics = collectPageDiagnostics(page);
@@ -17,6 +17,7 @@ test.describe('Public wishlist sharing @gui @sharing', () => {
     await page.getByRole('button', { name: 'Add item' }).click();
     await expect(page.getByText('Travel watercolor set')).toBeVisible();
 
+    await page.getByRole('button', { name: 'Sharing', exact: true }).click();
     const sharePanel = page.locator('.share-panel');
     await expect(sharePanel.locator('select').first()).toHaveValue('WISH_CLAIM');
     await sharePanel.getByRole('button', { name: 'Create public link' }).click();
@@ -26,7 +27,8 @@ test.describe('Public wishlist sharing @gui @sharing', () => {
     const shareUrl = (await publicLink.textContent())?.trim();
     expect(shareUrl).toBeTruthy();
 
-    const guestPage = await context.newPage();
+    const guestContext = await browser.newContext();
+    const guestPage = await guestContext.newPage();
     const guestDiagnostics = collectPageDiagnostics(guestPage);
     await guestPage.goto(shareUrl!);
 
@@ -38,10 +40,11 @@ test.describe('Public wishlist sharing @gui @sharing', () => {
     await claimForm.getByPlaceholder('Your name').fill('Guest tester');
     await claimForm.getByRole('button', { name: 'Claim' }).click();
 
-    await expect(guestPage.getByText('CLAIMED')).toBeVisible();
+    await expect(guestPage.getByText('Reserved', { exact: true })).toBeVisible();
     await expect(guestPage.getByRole('button', { name: 'Claim' })).toHaveCount(0);
 
     await diagnostics.expectClean();
     await guestDiagnostics.expectClean();
+    await guestContext.close();
   });
 });

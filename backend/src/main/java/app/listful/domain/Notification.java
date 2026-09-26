@@ -28,6 +28,10 @@ public class Notification {
 
     @Column(name = "read_at")
     private Instant readAt;
+    @Column(name = "delivery_key", unique = true)
+    private String deliveryKey;
+    public void setDeliveryKey(String value) { deliveryKey = value; }
+
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

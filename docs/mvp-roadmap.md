@@ -79,6 +79,10 @@ Status: complete for MVP release smoke and docs.
 - Security test matrix
 - Current state and weak-point register
 
+## September planning release candidate
+
+[0.2.0-rc.1](planning/release-candidate-0.2.md) adds Today & upcoming across accessible lists, pauseable archives, persistent Trash and Undo, and private user-managed templates. It also includes the reliability/security repairs, real SMTP recovery setup and workspace redesign. Remaining event-planning work is countdown/grouping polish; structured assignments and richer guest workflows remain later extensions.
+
 ## Current risk register
 
 The current implemented state and known weak points are tracked in [current-state-and-risk-register.md](current-state-and-risk-register.md). It is the canonical place to check whether the app is private-Tailnet-ready versus public-internet-ready.

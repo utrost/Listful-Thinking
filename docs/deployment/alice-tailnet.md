@@ -4,6 +4,36 @@ This document records the current private deployment contract for the Listful Th
 
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
+## Latest deployment — focused list workspace, 2026-09-26 11:57 UTC
+
+The tested image `listful-thinking:ux-20260926` is also tagged `listful-thinking:alice`. Image ID: `sha256:06e90f829ed0bb4745960a3f5a0c694d45c78ae2d42863c8b62d8526199923e6`.
+
+The [user experience concept](../design/user-experience.md) records the design and iteration process. The deployed interface separates Items, Sharing, List settings and Administration; uses desktop list navigation and a mobile selector; adds guidance, empty states and progressive item forms; and remembers language and list selection.
+
+Validation: 63 frontend tests, 14 active desktop/mobile Playwright journeys (6 deliberate duplicate-platform skips), plus both focused deletion-navigation checks passed. The final production image was built by the focused Docker/Playwright run. Live desktop/mobile browser checks, current frontend assets, container health, database integrity, foreign keys, and unchanged counts passed. Existing SMTP configuration and Tailnet-only access were preserved. No extra recovery emails were sent during this UX verification.
+
+Private source archive, consistent pre-upgrade backup, original container configuration and release/verification records: `data/deployments/20260926T115755Z/`. The previous container is retained stopped, with restart disabled. This frontend revision keeps schema V14; the private rollback note explains how to preserve current data when reverting.
+
+## Previous deployment — recovery fix, 2026-09-26 10:24 UTC
+
+The current image is `listful-thinking:recovery-20260926`, also tagged `listful-thinking:alice`, ID `sha256:ad7746e61f0f16bc0345f1e60b1ebd04bdf1d070a3e8857258ac36830abf912e`.
+
+Recovery now has its own email input validation and optional username, separate from password login. Reset-token pages have their own validated new-password form. The public auth settings report email availability. Missing SMTP configuration disables recovery with an explanation; failed SMTP submission returns an explicit error and rolls back token creation.
+
+Verification: 63 frontend tests and 13 backend auth tests passed. An isolated Docker instance and loopback SMTP receiver verified browser magic-link login, password-reset email, token consumption, and login using the changed password. Live mobile UI and Docker readiness passed. Existing data remains 1 account, 1 list, and 3 items.
+
+**SMTP enabled on 2026-09-26 at 11:32 UTC.** Outgoing mail uses `mail.your-server.de:587`, authenticated as `selfhosted@simiono.com`, with required STARTTLS and the same sender address. TLS certificate validation and authentication passed. Both live recovery endpoints successfully submitted an email for the existing account (HTTP 204); inbox receipt has not been independently checked. Recovery is enabled in the live auth settings. Credentials are in the container configuration only; do not copy them into this document. The configuration-change backup and verification record are in `data/deployments/20260926T113224Z/`.
+
+The consistent pre-upgrade backup, original configuration, and release record are in `data/deployments/20260926T102433Z/`. The previous container is retained stopped with restart disabled. Preserve any newer data before rollback, and restore the corresponding database snapshot together with the previous container.
+
+## Previous deployment — review fixes, 2026-09-26
+
+The local review remediation build is deployed as `listful-thinking:alice` (also tagged `listful-thinking:review-20260926`). Image ID: `sha256:aabe46367fdde6473e454800e1c5d36890118b75671388dc6aedc7ad8fc2cbbb`.
+
+This build includes the uncommitted fixes based on `7778df4`, including the final reminder rescheduling correction. Its exact source archive, original container configuration, verified pre-upgrade database, and release/verification records are stored privately under `data/deployments/20260926T092453Z/` in this checkout.
+
+Verified after deployment: Docker healthy, database readiness, schema V14, SQLite integrity and foreign keys, unchanged counts (1 account, 1 list, 3 items), current frontend assets, and browser login page. The volume and Tailnet-only port binding are unchanged. The old container is retained stopped with restart disabled; rollback requires its matching database snapshot, not merely starting the old image against V14.
+
 ## Live contract
 
 Observed deployment contract:
@@ -58,14 +88,16 @@ print('env_keys=', sorted(e.split('=', 1)[0] for e in info['Config']['Env']))
 PY
 ```
 
-For schema-changing releases, copy the live database before replacing the container and test the new migration against the copy:
+For schema-changing releases, stop the application before copying its database, restart it after the copy, and test the new migration against that copy. Alternatively, use the SQLite online backup helper on a readable bind mount. Do not copy a running SQLite file with plain `docker cp`:
 
 ```bash
 backup_dir="$HOME/backups/listful-thinking"
 mkdir -p "$backup_dir"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
+docker stop --time 30 listful-thinking-alice
 docker cp listful-thinking-alice:/app/data/listful-thinking.sqlite \
   "$backup_dir/listful-thinking-${stamp}-pre-deploy.sqlite"
+docker start listful-thinking-alice
 ```
 
 ## Build and package verification
@@ -151,11 +183,13 @@ for marker in ['ownerLabel', 'assistantLabels', 'Owner / responsible', 'Assistan
 PY
 ```
 
-Verify live SQLite migration state after schema releases:
+Verify SQLite migration state after schema releases. The following file-copy check requires a brief stop; for uninterrupted verification, use a read-only SQLite client connected to the mounted volume:
 
 ```bash
 tmp="$(mktemp -d)"
+docker stop --time 30 listful-thinking-alice
 docker cp listful-thinking-alice:/app/data/listful-thinking.sqlite "$tmp/db.sqlite"
+docker start listful-thinking-alice
 python3 - <<'PY' "$tmp/db.sqlite"
 import sqlite3, sys
 con = sqlite3.connect(sys.argv[1])

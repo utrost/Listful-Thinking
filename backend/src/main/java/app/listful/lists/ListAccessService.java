@@ -23,25 +23,39 @@ public class ListAccessService {
     @Transactional(readOnly = true)
     public ListEntity requireOwnedList(User actor, String listId) {
         return listRepository.findById(listId)
-            .filter(list -> list.getUser().getId().equals(actor.getId()))
+            .filter(list -> !list.isDeleted() && list.getUser().getId().equals(actor.getId()))
             .orElseThrow(() -> new ResourceNotFoundException("List not found"));
+    }
+
+    public ListEntity requireWritableOwnedList(User actor, String listId) {
+        ListEntity list = requireOwnedList(actor, listId);
+        if (list.isArchived()) throw new app.listful.api.ConflictException("list_inactive", "Restore the archived list before changing it.");
+        return list;
+    }
+
+    public ListEntity requireShareableList(User actor, String listId) {
+        ListEntity list = requireOwnedList(actor, listId);
+        if (!list.isActive()) throw new app.listful.api.ConflictException("list_inactive", "Only active lists can be shared.");
+        return list;
     }
 
     @Transactional(readOnly = true)
     public ListEntity requireReadableList(User actor, String listId) {
         return listRepository.findById(listId)
-            .filter(list -> list.getUser().getId().equals(actor.getId())
-                || listShareRepository.existsByListIdAndUserId(list.getId(), actor.getId()))
+            .filter(list -> !list.isDeleted() && (list.getUser().getId().equals(actor.getId())
+                || (list.isActive() && listShareRepository.existsByListIdAndUserId(list.getId(), actor.getId()))))
             .orElseThrow(() -> new ResourceNotFoundException("List not found"));
     }
 
     @Transactional(readOnly = true)
     public ListEntity requireContributableList(User actor, String listId) {
         ListEntity list = listRepository.findById(listId)
+            .filter(candidate -> !candidate.isDeleted() && !candidate.isArchived())
             .orElseThrow(() -> new ResourceNotFoundException("List not found"));
         if (list.getUser().getId().equals(actor.getId())) {
             return list;
         }
+        if (list.isTemplate()) throw new ResourceNotFoundException("List not found");
         ListShare share = listShareRepository.findByListIdAndUserId(list.getId(), actor.getId())
             .orElseThrow(() -> new ResourceNotFoundException("List not found"));
         if (share.getPermission() != ListSharePermission.CONTRIBUTE) {
@@ -52,9 +66,11 @@ public class ListAccessService {
 
     @Transactional(readOnly = true)
     public boolean canContribute(User actor, ListEntity list) {
+        if (list.isDeleted() || list.isArchived()) return false;
         if (list.getUser().getId().equals(actor.getId())) {
             return true;
         }
+        if (list.isTemplate()) return false;
         return listShareRepository.findByListIdAndUserId(list.getId(), actor.getId())
             .map(share -> share.getPermission() == ListSharePermission.CONTRIBUTE)
             .orElse(false);

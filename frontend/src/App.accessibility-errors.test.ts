@@ -3,7 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App.vue';
 import { i18n } from './i18n';
-import { ApiClientError, getAuthSettings, getCurrentUser, getItems, getListShares, getLists, getNotifications, login, requestMagicLink, updateItem } from './api/client';
+import { ApiClientError, getAuthSettings, getCurrentUser, getItems, getListShares, getLists, getNotifications, login, requestMagicLink, requestPasswordReset, updateItem } from './api/client';
 
 vi.mock('./api/client', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./api/client')>();
@@ -17,6 +17,7 @@ vi.mock('./api/client', async (importOriginal) => {
     getNotifications: vi.fn(),
     login: vi.fn(),
     requestMagicLink: vi.fn(),
+    requestPasswordReset: vi.fn(),
     updateItem: vi.fn()
   };
 });
@@ -79,6 +80,32 @@ describe('rendered accessibility and localized errors', () => {
     const status = wrapper.get('[role="status"]');
     expect(status.text()).toContain('If that email exists');
     expect(status.attributes('aria-live')).toBe('polite');
+  });
+
+  it.each(['Email me a magic link', 'Reset password'])('validates recovery email for %s without requiring login fields', async (label) => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+    const wrapper = mount(App, { global: { plugins: [i18n] } });
+    await flushPromises();
+    await button(wrapper, label)!.trigger('click');
+    expect(wrapper.get('[role="alert"]').text()).toBe('Enter a valid account email address.');
+    expect(wrapper.get('input[aria-label="Email"]').attributes('aria-invalid')).toBe('true');
+    expect(requestMagicLink).not.toHaveBeenCalled();
+    expect(requestPasswordReset).not.toHaveBeenCalled();
+    await wrapper.get('input[aria-label="Email"]').setValue(' uwe@example.test ');
+    await button(wrapper, label)!.trigger('click');
+    await flushPromises();
+    expect(label === 'Reset password' ? requestPasswordReset : requestMagicLink).toHaveBeenCalledWith({ email: 'uwe@example.test', username: undefined });
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+  });
+
+  it('explains missing outgoing mail and disables recovery', async () => {
+    vi.mocked(getCurrentUser).mockResolvedValue(null);
+    vi.mocked(getAuthSettings).mockResolvedValue({ registrationAvailable: false, emailRecoveryAvailable: false });
+    const wrapper = mount(App, { global: { plugins: [i18n] } });
+    await flushPromises();
+    expect(wrapper.text()).toContain('Ask the administrator to configure outgoing email.');
+    expect(button(wrapper, 'Reset password')!.attributes('disabled')).toBeDefined();
+    expect(button(wrapper, 'Email me a magic link')!.attributes('disabled')).toBeDefined();
   });
 
   it('keeps document language synchronized with the active locale', async () => {

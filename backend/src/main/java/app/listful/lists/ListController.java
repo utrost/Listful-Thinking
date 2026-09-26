@@ -32,6 +32,31 @@ public class ListController {
         return listService.findOwnedLists(currentUser(authentication));
     }
 
+    @GetMapping("/library")
+    public List<ListResponse> library(@org.springframework.web.bind.annotation.RequestParam String state, Authentication authentication) {
+        return listService.library(currentUser(authentication), state);
+    }
+
+    @PostMapping("/{id}/archive")
+    public ListResponse archive(@PathVariable String id, @Valid @RequestBody app.listful.lists.dto.ArchiveListRequest request, Authentication authentication) {
+        return listService.archive(currentUser(authentication), id, request.archived());
+    }
+
+    @PostMapping("/{id}/restore")
+    public ListResponse restore(@PathVariable String id, Authentication authentication) {
+        return listService.restore(currentUser(authentication), id);
+    }
+
+    @PostMapping("/{id}/template")
+    public ResponseEntity<ListResponse> saveTemplate(@PathVariable String id, @Valid @RequestBody app.listful.lists.dto.TemplateRequest request, Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(listService.saveTemplate(currentUser(authentication), id, request.title()));
+    }
+
+    @PostMapping("/{id}/instantiate")
+    public ResponseEntity<ListResponse> useTemplate(@PathVariable String id, @Valid @RequestBody app.listful.lists.dto.TemplateRequest request, Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(listService.useTemplate(currentUser(authentication), id, request.title(), request.targetDate()));
+    }
+
     @PostMapping
     public ResponseEntity<ListResponse> create(@Valid @RequestBody ListRequest request, Authentication authentication) {
         return ResponseEntity.status(HttpStatus.CREATED).body(listService.create(currentUser(authentication), request));

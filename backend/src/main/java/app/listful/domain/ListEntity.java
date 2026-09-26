@@ -52,6 +52,19 @@ public class ListEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @jakarta.persistence.Version private long version;
+    @Column(nullable = false) private int archived;
+    @Column(name = "is_template", nullable = false) private int templateFlag;
+    @Column(name = "deleted_at") private Instant deletedAt;
+    public boolean isArchived() { return archived == 1; }
+    public boolean isTemplate() { return templateFlag == 1; }
+    public boolean isDeleted() { return deletedAt != null; }
+    public boolean isActive() { return !isDeleted() && !isArchived() && !isTemplate(); }
+    public Instant getDeletedAt() { return deletedAt; }
+    public void setArchived(boolean value) { archived = value ? 1 : 0; if (value) disablePublicShare(); }
+    public void setTemplate(boolean value) { templateFlag = value ? 1 : 0; if (value) disablePublicShare(); }
+    public void setDeletedAt(Instant value) { deletedAt = value; if (value != null) disablePublicShare(); }
+
     protected ListEntity() {
     }
 

@@ -4,6 +4,12 @@ Listful Thinking is a small self-hosted web app for everyday lists that need jus
 
 It is meant for a household, family, club, care team, or small private group that wants shared lists without adopting a full productivity suite or sending list data to a hosted service. You run one container, store one SQLite database, create local users, and decide explicitly which lists stay private, which are shared with other registered users, and which get a public guest link.
 
+The [user experience concept](docs/design/user-experience.md) describes the list workspace, navigation, user guidance, and browser validation.
+
+## Release candidate 0.2.0-rc.1
+
+The [planning candidate](docs/planning/release-candidate-0.2.md) adds Today & upcoming, archives and recoverable Trash/Undo, and reusable personal templates. The version also includes the reliability/security repairs and redesigned workspace. Back up before upgrading: schema migrations V14 and V15 are forward-only; older-image rollback needs the matching database backup.
+
 ## What it does
 
 - **Typed lists:** create `WISH`, `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists with type-specific fields and validation.
@@ -104,7 +110,7 @@ The default Compose file mounts that path as the named volume:
 listful-data:/app/data
 ```
 
-For simple manual backups, copy the SQLite file from the volume or bind-mount `./data:/app/data`. If you use a bind mount, create it so the container user can write to it:
+For consistent backups, use `python3 scripts/backup-db.py data/listful-thinking.sqlite backups/listful-thinking.sqlite` with a host bind mount. The helper uses SQLite online backup and verifies integrity; do not copy a live database with plain `cp`. For named volumes and a restore walkthrough, see the [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md). If you use a bind mount, create it so the container user can write to it:
 
 ```bash
 mkdir -p data
@@ -131,6 +137,9 @@ MAIL_HOST=
 MAIL_PORT=25
 MAIL_USER=
 MAIL_PASS=
+MAIL_AUTH=false
+MAIL_STARTTLS=false
+MAIL_FROM=
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_MAX_REQUESTS=60
 RATE_LIMIT_WINDOW_SECONDS=60

@@ -38,9 +38,19 @@ public class ItemController {
         return ResponseEntity.status(HttpStatus.CREATED).body(itemService.create(currentUser(authentication), listId, request));
     }
 
+    @PostMapping("/items/{itemId}/import")
+    public ItemResponse retryImport(@PathVariable String itemId, Authentication authentication) {
+        return itemService.retryImport(currentUser(authentication), itemId);
+    }
+
+    @GetMapping("/items/{itemId}")
+    public ItemResponse get(@PathVariable String itemId, Authentication authentication) {
+        return itemService.get(currentUser(authentication), itemId);
+    }
+
     @PutMapping("/items/{itemId}")
-    public ItemResponse update(@PathVariable String itemId, @Valid @RequestBody ItemRequest request, Authentication authentication) {
-        return itemService.update(currentUser(authentication), itemId, request);
+    public ItemResponse update(@PathVariable String itemId, @Valid @RequestBody ItemRequest request, @org.springframework.web.bind.annotation.RequestHeader(value = "If-Match", required = false) String ifMatch, Authentication authentication) {
+        return itemService.update(currentUser(authentication), itemId, request, ifMatch);
     }
 
     @DeleteMapping("/items/{itemId}")
@@ -53,6 +63,11 @@ public class ItemController {
     public ResponseEntity<Void> clearCompleted(@PathVariable String listId, Authentication authentication) {
         itemService.clearCompleted(currentUser(authentication), listId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/items/{itemId}/restore")
+    public ItemResponse restore(@PathVariable String itemId, Authentication authentication) {
+        return itemService.restore(currentUser(authentication), itemId);
     }
 
     @PostMapping("/items/{itemId}/skip")

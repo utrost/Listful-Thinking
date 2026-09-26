@@ -2,7 +2,8 @@
   "app": {
     "title": "Listful Thinking",
     "tagline": "Wunschlisten, Aufgaben und Eventlisten für Self-Hoster.",
-    "intro": "Eine leichte Single-Container-App mit SQLite und öffentlichem Teilen für Gäste."
+    "intro": "Deine Wünsche, Pläne und Alltagslisten an einem Ort.",
+    "working": "Wird verarbeitet…"
   },
   "auth": {
     "register": "Registrieren",
@@ -15,9 +16,13 @@
     "passwordReset": "Passwort zurücksetzen",
     "newPassword": "Neues Passwort",
     "setNewPassword": "Neues Passwort setzen",
-    "emailSent": "Falls diese E-Mail existiert, wurde ein Link verschickt.",
+    "emailSent": "Wenn die E-Mail-Adresse das Konto eindeutig bestimmt, wurde ein Link gesendet. Bei einer gemeinsam genutzten Adresse bitte auch den Benutzernamen eingeben.",
     "passwordUpdated": "Passwort aktualisiert. Du kannst dich jetzt anmelden.",
-    "registrationDisabled": "Selbstregistrierung ist gerade deaktiviert. Bitte einen Administrator, dein Konto anzulegen."
+    "registrationDisabled": "Selbstregistrierung ist gerade deaktiviert. Bitte einen Administrator, dein Konto anzulegen.",
+    "recovery": "Kontozugang wiederherstellen",
+    "recoveryHelp": "Gib die E-Mail-Adresse deines Kontos ein. Ein Passwort ist nicht nötig. Bei gemeinsam genutzten Adressen auch den Benutzernamen angeben.",
+    "optionalUsername": "Benutzername (optional)",
+    "validEmailRequired": "Gib eine gültige E-Mail-Adresse deines Kontos ein."
   },
   "health": {
     "check": "Backend prüfen",
@@ -39,7 +44,12 @@
     "item_already_claimed": "Dieser Eintrag ist bereits reserviert.",
     "unauthorized": "Bitte melde dich erneut an.",
     "forbidden": "Dafür hast du keine Berechtigung.",
-    "not_found": "Dieser Eintrag wurde nicht gefunden."
+    "not_found": "Dieser Eintrag wurde nicht gefunden.",
+    "stale_item": "Dieser Eintrag wurde inzwischen geändert. Lade die Liste neu und prüfe die aktuelle Version vor dem Speichern.",
+    "list_type_in_use": "Leere die Liste, bevor du ihren Typ änderst.",
+    "email_unavailable": "Kontowiederherstellung per E-Mail ist nicht verfügbar. Bitte den Administrator bitten, den E-Mail-Versand einzurichten.",
+    "email_delivery_failed": "Die E-Mail konnte nicht gesendet werden. Bitte später erneut versuchen oder den Administrator kontaktieren.",
+    "list_inactive": "Stelle die archivierte Liste vor Änderungen wieder her. Vorlagen können nicht geteilt werden."
   },
   "lists": {
     "title": "Deine Listen",
@@ -53,7 +63,15 @@
     "cancel": "Abbrechen",
     "deleteConfirm": "Löschen bestätigen",
     "deleteCancel": "Liste behalten",
-    "delete": "Liste löschen"
+    "delete": "Liste löschen",
+    "type": "Listentyp",
+    "types": {
+      "WISH": "Wunschliste",
+      "TODO": "Aufgaben",
+      "GROCERY": "Einkauf",
+      "CHORE": "Hausarbeit",
+      "EVENT": "Veranstaltung"
+    }
   },
   "items": {
     "newName": "Neuer Eintrag",
@@ -111,7 +129,18 @@
     "reopen": "Wieder öffnen",
     "markPurchased": "Als gekauft markieren",
     "reopenWish": "Wunsch wieder öffnen",
-    "delete": "Löschen"
+    "delete": "Löschen",
+    "currency": "Währung (EUR, USD…)",
+    "deleteWarning": "Diesen Eintrag in den Papierkorb verschieben? Du kannst ihn später wiederherstellen.",
+    "clearWarning": "Alle erledigten Einkäufe in den Papierkorb verschieben? Du kannst dies rückgängig machen.",
+    "importPending": "Produktdetails werden geladen…",
+    "retryImport": "Import erneut versuchen",
+    "statuses": {
+      "OPEN": "Offen",
+      "DONE": "Erledigt",
+      "CLAIMED": "Reserviert",
+      "PURCHASED": "Gekauft"
+    }
   },
   "sharing": {
     "title": "Teilen",
@@ -130,7 +159,15 @@
       "VIEW": "Öffentliche Nur-Lesen-Ansicht",
       "WISH_CLAIM": "Wunschliste reservieren",
       "SIGNUP": "Eintragungsliste"
-    }
+    },
+    "mode": "Modus des öffentlichen Links",
+    "permission": "Freigabeberechtigung",
+    "replacePublic": "Öffentlichen Link ersetzen",
+    "replaceWarning": "Diesen öffentlichen Link ersetzen? Bisher geteilte Links funktionieren danach nicht mehr.",
+    "activeLinkHint": "Ein öffentlicher Link ist aktiv. Kopiere einen neuen Link sofort: Er wird nur einmal angezeigt. Beim Ersetzen wird der bisherige Link ungültig.",
+    "copyLink": "Link kopieren",
+    "openLink": "Link öffnen",
+    "copied": "Link kopiert."
   },
   "notifications": {
     "title": "Benachrichtigungen",
@@ -147,6 +184,125 @@
     "activate": "Aktivieren",
     "deactivate": "Deaktivieren",
     "lastActiveAdminHint": "Mindestens ein aktiver Admin muss verbleiben.",
-    "lists": "Alle Listen"
+    "lists": "Alle Listen",
+    "role": "Rolle"
+  },
+  "ux": {
+    "language": "Sprache",
+    "backToLists": "Zurück zu Listen",
+    "administration": "Verwaltung",
+    "adminHelp": "Hier verwaltest du Konten und Einstellungen. Deine alltäglichen Listen findest du im Listenbereich.",
+    "listsHelp": "Weniger im Kopf. Ein Platz für jede Liste.",
+    "newList": "+ Neue Liste",
+    "findList": "Liste suchen",
+    "chooseList": "Liste auswählen",
+    "noListsFound": "Keine passende Liste gefunden.",
+    "itemCount": "{open} offen · {total} insgesamt",
+    "listSections": "Listenbereiche",
+    "readOnlyHelp": "Mit dir geteilt: Du kannst diese Liste ansehen. Bitte den Eigentümer um Schreibzugriff, wenn du etwas ändern möchtest.",
+    "contributorHelp": "Mit dir geteilt: Du kannst Einträge hinzufügen und bearbeiten. Der Eigentümer verwaltet die Freigaben und Einstellungen.",
+    "settingsHelp": "Ändere die Angaben dieser Liste, erstelle eine Kopie oder lösche sie.",
+    "typeLocked": "Solange Einträge vorhanden sind, bleibt der Listentyp fest. Erstelle für einen anderen Zweck eine neue Liste.",
+    "sharingHelp": "Wähle, wer die Liste sehen und was diese Person tun darf. Ein öffentlicher Link funktioniert ohne Konto.",
+    "publicLink": "Link teilen",
+    "invitePeople": "Person mit einem Konto einladen",
+    "inviteHelp": "Mit Lesezugriff können Personen Einträge ansehen. Mit Schreibzugriff können sie diese auch hinzufügen und bearbeiten.",
+    "invite": "Zur Liste einladen",
+    "addToList": "Zu dieser Liste hinzufügen",
+    "productUrl": "Produktlink (optional)",
+    "moreDetails": "Weitere Angaben (optional)",
+    "filterSort": "Filtern & sortieren",
+    "emptyItems": "Ein neuer Anfang.",
+    "emptyItemsHelp": "Füge oben den ersten Eintrag hinzu. Du kannst zunächst nur einen Namen angeben und später Details ergänzen.",
+    "emptyReadOnly": "Hier ist noch nichts. Der Eigentümer kann Einträge hinzufügen.",
+    "noResults": "Keine passenden Einträge.",
+    "noResultsHelp": "Versuche einen anderen Suchbegriff oder setze die Filter zurück.",
+    "resetFilters": "Suche & Filter zurücksetzen",
+    "welcome": "Platz für das Wesentliche",
+    "firstList": "Beginne mit einer Liste.",
+    "firstListHelp": "Eine Wunschliste, der Wocheneinkauf oder Aufgaben, die du nicht vergessen möchtest. Wähle einen Zweck und gib der Liste einen Namen.",
+    "actions": "Mehr",
+    "listCreated": "Liste erstellt. Füge unten den ersten Eintrag hinzu.",
+    "itemAdded": "Eintrag zur Liste hinzugefügt.",
+    "sharedWithYou": "Mit dir geteilt",
+    "publicViewHelp": "Sieh dir die Liste an. Dieser Link erlaubt Lesezugriff.",
+    "publicClaimHelp": "Wähle einen verfügbaren Eintrag und gib deinen Namen ein, um ihn zu reservieren. Andere sehen dann, dass er vergeben ist.",
+    "purpose": {
+      "WISH": "Sammle Dinge, die du dir wünschst. Beginne mit einem Namen oder einem Produktlink.",
+      "TODO": "Raus aus dem Kopf. Füge eine Aufgabe hinzu und hake sie ab, wenn sie erledigt ist.",
+      "GROCERY": "Plane deinen nächsten Einkauf. Ergänze Artikel und Mengen; Kategorien helfen beim Sortieren.",
+      "CHORE": "Verteile alltägliche Aufgaben. Termine und Wiederholungen findest du unter Weitere Angaben.",
+      "EVENT": "Plane gemeinsam. Lege einen Termin fest und ergänze Aufgaben und zuständige Personen."
+    },
+    "views": {
+      "items": "Einträge",
+      "sharing": "Freigaben",
+      "settings": "Listeneinstellungen"
+    },
+    "repeat": "Wiederholung",
+    "resetHelp": "Wähle ein Passwort mit mindestens 8 Zeichen. Danach kannst du dich wieder anmelden."
+  },
+  "planning": {
+    "navigation": "Bereiche",
+    "refresh": "Aktualisieren",
+    "loading": "Wird geladen…",
+    "timezone": "Termine in deiner Zeitzone: {zone}.",
+    "clearDay": "Zeit zum Durchatmen.",
+    "clearDayHelp": "In diesem Zeitraum steht nichts mit Termin an. Einträge ohne Termin findest du weiterhin unter Deine Listen.",
+    "nothingDue": "Hier steht nichts an.",
+    "repeats": "Wiederkehrende Aufgabe",
+    "useTemplate": "Vorlage verwenden",
+    "preview": "Liste öffnen",
+    "restore": "Wiederherstellen",
+    "deleteTemplate": "Vorlage löschen",
+    "instanceTitle": "Name der neuen Liste",
+    "freshCopy": "Eine neue private Liste: Einträge beginnen offen, Reservierungen und Erledigungsdaten werden zurückgesetzt. Alte Eintragstermine werden nicht kopiert. Lege danach neue Termine fest.",
+    "createFromTemplate": "Aus Vorlage erstellen",
+    "deletedItems": "Gelöschte Einträge",
+    "restoreArchivedFirst": "Stelle zuerst die archivierte Liste wieder her.",
+    "undo": "Rückgängig",
+    "dismiss": "Schließen",
+    "archivedPreview": "Archiviert: Diese Liste ist pausiert und schreibgeschützt. Stelle sie unter Listeneinstellungen wieder her. Ihr alter öffentlicher Link wurde widerrufen.",
+    "templatePreview": "Vorlage: Bearbeite hier die wiederverwendbaren Einträge. Vorlagen bleiben privat und senden keine Erinnerungen. Erstelle im Vorlagenbereich eine neue Arbeitsliste.",
+    "archiveList": "Liste archivieren",
+    "saveTemplate": "Als Vorlage speichern",
+    "templateTitle": "Vorlagenname",
+    "movedToTrash": "„{name}“ wurde in den Papierkorb verschoben.",
+    "itemsTrashed": "{count} erledigte Einträge wurden in den Papierkorb verschoben.",
+    "listArchived": "„{name}“ wurde archiviert.",
+    "restored": "Wiederhergestellt. Gelöschte oder archivierte öffentliche Links bleiben widerrufen.",
+    "templateSaved": "Vorlage gespeichert. Verwende sie jederzeit für eine neue Liste.",
+    "createdFromTemplate": "Deine neue Liste ist bereit. Lege bei Bedarf Termine für Erinnerungen fest.",
+    "deleteTemplateConfirm": "Diese Vorlage in den Papierkorb verschieben? Bereits daraus erstellte Listen bleiben erhalten.",
+    "templateTrashed": "Vorlage in den Papierkorb verschoben.",
+    "loadFailed": "Dieser Bereich konnte nicht geladen werden. Versuche es mit Aktualisieren erneut.",
+    "views": {
+      "lists": "Deine Listen",
+      "today": "Heute & demnächst",
+      "archive": "Archiv",
+      "templates": "Vorlagen",
+      "trash": "Papierkorb"
+    },
+    "help": {
+      "today": "Termine aus deinen eigenen und geteilten Listen. Heute ist dein lokaler Kalendertag; demnächst umfasst die folgenden sieben Tage.",
+      "archive": "Bewahre abgeschlossene oder pausierte Listen auf. Archivierte Listen senden keine Erinnerungen und sind bis zur Wiederherstellung für Mitwirkende ausgeblendet.",
+      "templates": "Wiederverwendbare Ausgangspunkte für Reisen, Einkäufe und Veranstaltungen. Jede Verwendung erstellt eine unabhängige private Liste.",
+      "trash": "Gelöschte Listen und Einträge bleiben hier, bis du sie wiederherstellst. In dieser Version gibt es keine automatische endgültige Löschung. Öffentliche Links werden nicht wieder aktiviert."
+    },
+    "empty": {
+      "archive": "Noch keine archivierten Listen.",
+      "templates": "Beginne mit einer bewährten Liste.",
+      "trash": "Der Papierkorb ist leer."
+    },
+    "emptyHelp": {
+      "archive": "Verwende Liste archivieren in den Einstellungen, um eine Liste zu pausieren.",
+      "templates": "Öffne die Einstellungen einer Liste und wähle Als Vorlage speichern. Verwende sie hier für einen neuen Anfang.",
+      "trash": "Gelöschte Listen, Vorlagen und Einträge lassen sich hier wiederherstellen – auch nach dem Neuladen oder erneuten Anmelden."
+    },
+    "groups": {
+      "overdue": "Überfällig",
+      "today": "Heute",
+      "upcoming": "Nächste 7 Tage"
+    }
   }
 }

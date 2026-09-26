@@ -53,7 +53,9 @@ public class ItemService {
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
         item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
-        Item saved = itemRepository.save(item);
+        item.setPriceCurrency(request.priceCurrency());
+        if (shouldEnrichWishUrlItem(list, request)) item.setImportStatus("PENDING");
+        Item saved = itemRepository.saveAndFlush(item);
         if (shouldEnrichWishUrlItem(list, request)) {
             enrichUrlItemAfterCommit(saved.getId(), request.url().trim());
         }
@@ -61,7 +63,7 @@ public class ItemService {
     }
 
     @Transactional
-    public ItemResponse update(User actor, String itemId, ItemRequest request) {
+    public ItemResponse update(User actor, String itemId, ItemRequest request, String ifMatch) {
         Item item = requireContributableItem(actor, itemId);
         if (item.getList().getType() == ListType.WISH
                 && request.status() != null
@@ -69,26 +71,41 @@ public class ItemService {
                 && !item.getList().getUser().getId().equals(actor.getId())) {
             throw new ResourceNotFoundException("Item not found");
         }
+        requireRevision(item, ifMatch);
         validateForListType(item.getList(), request);
         ItemStatus status = request.status() == null ? item.getStatus() : request.status();
         item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), status, request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
+        item.setPriceCurrency(request.priceCurrency());
+        if ("PENDING".equals(item.getImportStatus())) item.setImportStatus("NONE");
         advanceCompletedRecurringChore(item);
+        itemRepository.flush();
         return toResponse(item);
     }
 
     @Transactional
     public void delete(User actor, String itemId) {
         Item item = requireOwnedItem(actor, itemId);
-        itemRepository.delete(item);
+        item.setDeletedAt(Instant.now());
+        if ("PENDING".equals(item.getImportStatus())) item.setImportStatus("FAILED");
     }
 
     @Transactional
     public void clearCompleted(User actor, String listId) {
-        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        ListEntity list = listAccessService.requireWritableOwnedList(actor, listId);
         if (list.getType() != ListType.GROCERY) {
             throw new ValidationFailedException("Clear completed is only available for grocery lists.");
         }
-        itemRepository.deleteByListIdAndStatus(list.getId(), ItemStatus.DONE);
+        itemRepository.findByListId(list.getId()).stream().filter(item -> item.getStatus() == ItemStatus.DONE)
+            .forEach(item -> item.setDeletedAt(Instant.now()));
+    }
+
+    @Transactional
+    public ItemResponse restore(User actor, String itemId) {
+        Item item = itemRepository.findById(itemId).orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+        listAccessService.requireWritableOwnedList(actor, item.getList().getId());
+        item.setDeletedAt(null);
+        itemRepository.flush();
+        return toResponse(item);
     }
 
     @Transactional
@@ -97,6 +114,7 @@ public class ItemService {
         requireRecurringChore(item);
         item.setDueDate(nextDueDate(item.getDueDate(), item.getRecurrenceRule()));
         item.setStatus(ItemStatus.OPEN);
+        itemRepository.flush();
         return toResponse(item);
     }
 
@@ -108,20 +126,51 @@ public class ItemService {
         }
         item.setDueDate(item.getDueDate().plus(days, ChronoUnit.DAYS));
         item.setStatus(ItemStatus.OPEN);
+        itemRepository.flush();
         return toResponse(item);
+    }
+
+    @Transactional
+    public ItemResponse retryImport(User actor, String itemId) {
+        Item item = requireContributableItem(actor, itemId);
+        if (item.getList().getType() != ListType.WISH || !hasText(item.getUrl())) {
+            throw new ValidationFailedException("Only wish items with a URL can be imported.");
+        }
+        if (!"PENDING".equals(item.getImportStatus())) {
+            item.setImportStatus("PENDING");
+            itemRepository.flush();
+            enrichUrlItemAfterCommit(itemId, item.getUrl());
+        }
+        return toResponse(item);
+    }
+
+    @Transactional(readOnly = true)
+    public ItemResponse get(User actor, String itemId) {
+        Item item = itemRepository.findById(itemId).filter(candidate -> !candidate.isDeleted()).orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+        listAccessService.requireReadableList(actor, item.getList().getId());
+        return toResponse(item);
+    }
+
+    private void requireRevision(Item item, String ifMatch) {
+        if (ifMatch == null || !ifMatch.equals("\"" + item.getVersion() + "\"")) {
+            throw new app.listful.api.ConflictException("stale_item", "This item changed. Reload it before saving.");
+        }
     }
 
     private Item requireOwnedItem(User actor, String itemId) {
         Item item = itemRepository.findById(itemId)
+            .filter(candidate -> !candidate.isDeleted())
             .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         if (!item.getList().getUser().getId().equals(actor.getId())) {
             throw new ResourceNotFoundException("Item not found");
         }
+        listAccessService.requireWritableOwnedList(actor, item.getList().getId());
         return item;
     }
 
     private Item requireContributableItem(User actor, String itemId) {
         Item item = itemRepository.findById(itemId)
+            .filter(candidate -> !candidate.isDeleted())
             .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         if (!listAccessService.canContribute(actor, item.getList())) {
             throw new ResourceNotFoundException("Item not found");
@@ -181,7 +230,11 @@ public class ItemService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                itemEnrichmentService.enrichUrlItem(itemId, url);
+                try {
+                    itemEnrichmentService.enrichUrlItem(itemId, url);
+                } catch (org.springframework.core.task.TaskRejectedException full) {
+                    itemEnrichmentService.markFailed(itemId, url);
+                }
             }
         });
     }
@@ -193,7 +246,7 @@ public class ItemService {
     }
 
     private boolean hasShoppingFields(ItemRequest request) {
-        return hasText(request.url()) || hasText(request.imageUrl()) || request.price() != null;
+        return hasText(request.url()) || hasText(request.imageUrl()) || request.price() != null || hasText(request.priceCurrency());
     }
 
     private boolean hasGroceryFields(ItemRequest request) {
@@ -279,7 +332,10 @@ public class ItemService {
             item.getReservedByGuest(),
             item.getLastCompletedAt() == null ? null : item.getLastCompletedAt().toString(),
             item.getOwnerLabel(),
-            item.getAssistantLabels()
+            item.getAssistantLabels(),
+            item.getVersion(),
+            item.getPriceCurrency(),
+            item.getImportStatus()
         );
     }
 }

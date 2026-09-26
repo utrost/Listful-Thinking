@@ -49,12 +49,15 @@ export async function bootstrapOrLoginAdmin(page: Page) {
   }
 
   await expect(page.getByRole('heading', { name: 'Your lists' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Admin' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Administration', exact: true })).toBeVisible();
+  await expect(page.locator('.admin-panel')).toBeHidden();
 }
 
 export async function createList(page: Page, title: string, type: 'WISH' | 'GROCERY' | 'TODO' | 'CHORE' | 'EVENT') {
+  await page.locator('.new-list-disclosure > summary').click();
   await page.getByPlaceholder('New list title').fill(title);
   await page.locator('form.inline-form').filter({ has: page.getByPlaceholder('New list title') }).getByRole('combobox').selectOption(type);
+  if (type === 'EVENT') await page.locator('.new-list-form').getByLabel('Target date').fill('2027-05-10T14:00');
   await page.getByRole('button', { name: 'Create list' }).click();
   await expect(page.getByRole('heading', { name: title })).toBeVisible();
 }

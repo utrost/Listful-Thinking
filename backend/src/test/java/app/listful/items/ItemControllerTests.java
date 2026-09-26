@@ -58,6 +58,29 @@ class ItemControllerTests {
         settingRepository.deleteAll();
     }
 
+
+    @Test
+    void staleFullEditCannotOverwriteNewerDataAndTypeConversionIsBlocked() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createList(owner, "Birthday");
+        MvcResult created = mockMvc.perform(post("/api/v1/lists/{id}/items", listId).session(owner)
+            .contentType("application/json").content("{\"name\":\"Original\"}"))
+            .andExpect(status().isCreated()).andReturn();
+        String itemId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        String revision = "\"0\"";
+        mockMvc.perform(put("/api/v1/items/{id}", itemId).session(owner).header("If-Match", revision)
+            .contentType("application/json").content("{\"name\":\"Newer name\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.version").value(1));
+        mockMvc.perform(put("/api/v1/items/{id}", itemId).session(owner).header("If-Match", revision)
+            .contentType("application/json").content("{\"name\":\"Original\",\"status\":\"PURCHASED\"}"))
+            .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("stale_item"));
+        mockMvc.perform(get("/api/v1/items/{id}", itemId).session(owner))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.name").value("Newer name"));
+        mockMvc.perform(put("/api/v1/lists/{id}", listId).session(owner)
+            .contentType("application/json").content("{\"title\":\"Birthday\",\"type\":\"GROCERY\"}"))
+            .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("list_type_in_use"));
+    }
+
     @Test
     void ownerCanCreateListItemsReadThemUpdateAndDeleteThem() throws Exception {
         MockHttpSession owner = register("owner");
@@ -72,7 +95,7 @@ class ItemControllerTests {
             .andExpect(jsonPath("$[0].name").value("Camera strap"))
             .andExpect(jsonPath("$[0].status").value("OPEN"));
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("""
                     {"name":"Leather camera strap","url":"https://example.test/strap","imageUrl":"https://example.test/strap.jpg","price":29.90,"status":"PURCHASED","dueDate":"2027-01-01T00:00:00Z","recurrenceRule":null}
@@ -100,7 +123,7 @@ class ItemControllerTests {
         mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(other))
             .andExpect(status().isNotFound());
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(other)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(other)
                 .contentType("application/json")
                 .content("""
                     {"name":"Stolen","status":"PURCHASED"}
@@ -156,14 +179,14 @@ class ItemControllerTests {
         String eventItem = createItem(owner, eventId, "Pack bag");
 
         for (String itemId : java.util.List.of(todoItem, groceryItem, choreItem, eventItem)) {
-            mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+            mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(owner)
                     .contentType("application/json")
                     .content("{\"name\":\"Done item\",\"status\":\"DONE\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("DONE"));
         }
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", todoItem).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", todoItem).header("If-Match", "\"" + itemRepository.findById(todoItem).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("{\"name\":\"Bought task\",\"status\":\"PURCHASED\"}"))
             .andExpect(status().isBadRequest())
@@ -214,7 +237,7 @@ class ItemControllerTests {
         String choreId = createList(owner, "Chores", "CHORE");
         String itemId = createChore(owner, choreId, "Water plants", "2027-01-01T09:00:00Z", "FREQ=WEEKLY");
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("""
                     {"name":"Water plants","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY"}
@@ -301,7 +324,7 @@ class ItemControllerTests {
             .andExpect(jsonPath("$.ownerLabel").value("Host"))
             .andExpect(jsonPath("$.assistantLabels").value("Setup crew"));
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("""
                     {"name":"Water plants","status":"OPEN","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY","ownerLabel":"Plant owner","assistantLabels":"Local assistant"}
@@ -334,7 +357,7 @@ class ItemControllerTests {
             .andExpect(jsonPath("$.code").value("validation_failed"));
 
         String groceryItem = createItem(owner, groceryId, "Apples");
-        mockMvc.perform(put("/api/v1/items/{itemId}", groceryItem).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", groceryItem).header("If-Match", "\"" + itemRepository.findById(groceryItem).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("""
                     {"name":"Apples","quantity":"6","assistantLabels":"Pantry bot"}
@@ -363,13 +386,13 @@ class ItemControllerTests {
         String wishListId = createList(owner, "Birthday", "WISH");
         String itemId = createItem(owner, wishListId, "Book");
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("{\"name\":\"Book\",\"status\":\"PURCHASED\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("PURCHASED"));
 
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(owner)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(owner)
                 .contentType("application/json")
                 .content("{\"name\":\"Book\",\"status\":\"DONE\"}"))
             .andExpect(status().isBadRequest())
@@ -441,7 +464,7 @@ class ItemControllerTests {
     }
 
     @Test
-    void urlOnlyEnrichmentFailureLeavesPlaceholderItem() throws Exception {
+    void urlOnlyEnrichmentFailureHasUsefulNameAndRetryState() throws Exception {
         MockHttpSession owner = register("owner");
         String listId = createList(owner, "Birthday");
         doThrow(new RuntimeException("offline")).when(scraperService).scrape(eq("https://shop.test/offline"));
@@ -454,11 +477,12 @@ class ItemControllerTests {
             .andReturn();
         String itemId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
 
-        Thread.sleep(Duration.ofMillis(200).toMillis());
+        awaitItemName(itemId, "shop.test");
         mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(owner))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].id").value(itemId))
-            .andExpect(jsonPath("$[0].name").value("Loading metadata…"))
+            .andExpect(jsonPath("$[0].name").value("shop.test"))
+            .andExpect(jsonPath("$[0].importStatus").value("FAILED"))
             .andExpect(jsonPath("$[0].url").value("https://shop.test/offline"));
     }
 
@@ -496,7 +520,7 @@ class ItemControllerTests {
     }
 
     private void markDone(MockHttpSession session, String itemId, String name) throws Exception {
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(session)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(session)
                 .contentType("application/json")
                 .content("{\"name\":\"%s\",\"status\":\"DONE\"}".formatted(name)))
             .andExpect(status().isOk())
@@ -504,7 +528,7 @@ class ItemControllerTests {
     }
 
     private org.springframework.test.web.servlet.ResultActions completeRecurringChore(MockHttpSession session, String itemId, String name, String dueDate, String recurrenceRule) throws Exception {
-        return mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(session)
+        return mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(session)
                 .contentType("application/json")
                 .content("{\"name\":\"%s\",\"status\":\"DONE\",\"dueDate\":\"%s\",\"recurrenceRule\":\"%s\"}".formatted(name, dueDate, recurrenceRule)))
             .andExpect(status().isOk())

@@ -240,7 +240,7 @@ class ListControllerTests {
             .andExpect(status().isCreated())
             .andReturn();
         String itemId = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
-        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).session(session)
+        mockMvc.perform(put("/api/v1/items/{itemId}", itemId).header("If-Match", "\"" + itemRepository.findById(itemId).orElseThrow().getVersion() + "\"").session(session)
                 .contentType("application/json")
                 .content("""
                     {"name":"Water plants","description":"Keep balcony alive","status":"DONE","dueDate":"2027-01-01T09:00:00Z","recurrenceRule":"FREQ=WEEKLY","ownerLabel":"Resident on plants","assistantLabels":"Reminder bot; backup helper"}

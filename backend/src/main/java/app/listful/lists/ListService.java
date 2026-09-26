@@ -49,8 +49,12 @@ public class ListService {
 
     @Transactional
     public ListResponse update(User actor, String listId, ListRequest request) {
-        validateListType(request);
-        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        ListEntity list = listAccessService.requireWritableOwnedList(actor, listId);
+        if (!list.isTemplate()) validateListType(request);
+        else if (request.targetDate() != null) throw new ValidationFailedException("Set dates when creating a list from the template.");
+        if (list.getType() != request.type() && itemRepository.existsByListId(list.getId())) {
+            throw new app.listful.api.ConflictException("list_type_in_use", "Empty the list before changing its type.");
+        }
         list.update(request.title(), request.description(), request.type(), request.targetDate());
         return toResponse(actor, list);
     }
@@ -80,6 +84,7 @@ public class ListService {
                 sourceItem.getAssistantLabels()
             );
             copied.setLastCompletedAt(sourceItem.getLastCompletedAt());
+            copied.setPriceCurrency(sourceItem.getPriceCurrency());
             itemRepository.save(copied);
         }
 
@@ -89,7 +94,77 @@ public class ListService {
     @Transactional
     public void delete(User actor, String listId) {
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
-        listRepository.delete(list);
+        list.setDeletedAt(Instant.now());
+        cancelPendingImports(list);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ListResponse> library(User actor, String state) {
+        if (!java.util.Set.of("archive", "trash", "templates").contains(state)) throw new ValidationFailedException("Unknown library state.");
+        return listRepository.findByUserId(actor.getId()).stream()
+            .filter(list -> switch (state) {
+                case "trash" -> list.isDeleted();
+                case "archive" -> !list.isDeleted() && list.isArchived() && !list.isTemplate();
+                default -> !list.isDeleted() && list.isTemplate();
+            }).sorted(java.util.Comparator.comparing(ListEntity::getCreatedAt).reversed())
+            .map(list -> toResponse(actor, list)).toList();
+    }
+
+    @Transactional
+    public ListResponse archive(User actor, String id, boolean archived) {
+        ListEntity list = listAccessService.requireOwnedList(actor, id);
+        if (list.isTemplate()) throw new ValidationFailedException("Templates cannot be archived.");
+        list.setArchived(archived);
+        if (archived) cancelPendingImports(list);
+        return toResponse(actor, list);
+    }
+
+    @Transactional
+    public ListResponse restore(User actor, String id) {
+        ListEntity list = listRepository.findById(id).filter(candidate -> candidate.getUser().getId().equals(actor.getId()))
+            .orElseThrow(() -> new app.listful.api.ResourceNotFoundException("List not found"));
+        list.setDeletedAt(null);
+        list.setArchived(false);
+        return toResponse(actor, list);
+    }
+
+    @Transactional
+    public ListResponse saveTemplate(User actor, String id, String title) {
+        ListEntity source = listAccessService.requireOwnedList(actor, id);
+        ListEntity template = new ListEntity(actor, title.trim(), source.getDescription(), source.getType(), Instant.now());
+        template.setTemplate(true);
+        ListEntity saved = listRepository.save(template);
+        copyFreshItems(source, saved);
+        return toResponse(actor, saved);
+    }
+
+    @Transactional
+    public ListResponse useTemplate(User actor, String id, String title, Instant targetDate) {
+        ListEntity source = listAccessService.requireOwnedList(actor, id);
+        if (!source.isTemplate()) throw new ValidationFailedException("Choose a template.");
+        ListRequest request = new ListRequest(title.trim(), source.getDescription(), source.getType(), targetDate);
+        validateListType(request);
+        ListEntity created = new ListEntity(actor, request.title(), request.description(), request.type(), Instant.now());
+        created.update(request.title(), request.description(), request.type(), targetDate);
+        ListEntity saved = listRepository.save(created);
+        copyFreshItems(source, saved);
+        return toResponse(actor, saved);
+    }
+
+    private void copyFreshItems(ListEntity source, ListEntity destination) {
+        for (Item original : itemRepository.findByListId(source.getId())) {
+            Item copied = new Item(destination, original.getName().equals("Loading metadata…") ? "Imported item" : original.getName(), Instant.now());
+            copied.update(copied.getName(), original.getDescription(), original.getUrl(), original.getImageUrl(), original.getPrice(),
+                app.listful.domain.enums.ItemStatus.OPEN, null, original.getRecurrenceRule(), original.getQuantity(), original.getCategory(), original.getOwnerLabel(), original.getAssistantLabels());
+            copied.setPriceCurrency(original.getPriceCurrency());
+            copied.setImportStatus(java.util.Set.of("FAILED", "PENDING").contains(original.getImportStatus()) ? "FAILED" : "NONE");
+            itemRepository.save(copied);
+        }
+    }
+
+    private void cancelPendingImports(ListEntity list) {
+        itemRepository.findByListId(list.getId()).stream().filter(item -> "PENDING".equals(item.getImportStatus()))
+            .forEach(item -> item.setImportStatus("FAILED"));
     }
 
     private void validateListType(ListRequest request) {
@@ -120,6 +195,7 @@ public class ListService {
             list.getPublicShareMode().name(),
             list.getTargetDate() == null ? null : list.getTargetDate().toString(),
             listAccessService.accessMode(actor, list),
+            list.isArchived(), list.isTemplate(), list.getDeletedAt() == null ? null : list.getDeletedAt().toString(),
             list.getCreatedAt().toString()
         );
     }

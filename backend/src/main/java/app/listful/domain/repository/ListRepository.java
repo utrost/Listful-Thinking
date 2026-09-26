@@ -11,8 +11,8 @@ public interface ListRepository extends JpaRepository<ListEntity, String> {
     List<ListEntity> findByUserId(String userId);
     @Query("""
         select distinct l from ListEntity l
-        where l.user.id = :userId
-           or l.id in (select s.list.id from ListShare s where s.user.id = :userId)
+        where l.deletedAt is null and l.archived = 0 and l.templateFlag = 0
+          and (l.user.id = :userId or l.id in (select s.list.id from ListShare s where s.user.id = :userId))
         order by l.createdAt desc
         """)
     List<ListEntity> findAccessibleByUserId(@Param("userId") String userId);

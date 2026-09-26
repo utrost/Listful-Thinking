@@ -95,6 +95,7 @@ async function mountSignedIn(list: ListEntry, items: ItemEntry[]) {
 describe('additional rendered application workflows', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  window.confirm = vi.fn(() => true);
     window.history.replaceState({}, '', '/');
     i18n.global.locale.value = 'en';
   });
@@ -135,10 +136,12 @@ describe('additional rendered application workflows', () => {
     await button(wrapper, 'Keep list').trigger('click');
     expect(wrapper.text()).not.toContain('Confirm delete');
 
+    await button(wrapper, 'List settings').trigger('click');
     await button(wrapper, 'Delete list').trigger('click');
     await button(wrapper, 'Confirm delete').trigger('click');
     await flushPromises();
     expect(deleteList).toHaveBeenCalledWith('list-1');
+    expect(wrapper.get('.items-workspace').isVisible()).toBe(true);
   });
 
   it('previews wishlist URLs and keeps scraped metadata editable before creation', async () => {
@@ -170,13 +173,13 @@ describe('additional rendered application workflows', () => {
     const wrapper = mount(App, { global: { plugins: [i18n] } });
     await flushPromises();
 
-    await wrapper.get('input[type="search"]').setValue('milk');
+    await wrapper.get('input[type="search"][placeholder="Name, notes, category, or URL"]').setValue('milk');
     expect(wrapper.text()).toContain('Milk');
     expect(wrapper.text()).not.toContain('Bread');
 
     await buttonContaining(wrapper, 'Second list').trigger('click');
     await flushPromises();
-    expect((wrapper.get('input[type="search"]').element as HTMLInputElement).value).toBe('');
+    expect((wrapper.get('input[type="search"][placeholder="Name, notes, category, or URL"]').element as HTMLInputElement).value).toBe('');
     expect(wrapper.text()).toContain('Hammer');
   });
 
@@ -204,7 +207,7 @@ describe('additional rendered application workflows', () => {
     vi.mocked(postponeChoreItem).mockResolvedValue({ ...chore, dueDate: '2027-01-02T10:00:00Z' });
     const wrapper = await mountSignedIn({ ...baseList, type: 'CHORE', title: 'Chores' }, [chore]);
 
-    const recurrence = wrapper.get('select[aria-label="Recurrence"]');
+    const recurrence = wrapper.get('select[aria-label="Repeat"]');
     expect(recurrence.text()).toContain('Daily');
     expect(recurrence.text()).toContain('Annually');
 

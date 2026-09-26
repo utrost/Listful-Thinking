@@ -2,6 +2,19 @@
 
 This guide describes what a regular user and an admin can do in the current Listful Thinking app. It is written for people using the app, not for developers reading the API.
 
+## Workspace navigation and planning
+
+Use **Your lists** for everyday list work. Each selected list has **Items**, **Sharing**, and **List settings**; administration is a separate destination. Empty lists open the add form; populated lists let you expand **Add to this list** and optional details. Your language and last selected list are remembered in this browser.
+
+**Today & upcoming** shows open dated work and event dates across your own and shared active lists. Dates follow your local timezone: Overdue is before today's midnight, Today is the current calendar day, and Next 7 days is the following seven days. Undated items stay in their lists. Read-only entries can be opened; editable tasks can be completed directly. Refresh if another person has changed an entry. Recurring chores advance their schedule on completion.
+
+**Archive** stores paused lists. Archive a list from its settings: it stops new reminders, disappears for collaborators, and becomes read-only for its owner. Restore it to continue. Existing reminder history is retained. Archiving revokes any public link.
+
+**Trash** holds deleted lists, templates and items, including cleared completed groceries. Undo reverses the most recent deletion/archive; Trash supports recovery even after reload or signing in again. Only the owner can restore. No automatic purge runs in this release. Restore an archived parent list before restoring its deleted items; restore a deleted parent before its separately deleted items appear. Old public links stay revoked; issue new ones if needed. Restoring a list resumes its retained internal shares.
+
+**Templates** are personal reusable blueprints. In a list's settings choose Save as template and give it a name. Use template creates a fresh independent private list: all items are open, guest reservations/history/shares are cleared, and item dates are reset. Event copies require a new event date. Content, prices, quantities, recurrence and responsibility labels are retained. Set fresh dates for recurring tasks if you want reminders. Open list lets you edit the blueprint. Deleting a template moves it to Trash and leaves existing instances alone.
+
+
 ## Roles at a glance
 
 ### Regular user
@@ -177,7 +190,7 @@ Shop mode:
 - Items without a category appear under **Uncategorized**.
 - Use **Done** as the one-tap check-off while shopping.
 - Use **Hide completed** to keep only remaining open items visible on a phone.
-- List owners can use **Clear completed** after the trip. This deletes only `DONE` grocery items from that grocery list. It does not clear completed TODO, CHORE, EVENT, or WISH items.
+- List owners can use **Clear completed** after the trip. This moves only `DONE` grocery items from that grocery list to Trash, where they can be restored. It does not clear completed TODO, CHORE, EVENT, or WISH items.
 
 ### CHORE
 
@@ -276,9 +289,9 @@ Editable list fields:
 - type
 - event target date, for `EVENT` lists only
 
-Changing a list type changes which item fields are shown and accepted for future item edits. Use this mainly to correct a wrongly chosen type early; if a list already contains many type-specific items, create a fresh list instead of using type changes as a conversion tool.
+List type changes are allowed only when there are no stored items, including items recoverable from Trash. Create a new list for another purpose rather than converting existing data.
 
-Deleting a list is destructive. The UI now asks for a second confirmation step before calling delete. Deleting a list removes its items, internal shares, and public link state with the list.
+Deleting a list requires confirmation and moves the list to Trash. Its data and internal shares are retained for owner recovery; public links are revoked.
 
 ## Sharing
 
@@ -531,7 +544,7 @@ Admins can see user and list metadata needed to operate the instance. The curren
 - Done items do not trigger due-date reminders.
 - Recurring chores stay open by advancing to their next due date after Done or Skip.
 - If SMTP is complete, reminders can go by email; otherwise in-app notifications are created.
-- The default scan is daily at server-local 08:00, so a reminder may not appear immediately after editing a due date.
+- The default scan runs every minute and catches overdue items after downtime. Each due occurrence is recorded so repeated scans do not resend it.
 
 ## Current limitations
 
@@ -543,3 +556,14 @@ Admins can see user and list metadata needed to operate the instance. The curren
 - Email features require SMTP configuration; otherwise the app stays functional with password login and in-app notifications.
 - Admin inventory is metadata-focused and does not include a break-glass private content view.
 - Internet-facing deployment still needs a dedicated HTTPS/HSTS/secure-cookie pass; the current Alice deployment is private Tailnet HTTP.
+
+## Reliability and sharing notes
+
+- Administration is collapsed under **Admin**, leaving your lists in the main working area.
+- If multiple accounts use one email address, enter your username as well as the email before requesting recovery or magic login. Password reset signs out old sessions and revokes outstanding login/recovery links.
+- Public URLs are displayed only when created. Use **Copy link** immediately. **Replace public link** warns that previously distributed links will stop working; reloading does not revoke an existing link.
+- Item deletion and clearing completed groceries require confirmation.
+- A populated list's type cannot be changed. Create a new list of the desired type instead.
+- If someone else changes an item before you save, the app reports a conflict. Reload the list, review the latest values, and reapply your edit. Notes are available for all item types.
+- URL imports show their state and offer **Retry import** after failure. The page polls pending imports for up to two minutes; reload to check jobs still pending beyond that time. Editing an item cancels application of an older pending import result.
+- Prices retain their currency. Existing stored prices are migrated as EUR, matching their previous display; new imported prices with no known currency display an amount without inventing a currency.

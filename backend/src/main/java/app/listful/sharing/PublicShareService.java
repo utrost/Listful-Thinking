@@ -38,7 +38,7 @@ public class PublicShareService {
 
     @Transactional
     public PublicShareTokenResponse createToken(User actor, String listId, PublicShareRequest request) {
-        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        ListEntity list = listAccessService.requireShareableList(actor, listId);
         PublicShareMode mode = request == null || request.mode() == null ? defaultMode(list) : request.mode();
         validateMode(list, mode);
         String token = uniqueToken();
@@ -48,7 +48,7 @@ public class PublicShareService {
 
     @Transactional
     public void revokeToken(User actor, String listId) {
-        ListEntity list = listAccessService.requireOwnedList(actor, listId);
+        ListEntity list = listAccessService.requireShareableList(actor, listId);
         list.disablePublicShare();
     }
 
@@ -89,7 +89,7 @@ public class PublicShareService {
             throw ex;
         }
         Item item = itemRepository.findById(itemId)
-            .filter(candidate -> candidate.getList().getId().equals(list.getId()))
+            .filter(candidate -> !candidate.isDeleted() && candidate.getList().getId().equals(list.getId()))
             .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
         if (claimed == 0) {
             throw new ConflictException("item_already_claimed", "Item is already claimed.");
@@ -101,13 +101,13 @@ public class PublicShareService {
         String tokenHash = TokenHashing.sha256(token);
         return listRepository.findByShareTokenHash(tokenHash)
             .or(() -> migrateLegacyRawToken(token, tokenHash))
-            .filter(ListEntity::isPublicList)
+            .filter(list -> list.isPublicList() && list.isActive())
             .orElseThrow(() -> new ResourceNotFoundException("Shared list not found"));
     }
 
     private java.util.Optional<ListEntity> migrateLegacyRawToken(String token, String tokenHash) {
         return listRepository.findByShareTokenHash(token)
-            .filter(ListEntity::isPublicList)
+            .filter(list -> list.isPublicList() && list.isActive())
             .map(list -> {
                 list.migratePublicShareTokenHash(tokenHash);
                 return list;
@@ -170,7 +170,8 @@ public class PublicShareService {
             item.getDueDate() == null ? null : item.getDueDate().toString(),
             item.getQuantity(),
             item.getCategory(),
-            item.getReservedByGuest()
+            item.getReservedByGuest(),
+            item.getPriceCurrency()
         );
     }
 }

@@ -10,6 +10,9 @@ public record ListResponse(
     String publicShareMode,
     String targetDate,
     String access,
+    boolean archived,
+    boolean template,
+    String deletedAt,
     String createdAt
 ) {
 }

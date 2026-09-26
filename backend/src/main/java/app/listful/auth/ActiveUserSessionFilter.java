@@ -31,7 +31,7 @@ public class ActiveUserSessionFilter extends OncePerRequestFilter {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (userRepository != null
                 && authentication != null && authentication.getPrincipal() instanceof ListfulUserPrincipal principal
-                && userRepository.findById(principal.user().getId()).filter(user -> user.isActive()).isEmpty()) {
+                && userRepository.findById(principal.user().getId()).filter(user -> user.isActive() && user.getPasswordHash().equals(principal.getPassword())).isEmpty()) {
             SecurityContextHolder.clearContext();
             HttpSession session = request.getSession(false);
             if (session != null) {

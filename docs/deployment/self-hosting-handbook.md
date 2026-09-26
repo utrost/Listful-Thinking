@@ -138,15 +138,50 @@ Back up at least this file:
 ./data/listful-thinking.sqlite
 ```
 
-Suggested manual backup before an update:
+Create a consistent online snapshot from the production bind mount (Python 3 required):
 
 ```bash
-mkdir -p backups
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
-cp data/listful-thinking.sqlite "backups/listful-thinking-${stamp}.sqlite"
+python3 scripts/backup-db.py data/listful-thinking.sqlite "backups/listful-thinking-${stamp}.sqlite"
 ```
 
-If you use the named Docker volume instead of `./data`, copy the file out of a stopped or running container before updating.
+The helper opens the source read-only, uses SQLite's online backup API (including committed WAL data), checks integrity, and creates a private backup file without overwriting an existing destination. The account running it needs read access to the database and its journal/WAL files. Keep encrypted copies off the application host and choose a retention policy.
+
+For the default named volume, stop the application before copying:
+
+```bash
+docker compose stop listful-thinking
+container_id="$(docker compose ps -aq listful-thinking)"
+mkdir -p backups
+docker cp "$container_id:/app/data/listful-thinking.sqlite" backups/stopped-copy.sqlite
+docker compose start listful-thinking
+python3 scripts/backup-db.py backups/stopped-copy.sqlite backups/verified-copy.sqlite
+```
+
+Use a new backup filename each time. Never copy a running SQLite file with plain `cp` or `docker cp`.
+
+### Test a restore without replacing production
+
+Select a verified backup, place it in a new directory, and start a separate instance on a local port:
+
+```bash
+mkdir restore-check
+cp backups/verified-copy.sqlite restore-check/listful-thinking.sqlite
+sudo chown -R 1000:1000 restore-check
+LISTFUL_DATA_BIND=./restore-check LISTFUL_PORT=18081 LISTFUL_BIND=127.0.0.1 \
+  docker compose --env-file .env.example -p listful-restore -f compose.prod.yml up --build -d
+curl -fsS http://127.0.0.1:18081/api/v1/health/ready
+```
+
+Open the restored instance, log in using an account from the backup, and verify expected lists and items. It has SMTP disabled by `.env.example`; avoid configuring outbound mail on a restore test. When finished:
+
+```bash
+docker compose --env-file .env.example -p listful-restore -f compose.prod.yml down
+```
+
+For actual recovery, stop production, retain its old data directory, install the verified restore at the production bind path with UID/GID 1000 ownership, and restart using the same production Compose profile. Do not mix an old SQLite file with leftover journal/WAL files. Restore before performing a downgrade: Flyway schema upgrades are forward-only.
+
+The release smoke script performs an isolated restore and verifies readiness, login, and list contents. `python3 scripts/test-backup.py` also verifies a live WAL database snapshot.
 
 ## Public HTTPS example with Caddy
 
@@ -174,6 +209,9 @@ services:
       MAIL_PORT: ${MAIL_PORT:-25}
       MAIL_USER: ${MAIL_USER:-}
       MAIL_PASS: ${MAIL_PASS:-}
+      MAIL_AUTH: ${MAIL_AUTH:-false}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
+      MAIL_FROM: ${MAIL_FROM:-}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-60}
       RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
@@ -325,7 +363,12 @@ MAIL_HOST=smtp.example.org
 MAIL_PORT=587
 MAIL_USER=listful@example.org
 MAIL_PASS=change-me
+MAIL_AUTH=true
+MAIL_STARTTLS=true
+MAIL_FROM=listful@example.org
 ```
+
+For a relay without authentication, leave `MAIL_AUTH=false`. For port 587 submission, enable both authentication and required STARTTLS; the sender must be allowed by your provider. Connections, reads, and writes have five-second timeouts. Verify delivery using your own SMTP server before depending on email recovery.
 
 Keep mail credentials out of logs and chat. Store production `.env` files with mode `0600` where practical.
 
@@ -339,15 +382,15 @@ Before updating:
 4. Rebuild and restart the container.
 5. Re-run the health and login checks.
 
-Typical source checkout update:
+Production-profile source checkout update:
 
 ```bash
 git pull --ff-only
-docker compose up --build -d
+docker compose --env-file .env -f compose.prod.yml up --build -d
 curl -fsS http://localhost:8080/api/v1/health
 ```
 
-For public HTTPS, use the public compose command and verify HSTS plus the secure session cookie again.
+For the default development/named-volume profile, use `docker compose up --build -d` instead. Keep the same profile and data path that created your instance. For public HTTPS, use the public compose command and verify HSTS plus the secure session cookie again.
 
 ## Security baseline for small self-hosters
 
@@ -380,7 +423,7 @@ Check that `PUBLIC_BASE_URL` uses `https://...` and `SESSION_COOKIE_SECURE=true`
 
 ### Public links point at localhost or a private host
 
-Set `PUBLIC_BASE_URL` to the URL users should actually open and restart the container.
+Open the app using the externally reachable hostname before copying a public share link: the browser builds it from its current origin. `PUBLIC_BASE_URL` controls server-generated email links; set it to the externally reachable URL and restart the container. These settings do not make a private-only host publicly reachable.
 
 ### Rate limits show the proxy IP for all users
 
@@ -396,6 +439,6 @@ Scraping is best-effort. Some shops block server-side requests or return generic
 - Multi-tenant public service operation.
 - Image signing/SBOM publication.
 - A full audited admin-superuser workflow.
-- Automated backups or backup encryption.
+- Automated backup scheduling, retention, or encryption. The repository includes a manual verified snapshot helper and restore checks.
 
 Those are separate release-readiness and operations topics. The current app is aimed at small self-hosted instances first.

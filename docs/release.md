@@ -8,8 +8,8 @@ Run from the repository root:
 
 ```bash
 cd backend && mvn test
-cd ../frontend && npm test && npm run build
-cd .. && scripts/test-smoke-contract.sh && scripts/test-compose-env-contract.sh && scripts/test-docs-contract.sh
+cd ../frontend && npm test && npm run build && npm run test:gui
+cd .. && scripts/test-smoke-contract.sh && scripts/test-compose-env-contract.sh && scripts/test-docs-contract.sh && python3 scripts/test-backup.py
 ```
 
 ## Container smoke
@@ -114,3 +114,19 @@ Known weak points and future hardening:
 - CI has OSV scanning, but release images/JARs are not signed and no SBOM artifact is published.
 - Current GitHub Actions are green but emit action-runtime deprecation warnings; upgrade action majors as maintenance work.
 - `npm audit` fails closed when the npm registry audit endpoint is unavailable. That is the desired security posture, but it can create transient red frontend jobs during registry 503/timeout incidents.
+
+## Review remediation release checks
+
+Run `scripts/smoke.sh` (now includes an isolated database restore), `python3 scripts/test-backup.py`, and `scripts/test-docs-contract.sh` alongside backend/frontend/browser suites. Migration V14 adds item revisions, import/currency state, notification delivery keys, and historical audit-path redaction. Make a verified backup before release. Custom item API clients must send the returned version in `If-Match` on PUT.
+
+## 0.2.0-rc.1 verification — 2026-09-26
+
+The candidate combines all September review repairs, email recovery fixes, the workspace redesign and roadmap milestones 2–4. See [release notes](releases/0.2.0-rc.1.md).
+
+- Backend: 118 tests passed, including 10 planning/lifecycle tests covering DST boundaries, authorization, reminder suppression, Trash recovery, public-link revocation, concurrent archive writes and fresh templates.
+- Frontend: 63 tests passed; the candidate Docker build passed TypeScript checking and production compilation. Production npm audit reports zero vulnerabilities.
+- Browser acceptance: desktop/mobile Playwright covers the existing experience plus Today, stale completion rejection, archive/Undo, persistent list/item recovery and template creation/use/recovery. **20 passed, 6 deliberate duplicate-platform skips**, with no failures.
+- Full Docker API smoke passed, including non-root runtime, revision-checked updates, explicit unavailable-email behavior, backup integrity and restored-container login/list access.
+- Script, Compose and documentation contracts, standalone online backup checks and whitespace checks passed.
+
+The browser setup waits for database readiness and stops the previous disposable stack before recreating its database. Tests use isolated databases and ports; live credentials/data are excluded from all public artifacts.

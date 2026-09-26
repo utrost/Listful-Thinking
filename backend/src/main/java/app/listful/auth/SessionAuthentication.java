@@ -13,6 +13,10 @@ public final class SessionAuthentication {
     }
 
     public static void authenticate(HttpServletRequest request, User user) {
+        if (request.getSession(false) != null) {
+            request.changeSessionId();
+            request.getSession().removeAttribute(app.listful.config.SecurityHardeningFilter.CSRF_SESSION_ATTRIBUTE);
+        }
         ListfulUserPrincipal principal = new ListfulUserPrincipal(user);
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
             principal,

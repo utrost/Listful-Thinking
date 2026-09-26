@@ -21,6 +21,7 @@ export interface LoginRequest {
 }
 
 export interface EmailLinkRequest {
+  username?: string;
   email: string;
 }
 
@@ -38,6 +39,7 @@ export interface AdminSettings {
 }
 
 export interface AuthSettings {
+  emailRecoveryAvailable?: boolean;
   registrationAvailable: boolean;
 }
 
@@ -82,6 +84,9 @@ export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT';
 export type PublicShareMode = 'VIEW' | 'WISH_CLAIM' | 'SIGNUP';
 
 export interface ListEntry {
+  archived?: boolean;
+  template?: boolean;
+  deletedAt?: string | null;
   id: string;
   title: string;
   description: string | null;
@@ -108,6 +113,9 @@ export interface CloneListRequest {
 export type ItemStatus = 'OPEN' | 'CLAIMED' | 'PURCHASED' | 'DONE';
 
 export interface ItemEntry {
+  priceCurrency?: string | null;
+  version?: number;
+  importStatus?: 'NONE' | 'PENDING' | 'READY' | 'FAILED';
   id: string;
   listId: string;
   name: string;
@@ -127,6 +135,8 @@ export interface ItemEntry {
 }
 
 export interface ItemRequest {
+  priceCurrency?: string | null;
+  version?: number;
   name?: string;
   description?: string;
   url?: string;
@@ -167,6 +177,7 @@ export interface PublicShareToken {
 }
 
 export interface PublicItemEntry {
+  priceCurrency?: string | null;
   id: string;
   name: string;
   description: string | null;
@@ -273,7 +284,7 @@ async function csrfFetch(path: string, init: RequestInit = {}): Promise<Response
 }
 
 async function parseApiError(response: Response): Promise<ApiClientError> {
-  let code = 'request_failed';
+  let code = response.status === 401 ? 'unauthorized' : response.status === 403 ? 'forbidden' : 'request_failed';
   let message = `Request failed: ${response.status}`;
   const contentType = response.headers?.get?.('content-type') ?? '';
   if (contentType.includes('application/json')) {
@@ -294,7 +305,15 @@ async function parseApiError(response: Response): Promise<ApiClientError> {
 
 async function fetchWithApiErrors(path: string, init: RequestInit = {}): Promise<Response> {
   try {
-    return await csrfFetch(path, init);
+    let response = await csrfFetch(path, init);
+    if (response.status === 403 && needsCsrf(path, init)) {
+      const error = await parseApiError(response.clone());
+      if (error.code === 'csrf_required') {
+        csrfToken = null;
+        response = await csrfFetch(path, init);
+      }
+    }
+    return response;
   } catch (error) {
     if (error instanceof ApiClientError) {
       throw error;
@@ -332,6 +351,7 @@ export async function getAuthSettings(): Promise<AuthSettings> {
 }
 
 export async function register(request: RegisterRequest): Promise<AuthUser> {
+  csrfToken = null;
   return requestJson<AuthUser>('/api/v1/auth/register', {
     method: 'POST',
     body: JSON.stringify(request)
@@ -339,6 +359,7 @@ export async function register(request: RegisterRequest): Promise<AuthUser> {
 }
 
 export async function login(request: LoginRequest): Promise<AuthUser> {
+  csrfToken = null;
   return requestJson<AuthUser>('/api/v1/auth/login', {
     method: 'POST',
     body: JSON.stringify(request)
@@ -360,6 +381,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function logout(): Promise<void> {
+  csrfToken = null;
   const response = await fetchWithApiErrors('/api/v1/auth/logout', {
     method: 'POST',
     credentials: 'include'
@@ -373,6 +395,7 @@ export async function requestMagicLink(request: EmailLinkRequest): Promise<void>
 }
 
 export async function consumeMagicLink(request: TokenRequest): Promise<AuthUser> {
+  csrfToken = null;
   return requestJson<AuthUser>('/api/v1/auth/magic-link/consume', {
     method: 'POST',
     body: JSON.stringify(request)
@@ -481,9 +504,11 @@ export async function createItem(listId: string, request: ItemRequest): Promise<
 }
 
 export async function updateItem(itemId: string, request: ItemRequest): Promise<ItemEntry> {
+  const { version, ...payload } = request;
   return requestJson<ItemEntry>(`/api/v1/items/${itemId}`, {
     method: 'PUT',
-    body: JSON.stringify(request)
+    headers: { 'If-Match': `"${version}"` },
+    body: JSON.stringify(payload)
   });
 }
 
@@ -581,3 +606,40 @@ export async function markNotificationRead(notificationId: string): Promise<Noti
     method: 'PUT'
   });
 }
+
+export async function retryItemImport(itemId: string): Promise<ItemEntry> {
+  return requestJson<ItemEntry>(`/api/v1/items/${itemId}/import`, { method: 'POST' });
+}
+
+export type HubView = 'lists' | 'today' | 'archive' | 'trash' | 'templates';
+export interface AgendaEntry {
+  kind: 'ITEM' | 'EVENT'; id: string; listId: string; listTitle: string; listType: ListType;
+  name: string; dueDate: string; access: 'OWNER' | 'READ' | 'CONTRIBUTE';
+  version: number; recurrenceRule: string | null; ownerLabel: string | null;
+}
+export interface Overview {
+  date: string; zone: string; overdue: AgendaEntry[]; today: AgendaEntry[]; upcoming: AgendaEntry[];
+}
+export interface TrashedItem {
+  id: string; listId: string; listTitle: string; name: string; deletedAt: string; listArchived: boolean;
+}
+export function getOverview(zone: string): Promise<Overview> {
+  return requestJson(`/api/v1/overview?zone=${encodeURIComponent(zone)}`);
+}
+export function getLibrary(state: 'archive' | 'trash' | 'templates'): Promise<ListEntry[]> {
+  return requestJson(`/api/v1/lists/library?state=${state}`);
+}
+export function getTrashedItems(): Promise<TrashedItem[]> { return requestJson('/api/v1/trash/items'); }
+export function archiveList(id: string, archived: boolean): Promise<ListEntry> {
+  return requestJson(`/api/v1/lists/${id}/archive`, { method: 'POST', body: JSON.stringify({ archived }) });
+}
+export function restoreList(id: string): Promise<ListEntry> { return requestJson(`/api/v1/lists/${id}/restore`, { method: 'POST' }); }
+export function restoreItem(id: string): Promise<ItemEntry> { return requestJson(`/api/v1/items/${id}/restore`, { method: 'POST' }); }
+export function saveTemplate(id: string, title: string): Promise<ListEntry> {
+  return requestJson(`/api/v1/lists/${id}/template`, { method: 'POST', body: JSON.stringify({ title }) });
+}
+export function instantiateTemplate(id: string, title: string, targetDate?: string): Promise<ListEntry> {
+  return requestJson(`/api/v1/lists/${id}/instantiate`, { method: 'POST', body: JSON.stringify({ title, targetDate }) });
+}
+
+export function getItem(id: string): Promise<ItemEntry> { return requestJson(`/api/v1/items/${id}`); }

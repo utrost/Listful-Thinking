@@ -440,3 +440,31 @@ Requires `ADMIN` role. Returns all lists with owner metadata for support/oversig
 ```json
 [{"id":"uuid","title":"Next actions","description":null,"type":"TODO","publicList":false,"ownerId":"uuid","ownerUsername":"uwe","ownerEmail":"uwe@example.test","targetDate":null,"createdAt":"2026-08-31T17:00:00Z"}]
 ```
+
+## September 2026 reliability changes
+
+- Item responses include `version`, `priceCurrency`, and `importStatus` (`NONE`, `PENDING`, `READY`, `FAILED`).
+- `GET /api/v1/items/{id}` returns a readable item.
+- `PUT /api/v1/items/{id}` requires `If-Match: "<version>"`. Read the version first; missing/stale values return `409 stale_item`. Never automatically overwrite a stale edit.
+- `POST /api/v1/items/{id}/import` retries metadata import for a contributable wishlist item with a URL. It returns the item with pending state and is rate-limited.
+- `priceCurrency` is an optional three-uppercase-letter code. Public item responses also contain it.
+- Email-link/reset request bodies accept optional `username` alongside `email`; this is required to disambiguate shared family addresses. Ambiguous requests still return 204.
+- Changing the type of a populated list returns `409 list_type_in_use`.
+- `GET /api/v1/health` is liveness; `GET /api/v1/health/ready` checks database access and returns 503 when unavailable.
+
+## Planning, archive, recovery and templates (0.2.0-rc.1)
+
+All endpoints below require a session. Library and restore endpoints are owner-only; overview entries include only active owned/shared lists.
+
+| Method | Endpoint | Behavior |
+| --- | --- | --- |
+| GET | `/api/v1/overview?zone=Europe/Berlin` | Returns `date`, `zone`, `overdue`, `today`, `upcoming`. Zone defaults to UTC; invalid zones return 400. Entries have kind ITEM/EVENT, ID/list metadata, dueDate, access, version, recurrence and responsibility label. Images/private account data are omitted. |
+| GET | `/api/v1/lists/library?state=archive` | Owner's archive; states `archive`, `trash`, `templates` accepted. Invalid states return 400. |
+| GET | `/api/v1/trash/items` | Owner's deleted items whose parent is not deleted, with parent title/archive state. |
+| POST | `/api/v1/lists/{id}/archive` | Body `{"archived":true}` pauses a list; false resumes it. Templates cannot be archived. |
+| POST | `/api/v1/lists/{id}/restore` | Restore owner's trashed list, clear archive flag, retain internal shares. Public links stay revoked. Idempotent. |
+| POST | `/api/v1/items/{id}/restore` | Restore owner's deleted item; parent must exist and not be archived. Revisions advance. Idempotent. |
+| POST | `/api/v1/lists/{id}/template` | Body `{"title":"Packing blueprint"}` saves a private fresh template copy. |
+| POST | `/api/v1/lists/{id}/instantiate` | Body `{"title":"Summer trip"}` creates a fresh private copy of an owned template; EVENT requires `targetDate`. |
+
+List responses additionally expose `archived`, `template`, and nullable `deletedAt`. Ordinary list collections contain only active lists. DELETE list/item and clear-completed now soft-delete into Trash; direct ordinary reads of deleted records return 404. Archive/Trash/templates are excluded from future reminder scans and public views. Only owners can inspect non-active lists. Archived item mutation is prohibited, and archived/template sharing returns `409 list_inactive`. Template instances reset status, reservation/history, item dates, and shares; content and recurrence definitions are copied. Item PUT still requires If-Match; stale revisions return 409.

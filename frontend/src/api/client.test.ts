@@ -295,3 +295,36 @@ describe('auth API client', () => {
   });
 
 });
+
+describe('CSRF lifecycle regressions', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('gets a new token after logout and login in the same loaded client', async () => {
+    let generation = 1;
+    const writes: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+      if (url === '/api/v1/auth/csrf') return new Response(JSON.stringify({ token: `token-${generation}` }));
+      if (url === '/api/v1/auth/logout') generation++;
+      if (url === '/api/v1/lists') writes.push((init?.headers as Record<string, string>)['X-CSRF-TOKEN']);
+      return new Response(JSON.stringify({ id: 'test' }));
+    });
+    await createList({ title: 'First', type: 'TODO' });
+    await logout();
+    await login({ username: 'owner', password: 'password' });
+    await createList({ title: 'Second', type: 'TODO' });
+    expect(writes).toEqual(['token-1', 'token-2']);
+  });
+
+  it('retries only a recognized CSRF rejection and sends the item revision', async () => {
+    let writes = 0;
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
+      if (url === '/api/v1/auth/csrf') return new Response(JSON.stringify({ token: 'fresh' }));
+      writes++;
+      if (writes === 1) return new Response(JSON.stringify({ code: 'csrf_required' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ id: 'item', version: 4 }));
+    });
+    await updateItem('item', { name: 'Updated', version: 3 });
+    expect(writes).toBe(2);
+    expect(fetchMock.mock.calls.at(-1)?.[1]?.headers).toMatchObject({ 'If-Match': '"3"' });
+  });
+});
