@@ -11,7 +11,12 @@ admin_cookie="$workdir/admin.cookies"
 user_cookie="$workdir/user.cookies"
 
 cleanup() {
+  local exit_status=$?
+  if [ "$exit_status" -ne 0 ]; then
+    docker compose -p "$project" -f "$compose_file" logs --tail 60 --no-color listful-thinking >&2 || true
+  fi
   docker rm -f "${project}-restore" >/dev/null 2>&1 || true
+  docker volume rm "${project}-restore-data" >/dev/null 2>&1 || true
   if [ "${LISTFUL_KEEP_SMOKE:-false}" = "true" ]; then
     echo "Keeping smoke stack '$project' for debugging. Remove with: docker compose -p '$project' -f '$compose_file' down -v"
     echo "Temporary smoke files kept in: $workdir"
@@ -300,14 +305,17 @@ container_id="$(docker compose -p "$project" -f "$compose_file" ps -aq listful-t
 docker cp "$container_id:/app/data/listful-thinking.sqlite" "$workdir/source.sqlite" >/dev/null
 mkdir "$workdir/restore"
 python3 "$repo_root/scripts/backup-db.py" "$workdir/source.sqlite" "$workdir/restore/listful-thinking.sqlite"
-# The disposable restore container retains the image's non-root user.
-chmod 777 "$workdir/restore"
-chmod 666 "$workdir/restore/listful-thinking.sqlite"
+# Restore into a fresh volume owned by the application's UID, independently of
+# the host/CI runner UID. Keep the application itself non-root and files private.
+docker volume create "${project}-restore-data" >/dev/null
+docker run --rm --user 0 --entrypoint sh \
+  -v "$workdir/restore:/restore:ro" -v "${project}-restore-data:/app/data" \
+  listful-thinking:smoke -c 'cp /restore/listful-thinking.sqlite /app/data/listful-thinking.sqlite && chown 1000:1000 /app/data /app/data/listful-thinking.sqlite && chmod 700 /app/data && chmod 600 /app/data/listful-thinking.sqlite'
 docker run -d --name "${project}-restore" -p "127.0.0.1:${port}:8080" \
-  -v "$workdir/restore:/app/data" listful-thinking:smoke >/dev/null
+  -v "${project}-restore-data:/app/data" listful-thinking:smoke >/dev/null
 for attempt in $(seq 1 60); do
   if curl -fsS "$base_url/api/v1/health/ready" >/dev/null 2>&1; then break; fi
-  [ "$attempt" -lt 60 ] || { echo 'Restore did not become ready' >&2; exit 1; }
+  [ "$attempt" -lt 60 ] || { docker logs --tail 40 "${project}-restore" >&2; echo 'Restore did not become ready' >&2; exit 1; }
   sleep 1
 done
 curl_json -c "$admin_cookie" -H 'Content-Type: application/json' \
