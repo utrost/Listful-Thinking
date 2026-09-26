@@ -4,15 +4,15 @@ This document records the current private deployment contract for the Listful Th
 
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
-## Latest deployment — 0.2.0-rc.1, 2026-09-26 19:41 UTC
+## Latest deployment — 0.2.0-rc.1, 2026-09-26 19:46 UTC
 
-Image `listful-thinking:v0.2.0-rc.1`, also tagged `listful-thinking:alice`, ID `sha256:96eb7b1d9bfea7f789814c68ac3433cbc251339c4314ba51e9996d5e32542ae4`.
+Image `listful-thinking:v0.2.0-rc.1`, also tagged `listful-thinking:alice`, ID `sha256:d438e808352f0e3a6e8ac258fd97cdb52884fb408b8293de794fc8b46d082c2e`.
 
 The candidate adds Today & upcoming, archive/Undo and persistent Trash recovery, and private reusable templates to the September fixes and redesigned workspace. See [release notes](../releases/0.2.0-rc.1.md) and [verification](../release.md).
 
-V14→V15 migration passed on a separate copy of the live database before cutover. The deployed database passes SQLite integrity and foreign-key checks; the original 1 account, 1 list and 3 items remain. Database readiness, non-root runtime, preserved volume/port binding and enabled email recovery passed. SMTP configuration was preserved; no additional recovery emails were sent. Desktop/mobile live login pages passed layout and browser-error checks.
+V14→V15 migration passed on a separate copy of the live database before cutover. The final image includes bounded import-write contention retries verified by regression tests. The deployed database passes SQLite integrity and foreign-key checks; the original 1 account, 1 list and 3 items remain. Database readiness, non-root runtime, preserved volume/port binding and enabled email recovery passed. SMTP configuration was preserved; no additional recovery emails were sent. Desktop/mobile live login pages passed layout and browser-error checks.
 
-Private original configuration, source archive, migration preflight, consistent stopped backup, deployment and verification records are in `data/deployments/20260926T194124Z/`. The previous container is retained stopped with restart disabled. Rollback requires the previous image and matching V14 snapshot; never run it directly against V15.
+Private original configuration, source archive, migration preflight, consistent stopped backup, deployment and verification records are in `data/deployments/20260926T194643Z/`. The V14→V15 migration preflight and original V14 backup are retained separately in `data/deployments/20260926T194124Z/`. Previous containers are stopped with restart disabled. Rollback across schema versions requires the previous image and its matching database snapshot; never run a V14 image directly against V15.
 
 ## Previous deployment — focused list workspace, 2026-09-26 11:57 UTC
 
