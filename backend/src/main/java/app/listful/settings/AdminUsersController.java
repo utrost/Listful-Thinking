@@ -4,7 +4,6 @@ import app.listful.api.ApiError;
 import app.listful.api.ConflictException;
 import app.listful.auth.AuthService;
 import app.listful.auth.UsernameAlreadyExistsException;
-import app.listful.domain.ListEntity;
 import app.listful.domain.User;
 import app.listful.domain.enums.UserRole;
 import app.listful.domain.repository.ListRepository;
@@ -17,7 +16,6 @@ import app.listful.settings.dto.AdminUpdateUserRequest;
 import app.listful.settings.dto.AdminUserResponse;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Comparator;
 import java.util.List;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -104,9 +102,8 @@ public class AdminUsersController {
     @GetMapping("/lists")
     @Transactional(readOnly = true)
     public List<AdminListResponse> listAllLists() {
-        return listRepository.findAll().stream()
-            .sorted(Comparator.comparing(ListEntity::getCreatedAt).reversed())
-            .map(this::toListResponse)
+        return userRepository.findAllByOrderByCreatedAtAsc().stream()
+            .map(user -> new AdminListResponse(user.getId(), user.getUsername(), listRepository.countByUserId(user.getId())))
             .toList();
     }
 
@@ -118,22 +115,6 @@ public class AdminUsersController {
             user.getRole().name(),
             user.isActive(),
             user.getCreatedAt()
-        );
-    }
-
-    private AdminListResponse toListResponse(ListEntity list) {
-        User owner = list.getUser();
-        return new AdminListResponse(
-            list.getId(),
-            list.getTitle(),
-            list.getDescription(),
-            list.getType().name(),
-            list.isPublicList(),
-            owner.getId(),
-            owner.getUsername(),
-            owner.getEmail(),
-            list.getTargetDate(),
-            list.getCreatedAt()
         );
     }
 

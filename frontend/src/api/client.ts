@@ -68,16 +68,9 @@ export interface AdminUpdateUserRequest {
 }
 
 export interface AdminListEntry {
-  id: string;
-  title: string;
-  description: string | null;
-  type: ListType;
-  publicList: boolean;
   ownerId: string;
   ownerUsername: string;
-  ownerEmail: string | null;
-  targetDate: string | null;
-  createdAt: string;
+  listCount: number;
 }
 
 export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT';

@@ -41,6 +41,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final String publicBaseUrl;
+    private final String dummyCredentialHash;
     @Value("${spring.mail.host:}") private String mailHost;
     public boolean emailRecoveryAvailable() { return mailHost != null && !mailHost.isBlank(); }
 
@@ -58,6 +59,7 @@ public class AuthService {
         this.authTokenRepository = authTokenRepository;
         this.settingService = settingService;
         this.passwordEncoder = passwordEncoder;
+        this.dummyCredentialHash = passwordEncoder.encode("non-account timing equalization");
         this.mailSender = mailSender;
         this.publicBaseUrl = publicBaseUrl;
     }
@@ -93,10 +95,11 @@ public class AuthService {
     @Transactional(readOnly = true)
     public User login(LoginRequest request) {
         String username = normalizeUsername(request.username());
-        User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
-
-        if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+        User user = userRepository.findByUsername(username).orElse(null);
+        boolean matched;
+        try { matched = passwordEncoder.matches(request.password(), user == null ? dummyCredentialHash : user.getPasswordHash()); }
+        catch (IllegalArgumentException invalidPassword) { matched = false; }
+        if (user == null || !matched) {
             throw new BadCredentialsException("Invalid username or password");
         }
         if (!user.isActive()) {

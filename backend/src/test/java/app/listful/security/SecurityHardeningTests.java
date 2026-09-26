@@ -169,9 +169,11 @@ class SecurityHardeningTests {
 
     @Test
     void scraperRejectsPrivateNetworkTargetsBeforeFetching() {
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> scraperService.scrape("http://127.0.0.1:8080/internal"))
-            .isInstanceOf(app.listful.api.ValidationFailedException.class)
-            .hasMessageContaining("private");
+        for (String url : new String[] {"http://127.0.0.1:8080/internal", "http://100.64.0.1/private", "http://[fd00::1]/private", "http://[::ffff:127.0.0.1]/private", "http://[64:ff9b::7f00:1]/private", "http://[2002:7f00:1::1]/private"}) {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> scraperService.scrape(url))
+                .isInstanceOf(app.listful.api.ValidationFailedException.class)
+                .hasMessageContaining("private");
+        }
     }
 
     @Test
@@ -202,6 +204,24 @@ class SecurityHardeningTests {
                 .content("{\"registrationEnabled\":true}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.registrationEnabled").value(true));
+    }
+
+    @Test
+    void crossOriginAuthAndGuestWritesAreRejectedWithoutCreatingASession() throws Exception {
+        for (String path : new String[] {"/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/magic-link/consume", "/api/v1/share/token/items/item/claim"}) {
+            mockMvc.perform(post(path).header("Origin", "https://untrusted.example")
+                .contentType("application/json").content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("csrf_required"))
+                .andExpect(result -> {
+                    assertThat(result.getRequest().getSession(false)).isNull();
+                    assertThat(result.getResponse().getHeader("Cache-Control")).contains("no-store");
+                });
+        }
+        mockMvc.perform(post("/api/v1/auth/logout").header("Sec-Fetch-Site", "cross-site"))
+            .andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/v1/auth/logout").header("Origin", "null"))
+            .andExpect(status().isForbidden());
     }
 
     @Test

@@ -131,6 +131,8 @@ describe('wishlist image paste', () => {
     await paste(form, new File(['notes'], 'notes.txt', { type: 'text/plain' }));
 
     expect((form.get('input[aria-label="Image URL"]').element as HTMLInputElement).value).toBe('https://shop.test/manual.jpg');
+    expect(form.find('img.preview').exists()).toBe(false);
+    await form.get('button[aria-label="Load external image from shop.test"]').trigger('click');
     expect(form.get('img.preview').attributes('src')).toBe('https://shop.test/manual.jpg');
   });
 
@@ -172,6 +174,8 @@ describe('wishlist image paste', () => {
     await wrapper.get('button[aria-label="Edit: Camera"]').trigger('click');
     const form = formWithButton(wrapper, 'Save');
 
+    expect(form.find('img.preview').exists()).toBe(false);
+    await form.get('button[aria-label="Load external image from shop.test"]').trigger('click');
     expect(form.get('img.preview').attributes('src')).toBe('https://shop.test/old.jpg');
     await button(wrapper, 'Remove image').trigger('click');
     expect(form.find('img.preview').exists()).toBe(false);

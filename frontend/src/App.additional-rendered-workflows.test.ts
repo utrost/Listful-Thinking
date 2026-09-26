@@ -158,6 +158,8 @@ describe('additional rendered application workflows', () => {
     expect((form.get('textarea[aria-label="Description"]').element as HTMLTextAreaElement).value).toBe('A6 dotted');
     expect((form.get('input[aria-label="Image URL"]').element as HTMLInputElement).value).toBe('https://shop.test/notebook.jpg');
     expect((form.get('input[aria-label="Price"]').element as HTMLInputElement).value).toBe('12.5');
+    expect(wrapper.find('img.preview').exists()).toBe(false);
+    await form.get('button[aria-label^="Load external image from"]').trigger('click');
     expect(wrapper.get('img.preview').attributes('src')).toBe('https://shop.test/notebook.jpg');
   });
 

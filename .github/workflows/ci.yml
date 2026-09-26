@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, 'release/**']
+    branches: [main, 'release/**', 'security/**']
   pull_request:
 
 jobs:
@@ -82,10 +82,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Resolve and audit the complete backend dependency inventory
+        run: |
+          mvn -B -f backend/pom.xml org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
+          python3 scripts/audit-runtime.py backend/target/bom.json
       - uses: google/osv-scanner-action/osv-scanner-action@v2.2.2
         with:
           scan-args: |-
-            --lockfile=backend/pom.xml
             --lockfile=frontend/package-lock.json
 
   container-smoke:

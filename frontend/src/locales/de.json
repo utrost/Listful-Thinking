@@ -184,8 +184,10 @@
     "activate": "Aktivieren",
     "deactivate": "Deaktivieren",
     "lastActiveAdminHint": "Mindestens ein aktiver Admin muss verbleiben.",
-    "lists": "Alle Listen",
-    "role": "Rolle"
+    "lists": "Listennutzung",
+    "role": "Rolle",
+    "listCount": "{count} Listen",
+    "listPrivacy": "Die Verwaltung zeigt Nutzungszahlen. Listeninhalte sehen nur Eigentümer und Personen, mit denen sie geteilt wurden."
   },
   "ux": {
     "language": "Sprache",
@@ -203,7 +205,7 @@
     "contributorHelp": "Mit dir geteilt: Du kannst Einträge hinzufügen und bearbeiten. Der Eigentümer verwaltet die Freigaben und Einstellungen.",
     "settingsHelp": "Ändere die Angaben dieser Liste, erstelle eine Kopie oder lösche sie.",
     "typeLocked": "Solange Einträge vorhanden sind, bleibt der Listentyp fest. Erstelle für einen anderen Zweck eine neue Liste.",
-    "sharingHelp": "Wähle, wer die Liste sehen und was diese Person tun darf. Ein öffentlicher Link funktioniert ohne Konto.",
+    "sharingHelp": "Jeder mit einem öffentlichen Link kann diese Liste samt Notizen, Bildern und Gästenamen ohne Konto lesen. Der Link bleibt bis zum Widerruf gültig. Lade für persönliche Inhalte stattdessen bestimmte Personen ein.",
     "publicLink": "Link teilen",
     "invitePeople": "Person mit einem Konto einladen",
     "inviteHelp": "Mit Lesezugriff können Personen Einträge ansehen. Mit Schreibzugriff können sie diese auch hinzufügen und bearbeiten.",
@@ -304,5 +306,11 @@
       "today": "Heute",
       "upcoming": "Nächste 7 Tage"
     }
+  },
+  "privacy": {
+    "loadImage": "Bild laden",
+    "externalImage": "Externes Bild von {host} laden",
+    "imageHint": "Beim Laden wird {host} kontaktiert und deine IP-Adresse übermittelt.",
+    "invalidImage": "Bild nicht verfügbar"
   }
 }

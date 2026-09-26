@@ -342,6 +342,20 @@ class PublicShareTests {
             .isNotEqualTo("legacy-public-token");
     }
 
+    @Test
+    void storedTokenHashesAreNeverAcceptedAsBearerLinks() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Private celebration");
+        String token = createPublicShare(owner, listId);
+        String storedHash = storedShareTokenFor(listId);
+        mockMvc.perform(get("/api/v1/share/{token}", storedHash)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/share/{token}/items/missing/claim", storedHash)
+            .contentType("application/json").content("{\"guestName\":\"Unexpected visitor\"}"))
+            .andExpect(status().isNotFound());
+        assertThat(storedShareTokenFor(listId)).isEqualTo(storedHash);
+        mockMvc.perform(get("/api/v1/share/{token}", token)).andExpect(status().isOk());
+    }
+
     private record ClaimAttempt(String guestName, int status, String body) {
     }
 

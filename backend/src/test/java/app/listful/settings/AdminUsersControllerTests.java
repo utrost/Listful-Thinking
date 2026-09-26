@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.MvcResult;
     "listful.registration-enabled=true"
 })
 class AdminUsersControllerTests {
+    @Autowired app.listful.domain.repository.ListRepository listRepository;
     @Autowired
     private MockMvc mockMvc;
 
@@ -178,7 +179,7 @@ class AdminUsersControllerTests {
     }
 
     @Test
-    void adminCanSeeAllListsWithOwnerMetadata() throws Exception {
+    void adminSeesUsageCountsWithoutPrivateListContent() throws Exception {
         MockHttpSession adminSession = register("admin", "admin@example.test", "correct horse battery staple");
         MockHttpSession userSession = register("martha", "martha@example.test", "another good password");
 
@@ -187,11 +188,19 @@ class AdminUsersControllerTests {
                 .content("{\"title\":\"Martha todos\",\"type\":\"TODO\"}"))
             .andExpect(status().isCreated());
 
+        String privateListId = listRepository.findByUserId(userRepository.findByUsername("martha").orElseThrow().getId()).get(0).getId();
+        mockMvc.perform(get("/api/v1/lists/{id}", privateListId).session(adminSession)).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/lists/{id}/items", privateListId).session(adminSession)).andExpect(status().isNotFound());
         mockMvc.perform(get("/api/v1/admin/lists").session(adminSession))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].title").value("Martha todos"))
-            .andExpect(jsonPath("$[0].ownerUsername").value("martha"))
-            .andExpect(jsonPath("$[0].type").value("TODO"));
+            .andExpect(jsonPath("$[0].ownerUsername").value("admin"))
+            .andExpect(jsonPath("$[0].listCount").value(0))
+            .andExpect(jsonPath("$[1].ownerUsername").value("martha"))
+            .andExpect(jsonPath("$[1].listCount").value(1))
+            .andExpect(result -> {
+                var body = result.getResponse().getContentAsString();
+                org.assertj.core.api.Assertions.assertThat(body).doesNotContain("Martha todos", "description", "ownerEmail", "targetDate", "shareToken", "createdAt");
+            });
     }
 
     private MockHttpSession register(String username, String email, String password) throws Exception {

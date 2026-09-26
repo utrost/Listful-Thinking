@@ -6,7 +6,7 @@ It is meant for a household, family, club, care team, or small private group tha
 
 The [user experience concept](docs/design/user-experience.md) describes the list workspace, navigation, user guidance, and browser validation.
 
-## Release candidate 0.2.0-rc.1
+## Release candidate 0.2.0-rc.2
 
 The [planning candidate](docs/planning/release-candidate-0.2.md) adds Today & upcoming, archives and recoverable Trash/Undo, and reusable personal templates. The version also includes the reliability/security repairs and redesigned workspace. Back up before upgrading: schema migrations V14 and V15 are forward-only; older-image rollback needs the matching database backup.
 
@@ -288,3 +288,5 @@ Planning:
 - [MVP roadmap](docs/mvp-roadmap.md)
 - [MVP scope](docs/planning/mvp-scope.md)
 - [Implementation slices](docs/planning/implementation-slices.md)
+
+Privacy controls and deployment boundaries are documented in the [personal-data security review](docs/security-review-2026-09-26.md).

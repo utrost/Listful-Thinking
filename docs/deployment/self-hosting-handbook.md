@@ -442,3 +442,14 @@ Scraping is best-effort. Some shops block server-side requests or return generic
 - Automated backup scheduling, retention, or encryption. The repository includes a manual verified snapshot helper and restore checks.
 
 Those are separate release-readiness and operations topics. The current app is aimed at small self-hosted instances first.
+
+## Personal data and security updates
+
+Read the [personal-data security review](../security-review-2026-09-26.md) before storing sensitive information. Runtime SQLite files use mode 0600; protect the containing volume and backup directories too. The app does not encrypt list content end to end. Host/Docker administrators and backup holders remain trusted. Use encrypted storage and a retention policy, and prefer authenticated invitations over long-lived public links.
+
+Dependency verification must use the resolved runtime inventory, not just declared POM dependencies:
+
+```bash
+mvn -f backend/pom.xml org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
+python3 scripts/audit-runtime.py backend/target/bom.json
+```

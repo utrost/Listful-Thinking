@@ -324,8 +324,11 @@ public class ScraperService {
         if (raw.length == 16) {
             int first = raw[0] & 0xff;
             int second = raw[1] & 0xff;
-            return (first & 0xfe) == 0xfc
-                || (first == 0xfe && (second & 0xc0) == 0x80)
+            // Only native global-unicast IPv6. Translation/tunnel ranges can encode
+            // private IPv4 destinations (NAT64, 6to4, Teredo).
+            return (first & 0xe0) != 0x20
+                || (first == 0x20 && second == 0x02)
+                || (first == 0x20 && second == 0x01 && raw[2] == 0 && raw[3] == 0)
                 || isIpv4MappedBlocked(raw);
         }
         return false;

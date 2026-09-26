@@ -70,7 +70,7 @@ Can:
 - View users.
 - Create local users as `USER` or `ADMIN`.
 - Activate and deactivate users.
-- View all lists as an owner metadata inventory.
+- View per-user list counts; private titles, descriptions and dates are not an administrative inventory.
 - Read/update global settings.
 - Enable/disable registration.
 

@@ -435,10 +435,10 @@ Deactivated users cannot log in or consume magic/password-reset links.
 
 ### `GET /api/v1/admin/lists`
 
-Requires `ADMIN` role. Returns all lists with owner metadata for support/oversight.
+Requires `ADMIN` role. Returns per-user list counts only; administration does not grant access to private list content.
 
 ```json
-[{"id":"uuid","title":"Next actions","description":null,"type":"TODO","publicList":false,"ownerId":"uuid","ownerUsername":"uwe","ownerEmail":"uwe@example.test","targetDate":null,"createdAt":"2026-08-31T17:00:00Z"}]
+[{"ownerId":"uuid","ownerUsername":"uwe","listCount":3}]
 ```
 
 ## September 2026 reliability changes

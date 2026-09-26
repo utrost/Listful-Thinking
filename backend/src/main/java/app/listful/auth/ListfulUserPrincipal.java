@@ -10,10 +10,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class ListfulUserPrincipal implements UserDetails {
     private final User user;
     private final String credentialHash;
+    private final long sessionVersion;
+    public long getSessionVersion() { return sessionVersion; }
 
     public ListfulUserPrincipal(User user) {
         this.user = user;
         this.credentialHash = user.getPasswordHash();
+        this.sessionVersion = user.getSessionVersion();
     }
 
     public User user() {

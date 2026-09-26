@@ -58,7 +58,7 @@ As an admin, I want inactive users blocked from password, magic-link, and reset-
 
 ### Story: Admin list inventory
 
-As an admin, I want to see all lists with owner metadata so I can understand instance usage and abandoned lists without opening private item details.
+As an admin, I want per-user list counts so I can understand instance usage without seeing private list content.
 
 ## Epic: Private lists
 

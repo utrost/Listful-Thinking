@@ -130,3 +130,7 @@ The candidate combines all September review repairs, email recovery fixes, the w
 - Script, Compose and documentation contracts, standalone online backup checks and whitespace checks passed.
 
 The browser setup waits for database readiness and stops the previous disposable stack before recreating its database. Tests use isolated databases and ports; live credentials/data are excluded from all public artifacts.
+
+## 0.2.0-rc.2 security verification — 2026-09-26
+
+See the [security review](security-review-2026-09-26.md) and [RC2 release notes](releases/0.2.0-rc.2.md). The full backend suite passed 124 tests; the final SSRF additions also passed the focused security suite. Frontend tests passed 66 checks and production type-check/build. The full desktop/mobile suite passed 24 journeys with 6 intentional skips, including image-request interception and draft clearing on logout. Full Docker API smoke and isolated restore passed. The 77-component resolved runtime inventory had zero OSV advisory matches. Version/copy-only packaging is verified with focused browser checks and CI.

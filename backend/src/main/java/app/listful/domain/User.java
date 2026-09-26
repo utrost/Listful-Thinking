@@ -34,6 +34,10 @@ public class User {
     @Column(nullable = false)
     private int active;
 
+    @Column(name = "session_version", nullable = false)
+    private long sessionVersion;
+    public long getSessionVersion() { return sessionVersion; }
+
     protected User() {
     }
 
@@ -54,6 +58,9 @@ public class User {
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public UserRole getRole() { return role; }
     public boolean isActive() { return active == 1; }
-    public void setActive(boolean active) { this.active = active ? 1 : 0; }
+    public void setActive(boolean active) {
+        if (isActive() && !active) sessionVersion++;
+        this.active = active ? 1 : 0;
+    }
     public Instant getCreatedAt() { return createdAt; }
 }

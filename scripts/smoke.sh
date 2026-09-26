@@ -112,6 +112,8 @@ done
 
 uid_gid="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking sh -c 'printf "%s:%s" "$(id -u)" "$(id -g)"')"
 [ "$uid_gid" = "1000:1000" ] || { echo "Expected runtime UID:GID 1000:1000, got $uid_gid" >&2; exit 1; }
+database_mode="$(docker compose -p "$project" -f "$compose_file" exec -T listful-thinking stat -c '%a' /app/data/listful-thinking.sqlite)"
+[ "$database_mode" = "600" ] || { echo "SQLite file must be private (0600), got $database_mode" >&2; exit 1; }
 
 curl_json -c "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"username":"admin","email":"admin@example.test","password":"correct horse battery staple"}' \
@@ -262,7 +264,7 @@ curl_json -b "$admin_cookie" "$base_url/api/v1/lists/$grocery_id/items" \
   | assert_json 'len(data) == 1 and data[0]["name"] == "Oat milk"'
 
 curl_json -b "$admin_cookie" "$base_url/api/v1/admin/lists" \
-  | assert_json 'any(item["title"] == "Next actions" and item["ownerUsername"] == "admin" for item in data) and any(item["title"] == "Groceries" and item["type"] == "GROCERY" for item in data)'
+  | assert_json 'any(item["ownerUsername"] == "admin" and item["listCount"] == 5 for item in data) and all("title" not in item and "description" not in item for item in data)'
 
 signup_share_json="$(curl_json -b "$admin_cookie" -H 'Content-Type: application/json' \
   -d '{"mode":"SIGNUP"}' \

@@ -359,6 +359,42 @@ class AuthControllerTests {
         return (MockHttpSession) result.getRequest().getSession(false);
     }
 
+    @Test
+    void reactivationDoesNotReviveOldSessionsOrEmailTokens() throws Exception {
+        register("uwe", "uwe@example.test", "correct horse battery staple");
+        MvcResult login = mockMvc.perform(post("/api/v1/auth/login").contentType("application/json")
+            .content("{\"username\":\"uwe\",\"password\":\"correct horse battery staple\"}"))
+            .andExpect(status().isOk()).andReturn();
+        MockHttpSession oldSession = (MockHttpSession) login.getRequest().getSession(false);
+        var user = userRepository.findByUsername("uwe").orElseThrow();
+        String raw = "old-magic-link";
+        String hash = java.util.Base64.getEncoder().encodeToString(java.security.MessageDigest.getInstance("SHA-256").digest(raw.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        authTokenRepository.saveAndFlush(new app.listful.domain.AuthToken(user, hash, "MAGIC_LINK", java.time.Instant.now().plusSeconds(1800), java.time.Instant.now()));
+        user.setActive(false);
+        userRepository.saveAndFlush(user);
+        user.setActive(true);
+        userRepository.saveAndFlush(user);
+        mockMvc.perform(get("/api/v1/auth/me").session(oldSession)).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/auth/magic-link/consume").contentType("application/json")
+            .content("{\"token\":\"old-magic-link\"}")).andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/auth/login").contentType("application/json")
+            .content("{\"username\":\"uwe\",\"password\":\"correct horse battery staple\"}"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    void overlongPasswordsAreRejectedWithoutTruncationOrServerErrors() throws Exception {
+        for (String password : new String[] {"x".repeat(73), "é".repeat(37)}) {
+            mockMvc.perform(post("/api/v1/auth/register").contentType("application/json")
+                .content("{\"username\":\"overlong\",\"password\":\"" + password + "\"}"))
+                .andExpect(status().isBadRequest());
+        }
+        register("uwe", "uwe@example.test", "correct horse battery staple");
+        mockMvc.perform(post("/api/v1/auth/login").contentType("application/json")
+            .content("{\"username\":\"uwe\",\"password\":\"" + "x".repeat(73) + "\"}"))
+            .andExpect(status().isUnauthorized());
+    }
+
     private void register(String username, String email, String password) throws Exception {
         registerAndReturnSession(username, email, password);
     }

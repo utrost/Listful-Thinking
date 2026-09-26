@@ -27,7 +27,7 @@
         <p class="muted">{{ t(publicList?.mode === 'VIEW' ? 'ux.publicViewHelp' : 'ux.publicClaimHelp') }}</p>
         <ul class="item-list">
           <li v-for="item in publicList?.items ?? []" :key="item.id">
-            <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
+            <PrivateImage v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" />
             <span>
               <strong>{{ item.name }}</strong>
               <small v-if="item.description">{{ item.description }}</small>
@@ -269,7 +269,7 @@
               <label>{{ t('items.description') }}<textarea v-model="itemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea></label>
               <label v-if="currentItemFields.showImageUrl">{{ t('items.imageUrl') }}<input v-model="itemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" /></label>
               <label v-if="currentItemFields.showImageUrl">{{ t('items.uploadImage') }}<input type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, itemForm)" /></label>
-              <img v-if="currentItemFields.showImageUrl && itemForm.imageUrl" class="item-image preview" :src="itemForm.imageUrl" :alt="itemForm.name || t('items.newName')" />
+              <PrivateImage class="preview" v-if="currentItemFields.showImageUrl && itemForm.imageUrl" :src="itemForm.imageUrl" :alt="itemForm.name || t('items.newName')" />
               <button v-if="currentItemFields.showImageUrl && itemForm.imageUrl" type="button" class="secondary subtle" @click="itemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
               <label v-if="currentItemFields.showPrice">{{ t('items.price') }}<input v-model.number="itemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" /></label>
               <label v-if="currentItemFields.showPrice">{{ t('items.currency') }}<input v-model="itemForm.priceCurrency" :aria-label="t('items.currency')" :placeholder="t('items.currency')" maxlength="3" pattern="[A-Z]{3}" /></label>
@@ -357,14 +357,14 @@
 
             <ul v-else class="item-list">
               <li v-for="item in displayedItems" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
-                <img v-if="item.imageUrl" class="item-image" :src="item.imageUrl" :alt="item.name" />
+                <PrivateImage v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" />
                 <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @paste="currentItemFields.showImageUrl && handleImagePaste($event, editItemForm)" @submit.prevent="handleSaveEditedItem(item)">
                   <label>{{ t('items.newName') }}<input v-model="editItemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" required /></label>
                   <label>{{ t('items.description') }}<textarea v-model="editItemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea></label>
                   <input v-if="currentItemFields.showUrl" v-model="editItemForm.url" aria-label="URL" placeholder="URL" />
                   <label v-if="currentItemFields.showImageUrl">{{ t('items.imageUrl') }}<input v-model="editItemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" /></label>
                   <label v-if="currentItemFields.showImageUrl">{{ t('items.uploadImage') }}<input type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, editItemForm)" /></label>
-                  <img v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" class="item-image preview" :src="editItemForm.imageUrl" :alt="editItemForm.name || t('items.newName')" />
+                  <PrivateImage class="preview" v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" :src="editItemForm.imageUrl" :alt="editItemForm.name || t('items.newName')" />
                   <button v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" type="button" class="secondary subtle" @click="editItemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
                   <label v-if="currentItemFields.showPrice">{{ t('items.price') }}<input v-model.number="editItemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" /></label>
               <label v-if="currentItemFields.showPrice">{{ t('items.currency') }}<input v-model="editItemForm.priceCurrency" :aria-label="t('items.currency')" :placeholder="t('items.currency')" maxlength="3" pattern="[A-Z]{3}" /></label>
@@ -425,6 +425,7 @@ import { nextTick, computed, onMounted, onUnmounted, reactive, ref, watch } from
 import { useI18n } from 'vue-i18n';
 import AdminPanel from './components/AdminPanel.vue';
 import PlanningHub from './components/PlanningHub.vue';
+import PrivateImage from './components/PrivateImage.vue';
 import { getOverview, getLibrary, getTrashedItems, archiveList, restoreList, restoreItem, saveTemplate, instantiateTemplate, getItem, getList, type Overview, type TrashedItem, type HubView, type AgendaEntry } from './api/client';
 import {
   createItem,
@@ -521,6 +522,7 @@ const adminLists = ref<AdminListEntry[]>([]);
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
 const magicToken = window.location.pathname === '/magic-login' ? new URLSearchParams(window.location.search).get('token') : '';
 const resetToken = ref(window.location.pathname === '/reset-password' ? new URLSearchParams(window.location.search).get('token') : null);
+if (magicToken || resetToken.value) window.history.replaceState({}, '', window.location.pathname);
 const publicList = ref<PublicListEntry | null>(null);
 const guestName = ref('');
 const message = ref('');
@@ -694,6 +696,23 @@ async function handleLogout() {
   listQuery.value = '';
   listView.value = 'items';
   await logout();
+  window.clearTimeout(importPoll);
+  resetItemForm();
+  resetItemReviewForm();
+  Object.assign(editItemForm, itemForm);
+  Object.assign(listForm, { title: '', description: '', type: 'WISH', targetDate: '' });
+  Object.assign(editListForm, listForm);
+  Object.assign(adminUserForm, { username: '', email: '', password: '', role: 'USER' });
+  Object.assign(registerForm, { username: '', email: '', password: '' });
+  Object.assign(loginForm, { username: '', password: '' });
+  Object.assign(emailAuthForm, { username: '', email: '' });
+  Object.assign(shareForm, { username: '', permission: 'READ' });
+  resetPasswordForm.password = '';
+  templateTitle.value = '';
+  editingItemId.value = null;
+  editingList.value = false;
+  savingTemplate.value = false;
+  message.value = '';
   currentUser.value = null;
   lists.value = [];
   selectedList.value = null;

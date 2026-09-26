@@ -43,6 +43,8 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
     private final SecurityHardeningProperties properties;
     private final ObjectMapper objectMapper;
     private final SecurityAuditService auditService;
+    @org.springframework.beans.factory.annotation.Value("${listful.public-base-url:http://localhost:8080}")
+    private String publicBaseUrl = "http://localhost:8080";
     private final Map<String, WindowCounter> counters = new ConcurrentHashMap<>();
 
     public SecurityHardeningFilter(SecurityHardeningProperties properties, ObjectMapper objectMapper) {
@@ -63,6 +65,11 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         addSecurityHeaders(request, response);
+
+        if (isUnsafeMethod(request) && request.getRequestURI().startsWith("/api/v1/") && isCrossOrigin(request)) {
+            writeError(response, HttpStatus.FORBIDDEN, new ApiError("csrf_required", "Cross-origin writes are not allowed."));
+            return;
+        }
 
         HttpServletRequest boundedRequest = request;
         BodyLimitResult bodyLimitResult = enforceBodyLimit(request);
@@ -105,6 +112,8 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
     private void addSecurityHeaders(HttpServletRequest request, HttpServletResponse response) {
         response.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
         response.setHeader("Referrer-Policy", "no-referrer");
+        response.setHeader("Cache-Control", "no-store");
+        response.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive");
         response.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
         if (request.isSecure()) {
             response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
@@ -132,6 +141,27 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
     private boolean methodCanHaveBody(HttpServletRequest request) {
         String method = request.getMethod();
         return "POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "PATCH".equalsIgnoreCase(method);
+    }
+
+    private boolean isCrossOrigin(HttpServletRequest request) {
+        if ("cross-site".equalsIgnoreCase(request.getHeader("Sec-Fetch-Site"))) return true;
+        String origin = request.getHeader("Origin");
+        if (origin == null) return false;
+        return !sameOrigin(origin, request.getRequestURL().toString()) && !sameOrigin(origin, publicBaseUrl);
+    }
+
+    private boolean sameOrigin(String left, String right) {
+        try {
+            var a = java.net.URI.create(left);
+            var b = java.net.URI.create(right);
+            return a.getHost() != null && b.getHost() != null && a.getScheme() != null
+                && a.getScheme().equalsIgnoreCase(b.getScheme()) && a.getHost().equalsIgnoreCase(b.getHost())
+                && originPort(a) == originPort(b) && a.getRawUserInfo() == null;
+        } catch (IllegalArgumentException ex) { return false; }
+    }
+
+    private int originPort(java.net.URI uri) {
+        return uri.getPort() >= 0 ? uri.getPort() : ("https".equalsIgnoreCase(uri.getScheme()) ? 443 : 80);
     }
 
     private boolean requiresCsrf(HttpServletRequest request) {

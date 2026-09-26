@@ -48,10 +48,10 @@ function cannotDeactivateAdminUser(user: AdminUserEntry) {
             </li>
           </ul>
           <h4>{{ t('admin.lists') }}</h4>
+          <p class="muted">{{ t('admin.listPrivacy') }}</p>
           <ul class="admin-user-list">
-            <li v-for="list in adminLists" :key="list.id">
-              <span><strong>{{ list.title }}</strong> · {{ t(`lists.types.${list.type}`) }}</span>
-              <small>{{ list.ownerUsername }} · {{ list.ownerEmail ?? t('admin.noEmail') }}</small>
+            <li v-for="list in adminLists" :key="list.ownerId">
+              <span><strong>{{ list.ownerUsername }}</strong> · {{ t('admin.listCount', { count: list.listCount }) }}</span>
             </li>
           </ul>
         </section>

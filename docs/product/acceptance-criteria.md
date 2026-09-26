@@ -26,7 +26,7 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 - Admins can create either `USER` or `ADMIN` accounts.
 - Admins can deactivate and reactivate users.
 - Deactivated users cannot log in or use email auth tokens.
-- Admins can list all lists with owner metadata.
+- Admins can view per-user list counts, but cannot view private list content without an explicit share.
 - Admins can read and update global settings.
 - Non-admin users cannot access admin endpoints.
 - Database settings override environment defaults where applicable.

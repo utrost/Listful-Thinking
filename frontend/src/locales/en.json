@@ -184,8 +184,10 @@
     "activate": "Activate",
     "deactivate": "Deactivate",
     "lastActiveAdminHint": "At least one active admin must remain.",
-    "lists": "All lists",
-    "role": "Role"
+    "lists": "List usage",
+    "role": "Role",
+    "listCount": "{count} lists",
+    "listPrivacy": "Administration shows usage counts. List contents are visible only to their owner and people they share with."
   },
   "ux": {
     "language": "Language",
@@ -203,7 +205,7 @@
     "contributorHelp": "Shared with you: you can add and update items. The owner manages sharing and list settings.",
     "settingsHelp": "Change this list’s details, make a copy, or delete it.",
     "typeLocked": "The list type is fixed while it contains items. Create a new list for a different purpose.",
-    "sharingHelp": "Choose who can see this list and what they can do. A public link works without an account.",
+    "sharingHelp": "Anyone with a public link can read this list, including notes, images and guest names, without an account. The link stays valid until you revoke it. For personal information, invite specific people instead.",
     "publicLink": "Share a link",
     "invitePeople": "Invite someone with an account",
     "inviteHelp": "Read-only lets people view items. Contributors can also add and update them.",
@@ -304,5 +306,11 @@
       "today": "Today",
       "upcoming": "Next 7 days"
     }
+  },
+  "privacy": {
+    "loadImage": "Load image",
+    "externalImage": "Load external image from {host}",
+    "imageHint": "Loading this image contacts {host} and shares your IP address.",
+    "invalidImage": "Image unavailable"
   }
 }

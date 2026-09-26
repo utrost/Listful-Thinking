@@ -81,7 +81,7 @@ async function mountSignedIn(list: ListEntry = baseList, item: ItemEntry = baseI
   vi.mocked(getNotifications).mockResolvedValue([]);
   vi.mocked(getAdminSettings).mockResolvedValue({ registrationEnabled: true });
   vi.mocked(getAdminUsers).mockResolvedValue([adminUser]);
-  vi.mocked(getAdminLists).mockResolvedValue([{ ...list, ownerId: 'user-1', ownerUsername: 'owner', ownerEmail: null }]);
+  vi.mocked(getAdminLists).mockResolvedValue([{ ownerId: 'user-1', ownerUsername: 'owner', listCount: 1 }]);
   const wrapper = mount(App, { global: { plugins: [i18n] } });
   await flushPromises();
   return wrapper;

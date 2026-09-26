@@ -146,6 +146,7 @@ test('welcomes a new user and gives recovery links a focused screen @ux', async 
   });
   await newcomer.goto('/reset-password?token=ui-test-token');
   await expect(newcomer.getByRole('heading', { name: 'Set new password', exact: true })).toBeVisible();
+  expect(newcomer.url()).not.toContain('token=');
   await expect(newcomer.getByRole('heading', { name: 'Log in', exact: true })).toHaveCount(0);
   await newcomer.getByLabel('New password').fill('a-new-password');
   await newcomer.getByRole('button', { name: 'Set new password', exact: true }).click();

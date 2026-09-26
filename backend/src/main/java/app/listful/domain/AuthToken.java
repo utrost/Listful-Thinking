@@ -38,12 +38,16 @@ public class AuthToken {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "session_version", nullable = false)
+    private long sessionVersion;
+
     protected AuthToken() {
     }
 
     public AuthToken(User user, String tokenHash, String purpose, Instant expiresAt, Instant createdAt) {
         this.id = UUID.randomUUID().toString();
         this.user = user;
+        this.sessionVersion = user.getSessionVersion();
         this.tokenHash = tokenHash;
         this.purpose = purpose;
         this.expiresAt = expiresAt;
@@ -51,7 +55,8 @@ public class AuthToken {
     }
 
     public boolean usableFor(String expectedPurpose, Instant now) {
-        return purpose.equals(expectedPurpose) && usedAt == null && expiresAt.isAfter(now);
+        return purpose.equals(expectedPurpose) && usedAt == null && expiresAt.isAfter(now)
+            && sessionVersion == user.getSessionVersion();
     }
 
     public void markUsed(Instant usedAt) {

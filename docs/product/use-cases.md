@@ -46,7 +46,7 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 - As an admin, I want to create another admin deliberately so instance maintenance is not tied to one person.
 - As an admin, I want to deactivate a user so old accounts can no longer log in or consume email auth links.
 - As an admin, I want to see all users with role, email, active state, and creation time so I can maintain the instance.
-- As an admin, I want to see all lists with their owner metadata so I can spot abandoned or misplaced lists without opening private item details.
+- As an admin, I want to see per-user usage counts without viewing private list titles or content.
 
 ### 3. Password, magic-link, and reset email access
 

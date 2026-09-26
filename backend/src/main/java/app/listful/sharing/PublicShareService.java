@@ -106,6 +106,7 @@ public class PublicShareService {
     }
 
     private java.util.Optional<ListEntity> migrateLegacyRawToken(String token, String tokenHash) {
+        if (TokenHashing.isSha256Hash(token)) return java.util.Optional.empty();
         return listRepository.findByShareTokenHash(token)
             .filter(list -> list.isPublicList() && list.isActive())
             .map(list -> {

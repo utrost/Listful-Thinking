@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ListRepository extends JpaRepository<ListEntity, String> {
+    long countByUserId(String userId);
     List<ListEntity> findByUserId(String userId);
     @Query("""
         select distinct l from ListEntity l
