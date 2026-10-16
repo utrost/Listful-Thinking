@@ -23,6 +23,7 @@ public class RetentionService {
 
     @Scheduled(fixedDelayString = "${listful.retention.interval-ms:86400000}",
         initialDelayString = "${listful.retention.initial-delay-ms:60000}")
+    @Transactional
     public void purgeExpired() {
         purgeExpired(clock.instant());
     }

@@ -1,6 +1,7 @@
 package app.listful.planning;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +51,23 @@ class RetentionServiceTests {
         assertThat(jdbc.queryForObject("select is_public from lists where id='future-link'", Integer.class)).isEqualTo(1);
         retention.purgeExpired(NOW);
         assertThat(ids("items")).containsExactly("young-item");
+    }
+
+    @Test
+    void scheduledEntryPointRollsBackEarlierDeletesWhenLinkCleanupFails() {
+        user("owner");
+        list("active-list", null, "sha256:expired", Instant.now().minusSeconds(1).toString());
+        item("old-item", "active-list", Instant.now().minusSeconds(15L * 86400).toString());
+        jdbc.execute("""
+            CREATE TRIGGER reject_link_cleanup BEFORE UPDATE OF is_public ON lists
+            BEGIN SELECT RAISE(ABORT, 'blocked'); END
+            """);
+        try {
+            assertThatThrownBy(() -> retention.purgeExpired()).hasMessageContaining("blocked");
+        } finally {
+            jdbc.execute("DROP TRIGGER reject_link_cleanup");
+        }
+        assertThat(ids("items")).containsExactly("old-item");
     }
 
     private void user(String id) {
