@@ -42,6 +42,9 @@ public class ListEntity {
     @Column(name = "is_public", nullable = false)
     private int publicFlag;
 
+    @Column(name = "public_share_expires_at")
+    private Instant publicShareExpiresAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "public_share_mode", nullable = false)
     private PublicShareMode publicShareMode = PublicShareMode.VIEW;
@@ -80,18 +83,19 @@ public class ListEntity {
     }
 
     public void enablePublicShare(String shareTokenHash) {
-        enablePublicShare(shareTokenHash, null, defaultModeForType(type));
+        enablePublicShare(shareTokenHash, null, defaultModeForType(type), Instant.now().plus(RetentionPolicy.PUBLIC_LINK));
     }
 
     public void enablePublicShare(String shareTokenHash, PublicShareMode mode) {
-        enablePublicShare(shareTokenHash, null, mode);
+        enablePublicShare(shareTokenHash, null, mode, Instant.now().plus(RetentionPolicy.PUBLIC_LINK));
     }
 
-    public void enablePublicShare(String shareTokenHash, String transientShareToken, PublicShareMode mode) {
+    public void enablePublicShare(String shareTokenHash, String transientShareToken, PublicShareMode mode, Instant expiresAt) {
         this.shareTokenHash = shareTokenHash;
         this.transientShareToken = transientShareToken;
         this.publicShareMode = mode == null ? defaultModeForType(type) : mode;
         this.publicFlag = 1;
+        this.publicShareExpiresAt = expiresAt;
     }
 
     public void migratePublicShareTokenHash(String shareTokenHash) {
@@ -102,6 +106,7 @@ public class ListEntity {
         this.shareTokenHash = null;
         this.transientShareToken = null;
         this.publicFlag = 0;
+        this.publicShareExpiresAt = null;
         this.publicShareMode = defaultModeForType(type);
     }
 
@@ -121,6 +126,10 @@ public class ListEntity {
     public String getShareToken() { return transientShareToken; }
     public String getShareTokenHash() { return shareTokenHash; }
     public boolean isPublicList() { return publicFlag == 1; }
+    public boolean isPublicShareActive(Instant now) {
+        return isPublicList() && isActive() && publicShareExpiresAt != null && now.isBefore(publicShareExpiresAt);
+    }
+    public Instant getPublicShareExpiresAt() { return publicShareExpiresAt; }
     public PublicShareMode getPublicShareMode() { return publicShareMode == null ? defaultModeForType(type) : publicShareMode; }
     public Instant getTargetDate() { return targetDate; }
     public Instant getCreatedAt() { return createdAt; }

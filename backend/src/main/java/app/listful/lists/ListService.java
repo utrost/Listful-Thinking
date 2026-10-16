@@ -3,6 +3,7 @@ package app.listful.lists;
 import app.listful.api.ValidationFailedException;
 import app.listful.domain.Item;
 import app.listful.domain.ListEntity;
+import app.listful.domain.RetentionPolicy;
 import app.listful.domain.User;
 import app.listful.domain.enums.ListType;
 import app.listful.domain.repository.ItemRepository;
@@ -10,6 +11,7 @@ import app.listful.domain.repository.ListRepository;
 import app.listful.lists.dto.CloneListRequest;
 import app.listful.lists.dto.ListRequest;
 import app.listful.lists.dto.ListResponse;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Service;
@@ -20,11 +22,13 @@ public class ListService {
     private final ListRepository listRepository;
     private final ItemRepository itemRepository;
     private final ListAccessService listAccessService;
+    private final Clock clock;
 
-    public ListService(ListRepository listRepository, ItemRepository itemRepository, ListAccessService listAccessService) {
+    public ListService(ListRepository listRepository, ItemRepository itemRepository, ListAccessService listAccessService, Clock clock) {
         this.listRepository = listRepository;
         this.itemRepository = itemRepository;
         this.listAccessService = listAccessService;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -94,16 +98,17 @@ public class ListService {
     @Transactional
     public void delete(User actor, String listId) {
         ListEntity list = listAccessService.requireOwnedList(actor, listId);
-        list.setDeletedAt(Instant.now());
+        list.setDeletedAt(clock.instant());
         cancelPendingImports(list);
     }
 
     @Transactional(readOnly = true)
     public List<ListResponse> library(User actor, String state) {
         if (!java.util.Set.of("archive", "trash", "templates").contains(state)) throw new ValidationFailedException("Unknown library state.");
+        Instant now = clock.instant();
         return listRepository.findByUserId(actor.getId()).stream()
             .filter(list -> switch (state) {
-                case "trash" -> list.isDeleted();
+                case "trash" -> RetentionPolicy.isRestorable(list.getDeletedAt(), now);
                 case "archive" -> !list.isDeleted() && list.isArchived() && !list.isTemplate();
                 default -> !list.isDeleted() && list.isTemplate();
             }).sorted(java.util.Comparator.comparing(ListEntity::getCreatedAt).reversed())
@@ -123,6 +128,9 @@ public class ListService {
     public ListResponse restore(User actor, String id) {
         ListEntity list = listRepository.findById(id).filter(candidate -> candidate.getUser().getId().equals(actor.getId()))
             .orElseThrow(() -> new app.listful.api.ResourceNotFoundException("List not found"));
+        if (list.isDeleted() && !RetentionPolicy.isRestorable(list.getDeletedAt(), clock.instant())) {
+            throw new app.listful.api.ResourceNotFoundException("List not found");
+        }
         list.setDeletedAt(null);
         list.setArchived(false);
         return toResponse(actor, list);
@@ -185,14 +193,16 @@ public class ListService {
     }
 
     public ListResponse toResponse(User actor, ListEntity list) {
+        boolean publicShareActive = list.isPublicShareActive(clock.instant());
         return new ListResponse(
             list.getId(),
             list.getTitle(),
             list.getDescription(),
             list.getType().name(),
-            list.isPublicList(),
+            publicShareActive,
             list.getShareToken(),
             list.getPublicShareMode().name(),
+            publicShareActive ? list.getPublicShareExpiresAt().toString() : null,
             list.getTargetDate() == null ? null : list.getTargetDate().toString(),
             listAccessService.accessMode(actor, list),
             list.isArchived(), list.isTemplate(), list.getDeletedAt() == null ? null : list.getDeletedAt().toString(),

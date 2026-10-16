@@ -21,7 +21,7 @@ vi.mock('./api/client', async (importOriginal) => {
 
 const wishList = {
   id: 'list-1', title: 'Birthday', description: null, type: 'WISH' as const,
-  publicList: true, shareToken: 'public-token', publicShareMode: 'WISH_CLAIM' as const,
+  publicList: true, shareToken: 'public-token', publicShareMode: 'WISH_CLAIM' as const, publicShareExpiresAt: null,
   targetDate: null, access: 'OWNER' as const, createdAt: '2026-01-01T00:00:00Z'
 };
 const wishItem = {

@@ -437,7 +437,7 @@ Scraping is best-effort. Some shops block server-side requests or return generic
 
 - Hosted SaaS operation.
 - Multi-tenant public service operation.
-- Image signing/SBOM publication.
+- Image and artifact signing. RC2 includes a resolved runtime SBOM.
 - A full audited admin-superuser workflow.
 - Automated backup scheduling, retention, or encryption. The repository includes a manual verified snapshot helper and restore checks.
 

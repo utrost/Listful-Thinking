@@ -4,6 +4,7 @@ import app.listful.api.ResourceNotFoundException;
 import app.listful.api.ValidationFailedException;
 import app.listful.domain.Item;
 import app.listful.domain.ListEntity;
+import app.listful.domain.RetentionPolicy;
 import app.listful.domain.User;
 import app.listful.domain.enums.ItemStatus;
 import app.listful.domain.enums.ListType;
@@ -11,6 +12,7 @@ import app.listful.domain.repository.ItemRepository;
 import app.listful.items.dto.ItemRequest;
 import app.listful.items.dto.ItemResponse;
 import app.listful.lists.ListAccessService;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
@@ -25,11 +27,13 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final ListAccessService listAccessService;
     private final ItemEnrichmentService itemEnrichmentService;
+    private final Clock clock;
 
-    public ItemService(ItemRepository itemRepository, ListAccessService listAccessService, ItemEnrichmentService itemEnrichmentService) {
+    public ItemService(ItemRepository itemRepository, ListAccessService listAccessService, ItemEnrichmentService itemEnrichmentService, Clock clock) {
         this.itemRepository = itemRepository;
         this.listAccessService = listAccessService;
         this.itemEnrichmentService = itemEnrichmentService;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -85,7 +89,7 @@ public class ItemService {
     @Transactional
     public void delete(User actor, String itemId) {
         Item item = requireOwnedItem(actor, itemId);
-        item.setDeletedAt(Instant.now());
+        item.setDeletedAt(clock.instant());
         if ("PENDING".equals(item.getImportStatus())) item.setImportStatus("FAILED");
     }
 
@@ -96,12 +100,15 @@ public class ItemService {
             throw new ValidationFailedException("Clear completed is only available for grocery lists.");
         }
         itemRepository.findByListId(list.getId()).stream().filter(item -> item.getStatus() == ItemStatus.DONE)
-            .forEach(item -> item.setDeletedAt(Instant.now()));
+            .forEach(item -> item.setDeletedAt(clock.instant()));
     }
 
     @Transactional
     public ItemResponse restore(User actor, String itemId) {
         Item item = itemRepository.findById(itemId).orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+        if (!RetentionPolicy.isRestorable(item.getDeletedAt(), clock.instant())) {
+            throw new ResourceNotFoundException("Item not found");
+        }
         listAccessService.requireWritableOwnedList(actor, item.getList().getId());
         item.setDeletedAt(null);
         itemRepository.flush();

@@ -64,6 +64,7 @@
     "deleteConfirm": "Confirm delete",
     "deleteCancel": "Keep list",
     "delete": "Delete list",
+    "deleteRetention": "This list can be restored from Trash for two weeks. Its public link stops working now.",
     "type": "List type",
     "types": {
       "WISH": "Wishlist",
@@ -131,8 +132,8 @@
     "reopenWish": "Reopen wish",
     "delete": "Delete",
     "currency": "Currency (EUR, USD…)",
-    "deleteWarning": "Move this item to Trash? You can restore it later.",
-    "clearWarning": "Move all completed grocery items to Trash? You can undo this.",
+    "deleteWarning": "Move this item to Trash? You can restore it for two weeks.",
+    "clearWarning": "Move all completed grocery items to Trash? You can restore them for two weeks.",
     "importPending": "Importing product details…",
     "retryImport": "Retry import",
     "statuses": {
@@ -164,7 +165,8 @@
     "permission": "Share permission",
     "replacePublic": "Replace public link",
     "replaceWarning": "Replace this public link? Previously shared links will stop working.",
-    "activeLinkHint": "A public link is active. Copy a new link now: it is shown only once. Replacing it invalidates the previous link.",
+    "activeLinkHint": "A public link is active for eight weeks. Copy a new link now: it is shown only once. Replacing it invalidates the previous link.",
+    "expiresAt": "This link expires on {date}.",
     "copyLink": "Copy link",
     "openLink": "Open link",
     "copied": "Link copied."
@@ -205,7 +207,7 @@
     "contributorHelp": "Shared with you: you can add and update items. The owner manages sharing and list settings.",
     "settingsHelp": "Change this list’s details, make a copy, or delete it.",
     "typeLocked": "The list type is fixed while it contains items. Create a new list for a different purpose.",
-    "sharingHelp": "Anyone with a public link can read this list, including notes, images and guest names, without an account. The link stays valid until you revoke it. For personal information, invite specific people instead.",
+    "sharingHelp": "Anyone with a public link can read this list, including notes, images and guest names, without an account. The link expires after eight weeks or when you revoke it. For personal information, invite specific people instead.",
     "publicLink": "Share a link",
     "invitePeople": "Invite someone with an account",
     "inviteHelp": "Read-only lets people view items. Contributors can also add and update them.",
@@ -289,7 +291,7 @@
       "today": "A view of dated work across your own and shared lists. Today is your local calendar day; upcoming covers the following seven days.",
       "archive": "Keep finished or paused lists without cluttering your active workspace. Archived lists send no reminders and are hidden from collaborators until restored.",
       "templates": "Reusable starting points for trips, shopping and events. Each use creates an independent private list.",
-      "trash": "Deleted lists and items stay here until you restore them. There is no automatic deletion in this release. Public links are not re-enabled by restoring."
+      "trash": "Deleted lists and items can be restored for two weeks, then are permanently removed. Public links are not re-enabled by restoring."
     },
     "empty": {
       "archive": "No archived lists yet.",
@@ -299,7 +301,7 @@
     "emptyHelp": {
       "archive": "Use Archive list in a list’s settings when you want to pause it.",
       "templates": "Open a list’s settings and choose Save as template. Reuse it here for a fresh start.",
-      "trash": "Deleted lists, templates and items can be recovered here, even after refreshing or signing in again."
+      "trash": "Deleted lists, templates and items can be recovered here for two weeks, even after refreshing or signing in again."
     },
     "groups": {
       "overdue": "Overdue",

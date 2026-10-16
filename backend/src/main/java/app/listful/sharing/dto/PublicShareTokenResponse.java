@@ -5,6 +5,7 @@ public record PublicShareTokenResponse(
     boolean publicList,
     String shareToken,
     String shareUrl,
-    String mode
+    String mode,
+    String expiresAt
 ) {
 }

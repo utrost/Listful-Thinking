@@ -10,7 +10,7 @@ Use **Your lists** for everyday list work. Each selected list has **Items**, **S
 
 **Archive** stores paused lists. Archive a list from its settings: it stops new reminders, disappears for collaborators, and becomes read-only for its owner. Restore it to continue. Existing reminder history is retained. Archiving revokes any public link.
 
-**Trash** holds deleted lists, templates and items, including cleared completed groceries. Undo reverses the most recent deletion/archive; Trash supports recovery even after reload or signing in again. Only the owner can restore. No automatic purge runs in this release. Restore an archived parent list before restoring its deleted items; restore a deleted parent before its separately deleted items appear. Old public links stay revoked; issue new ones if needed. Restoring a list resumes its retained internal shares.
+**Trash** holds deleted lists, templates and items, including cleared completed groceries, for 14 days. Undo reverses the most recent deletion/archive; Trash supports recovery even after reload or signing in again until the retention deadline. Only the owner can restore. A daily cleanup permanently removes records at least 14 days old; deleting a list also removes its items and internal shares. Restore an archived parent list before restoring its deleted items; restore a deleted parent before its separately deleted items appear. Old public links stay revoked; issue new ones if needed. Restoring a list resumes its retained internal shares. Backups may retain older copies according to the operator's backup policy.
 
 **Templates** are personal reusable blueprints. In a list's settings choose Save as template and give it a name. Use template creates a fresh independent private list: all items are open, guest reservations/history/shares are cleared, and item dates are reset. Event copies require a new event date. Content, prices, quantities, recurrence and responsibility labels are retained. Set fresh dates for recurring tasks if you want reminders. Open list lets you edit the blueprint. Deleting a template moves it to Trash and leaves existing instances alone.
 
@@ -322,7 +322,7 @@ The list owner can revoke the internal share at any time.
 
 ### Public guest links
 
-A list owner can create a public link for one list. The link is intended for guests who should not need an account.
+A list owner can create a public link for one list. The link is intended for guests who should not need an account. Each link expires 56 days after creation; the owner can replace it with a fresh link at any time. Links that already existed before this retention change receive 56 days from the upgrade.
 
 Guests can:
 
@@ -533,7 +533,7 @@ Admins can see user and list metadata needed to operate the instance. The curren
 
 ### A public link stopped working
 
-- Public links stop working after revocation.
+- Public links stop working after revocation or 56 days after creation. Ask the owner for a fresh link.
 - Creating a new public link creates a new token; old copied URLs remain invalid.
 - Guest claims/signups work only when the public link mode matches the list type: `WISH_CLAIM` for wishlists or `SIGNUP` for non-wishlist signup sheets. `VIEW` links are read-only.
 - A claimed item cannot be claimed again; duplicate guest claims return a conflict.

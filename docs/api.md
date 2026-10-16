@@ -172,7 +172,7 @@ Deletes owned list, or returns `404` when not owned.
 List response:
 
 ```json
-{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"publicShareMode":"WISH_CLAIM","targetDate":null,"access":"OWNER","createdAt":"2026-08-31T17:00:00Z"}
+{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"publicShareMode":"WISH_CLAIM","publicShareExpiresAt":null,"targetDate":null,"access":"OWNER","createdAt":"2026-08-31T17:00:00Z"}
 ```
 
 ## Items
@@ -308,6 +308,7 @@ Public endpoints do not require authentication. Browser links use `/s/{token}` a
 ### `POST /api/v1/lists/{id}/public-share`
 
 Requires ownership. Creates or updates a public token for the requested mode. If no request body is provided, the default is `WISH_CLAIM` for wish lists and `VIEW` for other list types.
+The token expires 56 days after creation. Existing links at the V17 upgrade receive 56 days from upgrade. Expired public reads and claims return `404`, and the owner can create a fresh link.
 
 Request:
 
@@ -324,7 +325,7 @@ Supported modes:
 Response:
 
 ```json
-{"listId":"uuid","publicList":true,"shareToken":"urlsafetoken","shareUrl":"/s/urlsafetoken","mode":"WISH_CLAIM"}
+{"listId":"uuid","publicList":true,"shareToken":"urlsafetoken","shareUrl":"/s/urlsafetoken","mode":"WISH_CLAIM","expiresAt":"2026-12-11T17:00:00Z"}
 ```
 
 ### `DELETE /api/v1/lists/{id}/public-share`
@@ -468,3 +469,4 @@ All endpoints below require a session. Library and restore endpoints are owner-o
 | POST | `/api/v1/lists/{id}/instantiate` | Body `{"title":"Summer trip"}` creates a fresh private copy of an owned template; EVENT requires `targetDate`. |
 
 List responses additionally expose `archived`, `template`, and nullable `deletedAt`. Ordinary list collections contain only active lists. DELETE list/item and clear-completed now soft-delete into Trash; direct ordinary reads of deleted records return 404. Archive/Trash/templates are excluded from future reminder scans and public views. Only owners can inspect non-active lists. Archived item mutation is prohibited, and archived/template sharing returns `409 list_inactive`. Template instances reset status, reservation/history, item dates, and shares; content and recurrence definitions are copied. Item PUT still requires If-Match; stale revisions return 409.
+List responses also expose nullable `publicShareExpiresAt`; `publicList` becomes false once the link expires. Trash records are permanently removed by a daily job after 14 days. Purging a trashed list also removes its items and internal shares.

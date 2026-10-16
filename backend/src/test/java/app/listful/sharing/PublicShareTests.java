@@ -19,6 +19,7 @@ import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
 import com.jayway.jsonpath.JsonPath;
 import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -109,6 +110,27 @@ class PublicShareTests {
 
         mockMvc.perform(get("/api/v1/share/{token}", token))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void expiredPublicLinkCannotBeReadOrUsedToClaim() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Birthday");
+        String itemId = createItem(owner, listId, "Book");
+        String token = createPublicShare(owner, listId);
+        jdbcTemplate.update("update lists set public_share_expires_at = ? where id = ?", Instant.now().minusSeconds(1).toString(), listId);
+
+        mockMvc.perform(get("/api/v1/share/{token}", token)).andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/claim", token, itemId)
+                .contentType("application/json").content("{\"guestName\":\"Guest\"}"))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/v1/lists/{listId}", listId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.publicList").value(false));
+
+        String replacement = createPublicShare(owner, listId);
+        assertThat(replacement).isNotEqualTo(token);
+        mockMvc.perform(get("/api/v1/share/{token}", replacement)).andExpect(status().isOk());
     }
 
     @Test
@@ -326,8 +348,9 @@ class PublicShareTests {
         MockHttpSession owner = register("owner");
         String listId = createWishList(owner, "Legacy public link");
         jdbcTemplate.update(
-            "update lists set share_token = ?, is_public = 1, public_share_mode = 'WISH_CLAIM' where id = ?",
+            "update lists set share_token = ?, is_public = 1, public_share_mode = 'WISH_CLAIM', public_share_expires_at = ? where id = ?",
             "legacy-public-token",
+            Instant.now().plusSeconds(56L * 24 * 60 * 60).toString(),
             listId
         );
 

@@ -5,6 +5,7 @@ import app.listful.api.ResourceNotFoundException;
 import app.listful.api.ValidationFailedException;
 import app.listful.domain.Item;
 import app.listful.domain.ListEntity;
+import app.listful.domain.RetentionPolicy;
 import app.listful.domain.User;
 import app.listful.domain.enums.ItemStatus;
 import app.listful.domain.enums.ListType;
@@ -19,6 +20,7 @@ import app.listful.sharing.dto.PublicListResponse;
 import app.listful.sharing.dto.PublicShareRequest;
 import app.listful.sharing.dto.PublicShareTokenResponse;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,12 +30,14 @@ public class PublicShareService {
     private final ListAccessService listAccessService;
     private final ListRepository listRepository;
     private final ItemRepository itemRepository;
+    private final Clock clock;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public PublicShareService(ListAccessService listAccessService, ListRepository listRepository, ItemRepository itemRepository) {
+    public PublicShareService(ListAccessService listAccessService, ListRepository listRepository, ItemRepository itemRepository, Clock clock) {
         this.listAccessService = listAccessService;
         this.listRepository = listRepository;
         this.itemRepository = itemRepository;
+        this.clock = clock;
     }
 
     @Transactional
@@ -42,7 +46,7 @@ public class PublicShareService {
         PublicShareMode mode = request == null || request.mode() == null ? defaultMode(list) : request.mode();
         validateMode(list, mode);
         String token = uniqueToken();
-        list.enablePublicShare(TokenHashing.sha256(token), token, mode);
+        list.enablePublicShare(TokenHashing.sha256(token), token, mode, clock.instant().plus(RetentionPolicy.PUBLIC_LINK));
         return toTokenResponse(list);
     }
 
@@ -101,14 +105,14 @@ public class PublicShareService {
         String tokenHash = TokenHashing.sha256(token);
         return listRepository.findByShareTokenHash(tokenHash)
             .or(() -> migrateLegacyRawToken(token, tokenHash))
-            .filter(list -> list.isPublicList() && list.isActive())
+            .filter(list -> list.isPublicShareActive(clock.instant()))
             .orElseThrow(() -> new ResourceNotFoundException("Shared list not found"));
     }
 
     private java.util.Optional<ListEntity> migrateLegacyRawToken(String token, String tokenHash) {
         if (TokenHashing.isSha256Hash(token)) return java.util.Optional.empty();
         return listRepository.findByShareTokenHash(token)
-            .filter(list -> list.isPublicList() && list.isActive())
+            .filter(list -> list.isPublicShareActive(clock.instant()))
             .map(list -> {
                 list.migratePublicShareTokenHash(tokenHash);
                 return list;
@@ -156,7 +160,7 @@ public class PublicShareService {
     }
 
     private PublicShareTokenResponse toTokenResponse(ListEntity list) {
-        return new PublicShareTokenResponse(list.getId(), list.isPublicList(), list.getShareToken(), "/s/" + list.getShareToken(), list.getPublicShareMode().name());
+        return new PublicShareTokenResponse(list.getId(), list.isPublicList(), list.getShareToken(), "/s/" + list.getShareToken(), list.getPublicShareMode().name(), list.getPublicShareExpiresAt().toString());
     }
 
     private PublicItemResponse toPublicItemResponse(Item item) {

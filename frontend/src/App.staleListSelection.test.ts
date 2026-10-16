@@ -20,12 +20,12 @@ vi.mock('./api/client', async (importOriginal) => {
 
 const alphaList = {
   id: 'list-alpha', title: 'Alpha list', description: null, type: 'TODO' as const,
-  publicList: false, shareToken: null, publicShareMode: 'VIEW' as const,
+  publicList: false, shareToken: null, publicShareMode: 'VIEW' as const, publicShareExpiresAt: null,
   targetDate: null, access: 'OWNER' as const, createdAt: '2026-01-01T00:00:00Z'
 };
 const betaList = {
   id: 'list-beta', title: 'Beta list', description: null, type: 'TODO' as const,
-  publicList: false, shareToken: null, publicShareMode: 'VIEW' as const,
+  publicList: false, shareToken: null, publicShareMode: 'VIEW' as const, publicShareExpiresAt: null,
   targetDate: null, access: 'OWNER' as const, createdAt: '2026-01-02T00:00:00Z'
 };
 
