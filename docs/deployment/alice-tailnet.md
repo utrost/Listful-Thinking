@@ -4,9 +4,17 @@ This document records the current private deployment contract for the Listful Th
 
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
-## Latest deployment — security upgrade and retention policy, 2026-10-16
+## Latest deployment — account and list handoffs, 2026-10-16
 
-Merged `main` commit `74de4dc` is deployed as `listful-thinking:retention-20261016-74de4dc` (also tagged `listful-thinking:alice`), image ID `sha256:1c0ef5013bd683e3a2180dfdfb349c8a4fca76552910e8412ad9f4bca2ea96a8`. This includes the runtime and HTML-parser security upgrade from PR #50 and the 14-day Trash and 56-day public-link retention policy from PR #49.
+Merged `main` commit `f5b6b64` is deployed as `listful-thinking:handoff-20261016-f5b6b64` (also tagged `listful-thinking:alice`), image ID `sha256:c387463d10361416fa3a75b334cfc4a902f2827fc6112b05bd07e4ddfd04d0ab`. It includes the Playwright user/admin journeys from PR #51 and account setup, recovery, password change, sharing notifications, owner transfer, and admin transfer of inactive owners' lists from PR #52. All six CI jobs passed on the merged feature PR, including the strict dependency scan and desktop/mobile Playwright smoke.
+
+A stopped-container pre-deploy SQLite backup and a post-deploy copy both passed `integrity_check` and `foreign_key_check`; the schema remains V17 with 1 account, 1 list, and 3 items. Live readiness, current frontend assets, desktop/mobile Chromium login pages, preserved application settings, UID 1000 and database permissions, and Tailnet-only binding passed. Private backups, configuration, and verification are in `data/deployments/20261016T211037Z/`. The previous image/container is retained stopped as `listful-thinking-alice-pre-handoff-20261016` with restart disabled. Because the schema did not change, that container can be used for rollback after preserving any newer data.
+
+The first cutover attempt stopped the service, then a deployment script misread Flyway's text version order and its rollback handler removed the stopped container. The original image was recreated using its saved settings and unchanged volume; readiness and all application settings were verified before the successful retry. The first attempt's private artifacts are in `data/deployments/20261016T210946Z/`.
+
+## Previous deployment — security upgrade and retention policy, 2026-10-16
+
+Merged `main` commit `74de4dc` was deployed as `listful-thinking:retention-20261016-74de4dc` (then tagged `listful-thinking:alice`), image ID `sha256:1c0ef5013bd683e3a2180dfdfb349c8a4fca76552910e8412ad9f4bca2ea96a8`. This includes the runtime and HTML-parser security upgrade from PR #50 and the 14-day Trash and 56-day public-link retention policy from PR #49.
 
 A stopped-container pre-V17 SQLite backup was verified with `integrity_check` and `foreign_key_check`. V17 passed on an isolated restore and then on the live volume while the candidate was bound only to localhost. The migration preserved 1 account, 1 list, and 3 items. All six CI jobs passed on the deployed commit. Live health, Tailnet-only binding, frontend retention copy, and a Chromium login-page check passed. The runtime remains UID 1000; the SQLite directory and file retain modes 0700 and 0600. The existing application settings, including email recovery, were preserved.
 
@@ -165,18 +173,31 @@ Adjust the markers for the feature being deployed.
 Use the live contract, not a generic compose file, for the Alice Tailnet deployment:
 
 ```bash
-docker rm -f listful-thinking-alice
-
+umask 077
+env_file="$(mktemp /tmp/listful-alice-env.XXXXXX)"
+python3 - "$env_file" <<'PY'
+import json, os, subprocess, sys
+info = json.loads(subprocess.check_output(['docker', 'inspect', 'listful-thinking-alice']))[0]
+image_defaults = {'PATH', 'JAVA_HOME', 'JAVA_VERSION', 'LANG', 'LANGUAGE', 'LC_ALL'}
+settings = [entry for entry in info['Config']['Env'] if entry.split('=', 1)[0] not in image_defaults]
+assert all('\n' not in entry and '\r' not in entry for entry in settings)
+with open(sys.argv[1], 'w') as out:
+    out.write('\n'.join(settings) + '\n')
+os.chmod(sys.argv[1], 0o600)
+PY
+old_name="listful-thinking-alice-pre-$(date -u +%Y%m%dT%H%M%SZ)"
+docker stop --time 30 listful-thinking-alice
+docker update --restart no listful-thinking-alice
+docker rename listful-thinking-alice "$old_name"
 docker run -d --name listful-thinking-alice --restart unless-stopped \
+  --user 1000:1000 --env-file "$env_file" \
   -p 100.123.149.120:8080:8080 \
-  -e SPRING_DATASOURCE_URL=jdbc:sqlite:/app/data/listful-thinking.sqlite \
-  -e REGISTRATION_ENABLED=false \
-  -e PUBLIC_BASE_URL=http://alice.taileb20d9.ts.net:8080 \
   -v listful-thinking-alice-data:/app/data \
   listful-thinking:alice
+rm -f "$env_file"
 ```
 
-If the existing container has a different supported app env key/value, preserve the observed value instead of blindly using the example.
+Check readiness before considering the cutover complete. If the new container fails, remove only that new container, rename `$old_name` back to `listful-thinking-alice`, restore its `unless-stopped` restart policy, and start it. Keep the backup and the previous image until post-deploy verification is complete. Flyway versions are text: query the latest successful row by `installed_rank`, not `max(version)`.
 
 ## Post-deploy verification
 
