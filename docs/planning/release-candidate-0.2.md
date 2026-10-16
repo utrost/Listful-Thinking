@@ -1,5 +1,7 @@
 # 0.2.0-rc.1: planning and reusable lists
 
+Historical RC1 planning candidate. See [Current state and risk register](../current-state-and-risk-register.md) for the deployed version and later retention policy.
+
 The release candidate combines the September reliability/security repairs, email recovery fixes and holistic workspace redesign with milestones 2–4 from the revised roadmap.
 
 ## Today & upcoming

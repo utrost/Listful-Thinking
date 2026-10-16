@@ -6,23 +6,24 @@ It is meant for a household, family, club, care team, or small private group tha
 
 The [user experience concept](docs/design/user-experience.md) describes the list workspace, navigation, user guidance, and browser validation.
 
-## Release candidate 0.2.0-rc.2
+## Current release status
 
-The [planning candidate](docs/planning/release-candidate-0.2.md) adds Today & upcoming, archives and recoverable Trash/Undo, and reusable personal templates. The version also includes the reliability/security repairs and redesigned workspace. Back up before upgrading: schema migrations V14–V16 are forward-only; older-image rollback needs the matching database backup.
+The [September planning candidate](docs/planning/release-candidate-0.2.md) added Today & upcoming, archives and recoverable Trash/Undo, and reusable personal templates. It also included the reliability/security repairs and redesigned workspace. Schema migrations V14–V16 are forward-only; older-image rollback needs the matching database backup.
 
-Post-RC2 source work adds a 14-day Trash retention and 56-day public-link expiry through migration V17. Back up before adopting V17; older images need a matching pre-V17 database snapshot for rollback. Backup retention remains an operator decision.
+The current `main` build is deployed on the private Alice Tailnet instance. Migration V17 adds 14-day Trash retention and 56-day public-link expiry. Later work adds admin-issued account setup/recovery links, password changes, sharing notifications, owner transfer, and audited admin transfer of inactive owners' lists. Back up before adopting V17; older images need a matching pre-V17 database snapshot for rollback. Backup retention remains an operator decision. See the [deployment record](docs/deployment/alice-tailnet.md) and [current state](docs/current-state-and-risk-register.md).
 
 ## What it does
 
 - **Typed lists:** create `WISH`, `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists with type-specific fields and validation.
 - **Private by default:** users see their own lists unless another user shares a list with them.
 - **Registered-user collaboration:** list owners can share read-only or contributor access with another local account. Contributors can add and update items; owners keep destructive/list-management control.
+- **Account and ownership handoffs:** admins can issue one-time setup/recovery links, users can change passwords, owners can transfer lists to active users, and admins can transfer lists from inactive accounts without browsing private content.
 - **Public guest sharing:** owners can create public links with modes for read-only viewing, wishlist claiming, or signup-style participation.
 - **Wishlist helpers:** paste product URLs, scrape basic metadata where allowed, track claim/purchase state, and let guests reserve gifts.
 - **Grocery/shop mode:** use quantity/category fields, group by category, hide completed items, and clear completed grocery items after shopping.
 - **Chores and events:** use due dates, simple recurrence for chores, skip/postpone actions, target dates for events, and owner/helper labels for coordination.
-- **Notifications:** reminders appear in-app and can also be sent by email when SMTP is configured.
-- **Admin bootstrap:** the first registered account becomes admin; admins can manage registration, create users, activate/deactivate users, and inspect list ownership metadata.
+- **Notifications:** due-item reminders and sharing/ownership changes appear in-app; reminders can also be sent by email when SMTP is configured.
+- **Admin bootstrap:** the first registered account becomes admin; admins can manage registration, create users with a password or setup link, activate/deactivate users, and inspect per-user list counts.
 
 ## Current status
 
@@ -31,7 +32,7 @@ The current implementation is an MVP/post-MVP private self-hosting foundation:
 - Spring Boot backend with session auth, CSRF protection, Flyway migrations, SQLite persistence, URL scraping, reminders, admin endpoints, and security hardening.
 - Vue frontend served by the backend as a single web app.
 - Single-container Docker build path with persistent `/app/data` volume.
-- Automated smoke coverage for auth, admin settings/users, typed lists, internal sharing, item workflows, public links, guest claiming/signup, responsibility labels, and container runtime checks.
+- Automated smoke and Playwright coverage for auth, admin settings/users, typed lists, account setup, password change, list handoffs, internal sharing, item workflows, public links, guest claiming/signup, responsibility labels, and container runtime checks.
 
 Deployment posture: **private Tailnet/self-hosted ready** with a general [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md). Public internet deployments must use HTTPS, secure cookies, and reverse-proxy hardening as described in that handbook and tracked in [Current state and risk register](docs/current-state-and-risk-register.md).
 

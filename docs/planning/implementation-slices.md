@@ -1,6 +1,6 @@
 # Implementation Slices
 
-This is the preferred implementation order. Each slice should leave the repository green and commit a small coherent change.
+This records the implementation order used for the original MVP and September continuation. For shipped behavior after RC2, including retention and account/list handoffs, use the [current state register](../current-state-and-risk-register.md); older slice text is planning history.
 
 ## Slice 01: Full SQLite schema
 
@@ -224,7 +224,7 @@ User outcome:
 
 Backend:
 
-- Add Jsoup scraper and controller.
+- Add a server-side HTML scraper and controller. The shipped parser is HtmlUnit behind a validated-address fetch path.
 - Add HTML fixture tests.
 
 Tests:

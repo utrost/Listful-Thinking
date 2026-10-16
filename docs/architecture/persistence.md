@@ -34,7 +34,7 @@ Use one consistent timestamp representation across migrations/entities/API. Reco
 - API: ISO-8601 string
 - SQLite: `TEXT` storing ISO-8601 UTC
 
-## Initial tables
+## Persistent tables
 
 - `users`
 - `lists`
@@ -42,6 +42,10 @@ Use one consistent timestamp representation across migrations/entities/API. Reco
 - `settings`
 - `list_shares`
 - `notifications`
+- `auth_tokens`
+- `security_events`
+
+Flyway has reached V17. V14 adds item revisions, notification delivery keys, and audit-path redaction; V15 adds archive/template/Trash state; V16 adds session/token versions; V17 adds public-link expiry. New account setup and ownership handoff features reuse these tables and require no later migration.
 
 ## Indexing principles
 
@@ -55,9 +59,11 @@ Index every authorization lookup path:
 
 ## Backup model
 
-All mutable state must live under `/app/data`. A self-hoster can back up the SQLite file and any future files under the same directory.
+All mutable state must live under `/app/data`. A self-hoster should use SQLite's online backup API for a running database or stop the container before copying the file. Copying a live database file without its journal can lose committed data.
 
-For schema-changing deployments, copy the live SQLite database before replacing the container and test additive migrations on the copy when practical. The Alice Tailnet runbook documents the concrete backup and post-deploy migration verification flow.
+For schema-changing deployments, take a verified backup before replacing the container and test migrations on a restored copy. Older images may need the matching pre-migration database to roll back. Check `integrity_check`, `foreign_key_check`, the latest successful Flyway row by `installed_rank`, and key table counts. The [Alice runbook](../deployment/alice-tailnet.md) records the current contract.
+
+Trash is recoverable for 14 days; a daily purge removes expired deleted lists, templates, and items. Public links expire 56 days after issue. Database backups have a separate operator retention policy and may retain older content.
 
 ## Current item responsibility columns
 

@@ -34,6 +34,10 @@ As a user with an email address, I want to receive a one-time magic login link s
 
 As a user, I want to request a time-limited password reset link so I can recover access when I forget my password.
 
+### Story: Choose and change my password
+
+As a user, I want to choose my own initial password from a one-time setup link and change it while signed in so an admin does not need to know my password.
+
 ### Story: Email auth remains optional
 
 As a self-hoster, I want password login and in-app fallback behavior to keep working when SMTP is not configured so the app remains zero-config.
@@ -43,6 +47,10 @@ As a self-hoster, I want password login and in-app fallback behavior to keep wor
 ### Story: Admin creates users
 
 As an admin, I want to create users myself so public registration can stay disabled on a private instance.
+
+### Story: Admin issues setup and recovery links
+
+As an admin, I want to create an account without assigning its password and issue a fresh link to an active user who cannot receive recovery email.
 
 ### Story: Admin assigns role at creation
 
@@ -59,6 +67,10 @@ As an admin, I want inactive users blocked from password, magic-link, and reset-
 ### Story: Admin list inventory
 
 As an admin, I want per-user list counts so I can understand instance usage without seeing private list content.
+
+### Story: Hand off an inactive owner's lists
+
+As an admin, I want to transfer all lists of a deactivated account to a different active user without browsing their private titles or items.
 
 ## Epic: Private lists
 
@@ -101,6 +113,14 @@ As an owner, I want to share a list with another local user so family members ca
 ### Story: Revoke internal sharing
 
 As an owner, I want to remove a user's access so sharing remains under my control.
+
+### Story: Be notified about access changes
+
+As a shared user, I want an in-app message when a list is shared with me, my permission changes, or access is removed.
+
+### Story: Transfer list ownership
+
+As an owner, I want to transfer my list to another active account while preserving its items and existing shares, with the public link revoked and both owners notified.
 
 ## Epic: Public sharing
 

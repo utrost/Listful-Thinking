@@ -48,7 +48,7 @@ Status: complete for public token lifecycle, safe guest read DTOs, wishlist clai
 
 Status: complete for direct URL metadata preview and async URL-only item enrichment.
 
-- Jsoup metadata scraping
+- Validated-address fetch and HtmlUnit metadata parsing
 - Async URL-only item enrichment
 
 ## Phase 6: Reminders
@@ -82,6 +82,8 @@ Status: complete for MVP release smoke and docs.
 ## September planning release candidate
 
 [0.2.0-rc.1](planning/release-candidate-0.2.md) adds Today & upcoming across accessible lists, pauseable archives, persistent Trash and Undo, and private user-managed templates. It also includes the reliability/security repairs, real SMTP recovery setup and workspace redesign. Remaining event-planning work is countdown/grouping polish; structured assignments and richer guest workflows remain later extensions.
+
+After RC2, V17 added 14-day Trash retention and 56-day public links. Subsequent work shipped admin-issued account setup/recovery, signed-in password change, sharing notifications, owner transfer, and admin handoff from inactive owners. Alice runs this merged `main` state; see the [deployment record](deployment/alice-tailnet.md). Event countdown/grouping and structured assignments remain future work.
 
 ## Current risk register
 

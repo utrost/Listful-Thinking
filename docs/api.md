@@ -35,15 +35,16 @@ When registration is disabled after bootstrap, the endpoint returns `403 Forbidd
 
 ### `GET /api/v1/auth/settings`
 
-Public bootstrap/auth UI settings. This intentionally exposes only whether the self-registration form should be available, not the full admin settings object.
+Public bootstrap/auth UI settings. This exposes registration availability and whether an email recovery host is configured, without returning the full admin settings object.
 
 Response:
 
 ```json
-{"registrationAvailable":false}
+{"registrationAvailable":false,"emailRecoveryAvailable":true}
 ```
 
 `registrationAvailable` is `true` when no users exist yet, so the first admin can still bootstrap the instance, or when an admin has enabled registration.
+`emailRecoveryAvailable` reports whether a mail host is configured; it does not prove delivery or expose mail settings.
 
 ### `POST /api/v1/auth/login`
 
@@ -71,10 +72,10 @@ Responses:
 Request:
 
 ```json
-{"email":"uwe@example.test"}
+{"email":"uwe@example.test","username":"uwe"}
 ```
 
-Creates a 30-minute one-time token for the matching email address and sends a magic login link. Always returns `204 No Content` so callers cannot enumerate accounts.
+Creates a 30-minute one-time token for one matching active account and sends a magic login link. `username` is optional but disambiguates a shared email address. Returns a neutral `204 No Content` for unknown or ambiguous accounts so callers cannot enumerate them. Unavailable or failed mail delivery returns `503`.
 
 ### `POST /api/v1/auth/magic-link/consume`
 
@@ -91,10 +92,10 @@ Consumes the one-time token, creates a session, and returns the authenticated us
 Request:
 
 ```json
-{"email":"uwe@example.test"}
+{"email":"uwe@example.test","username":"uwe"}
 ```
 
-Creates a 30-minute one-time token for the matching email address and sends a password reset link. Always returns `204 No Content`.
+Creates a 30-minute one-time token for one matching active account and sends a password reset link. `username` is optional for shared email addresses. Unknown or ambiguous accounts receive a neutral `204 No Content`; unavailable or failed mail delivery returns `503`.
 
 ### `POST /api/v1/auth/password-reset/consume`
 
@@ -104,7 +105,17 @@ Request:
 {"token":"url-token","password":"new correct horse battery staple"}
 ```
 
-Consumes the one-time token and stores a new BCrypt password hash. Invalid, expired, or reused tokens return `401 Unauthorized`.
+Consumes the one-time token and stores a new BCrypt password hash. Invalid, expired, or reused tokens return `401 Unauthorized`. An admin-issued account setup/recovery link uses this same consume endpoint, but remains valid for 24 hours instead of 30 minutes. Consuming either kind of reset token invalidates the account's previous sessions and outstanding account tokens.
+
+### `POST /api/v1/auth/change-password`
+
+Requires an authenticated session and the current password.
+
+```json
+{"currentPassword":"current secret","newPassword":"new correct horse battery staple"}
+```
+
+Returns `204 No Content` on success. Existing sessions and outstanding account links are invalidated; the user must sign in again. A wrong current password returns `401 bad_credentials`. New passwords must be 8–72 characters and at most 72 UTF-8 bytes.
 
 ### `GET /api/v1/auth/me`
 
@@ -121,11 +132,11 @@ Authenticated user response:
 
 ## Lists
 
-All list endpoints require an authenticated registered user. `GET /lists/{id}` allows the owner or an internally shared user. Mutating list metadata endpoints remain owner-only.
+All list endpoints require an authenticated registered user. Active list reads allow the owner or an internally shared user. Mutating list metadata endpoints remain owner-only.
 
 ### `GET /api/v1/lists`
 
-Returns lists owned by the authenticated user plus lists explicitly shared with them.
+Returns active lists owned by the authenticated user plus active lists explicitly shared with them.
 
 ### `POST /api/v1/lists`
 
@@ -145,7 +156,7 @@ Type validation:
 
 ### `GET /api/v1/lists/{id}`
 
-Returns owned list, or `404` when the list does not exist or belongs to another user.
+Returns a non-deleted list to its owner; an internally shared user can read it only while it is active. Returns `404` when inaccessible. Owner-only library endpoints enumerate archived, trashed, and template lists; ordinary reads of trashed lists return `404`.
 
 ### `PUT /api/v1/lists/{id}`
 
@@ -167,7 +178,11 @@ Response: `201 Created` with the cloned list.
 
 ### `DELETE /api/v1/lists/{id}`
 
-Deletes owned list, or returns `404` when not owned.
+Moves an owned list to Trash, or returns `404` when not owned. The daily retention job permanently purges trashed records after 14 days.
+
+### `POST /api/v1/lists/{id}/transfer`
+
+Requires ownership. Body: `{"username":"martha"}`. The target must be a different active account. Returns `204 No Content`; the old owner loses access unless the new owner shares the list back. Existing internal shares remain, any share for the new owner is removed as redundant, the public link is revoked, both users receive in-app notifications, and the handoff is audited.
 
 List response:
 
@@ -181,7 +196,7 @@ All item endpoints require authenticated access to the parent list. Read access 
 
 ### `GET /api/v1/lists/{id}/items`
 
-Returns items for an owned list, or `404` when the list is not owned.
+Returns items from a non-deleted list to its owner; an internally shared user can read items only while the list is active. Returns `404` when inaccessible.
 
 ### `POST /api/v1/lists/{id}/items`
 
@@ -215,7 +230,7 @@ Type validation:
 
 ### `PUT /api/v1/items/{id}`
 
-Updates an item when its parent list is owned by the authenticated user or shared with `CONTRIBUTE` permission. Returns `404` for missing or inaccessible items.
+Updates an item when its parent list is owned by the authenticated user or shared with `CONTRIBUTE` permission. Send the current item version as `If-Match: "<version>"`; missing or stale versions return `409 stale_item`. Returns `404` for missing or inaccessible items.
 
 When a recurring `CHORE` item is updated to `DONE`, the API stores `lastCompletedAt`, advances `dueDate` by the recurrence rule, and returns the item as `OPEN` for the next occurrence.
 
@@ -235,11 +250,11 @@ Request:
 
 ### `DELETE /api/v1/items/{id}`
 
-Deletes an item only when its parent list is owned by the authenticated user. Returns `404` for missing or non-owned items.
+Moves an item to Trash only when its parent list is owned by the authenticated user. Returns `404` for missing or non-owned items.
 
 ### `DELETE /api/v1/lists/{id}/items/completed`
 
-Deletes `DONE` items from an owned `GROCERY` list. This is the shop-mode reset path after a shopping trip. It returns `400 validation_failed` for non-grocery lists and `404` for missing or non-owned lists.
+Moves `DONE` items from an owned `GROCERY` list to Trash. This is the shop-mode reset path after a shopping trip. It returns `400 validation_failed` for non-grocery lists and `404` for missing or non-owned lists.
 
 Item response:
 
@@ -263,7 +278,7 @@ Request:
 {"username":"shared-user","permission":"CONTRIBUTE"}
 ```
 
-Response: `201 Created` with share.
+Response: `201 Created` with share. An active recipient receives an in-app notification when access is first granted or updated.
 
 ```json
 {"listId":"uuid","userId":"uuid","username":"shared-user","permission":"CONTRIBUTE","createdAt":"2026-08-31T17:00:00Z"}
@@ -271,13 +286,13 @@ Response: `201 Created` with share.
 
 ### `DELETE /api/v1/lists/{id}/shares/{username}`
 
-Revokes read access for the named registered user. Returns `204 No Content`.
+Revokes access for the named registered user. Returns `204 No Content`. An active recipient receives an in-app notification.
 
 ## Scraper
 
 ### `POST /api/v1/utils/scrape`
 
-Requires authentication. Fetches best-effort metadata for an HTTP(S) URL using Jsoup with browser-like request headers.
+Requires authentication. Fetches best-effort metadata for an HTTP(S) URL using a validated-address fetch path and HtmlUnit parsing with browser-like request headers.
 
 Request:
 
@@ -424,6 +439,26 @@ Request:
 
 Response: `201 Created` with safe user metadata. Duplicate usernames return `409 Conflict` with `username_taken`.
 
+### `POST /api/v1/admin/users/with-setup`
+
+Requires `ADMIN` role. Creates a `USER` or `ADMIN` without an admin-chosen password and issues a one-time setup link valid for 24 hours, independent of public registration settings.
+
+```json
+{"username":"martha","email":"martha@example.test","role":"USER"}
+```
+
+Returns `201 Created` with safe user metadata and setup-link details:
+
+```json
+{"user":{"id":"uuid","username":"martha","email":"martha@example.test","role":"USER","active":true,"createdAt":"2026-10-16T12:00:00Z"},"setupUrl":"https://lists.example.org/reset-password?token=example","expiresAt":"2026-10-17T12:00:00Z","emailed":false}
+```
+
+If SMTP sends the link to the account email, `emailed` is `true` and `setupUrl` is `null`. A returned URL is shown once; pass it privately to the user. Duplicate usernames return `409 username_taken`.
+
+### `POST /api/v1/admin/users/{id}/setup-link`
+
+Requires `ADMIN` role and an active target account. Issues a fresh 24-hour one-time setup/recovery link with the same response shape as above. Earlier login, setup, and reset tokens for that account are invalidated. Returns `409 inactive_user` for an inactive target. Raw links are excluded from audit details.
+
 ### `PATCH /api/v1/admin/users/{id}`
 
 Requires `ADMIN` role. Activates or deactivates a user.
@@ -433,6 +468,10 @@ Requires `ADMIN` role. Activates or deactivates a user.
 ```
 
 Deactivated users cannot log in or consume magic/password-reset links.
+
+### `POST /api/v1/admin/users/{id}/transfer-lists`
+
+Requires `ADMIN` role. Body: `{"username":"martha"}`. The source account must be inactive; the target must be active, different from the source, and different from the acting admin. Transfers every owned list, including archived lists, templates, and Trash, while revoking public links and keeping unrelated internal shares. Returns `200 OK` with `{"transferred":3}`. Errors include `409 owner_active`, `inactive_user`, `same_owner`, `self_transfer`, or `no_lists_to_transfer`. The transfer is audited without exposing list titles to the admin.
 
 ### `GET /api/v1/admin/lists`
 

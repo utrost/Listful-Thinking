@@ -10,7 +10,8 @@ Primary goals:
 - Create the first account.
 - Toggle registration.
 - Create, activate, and deactivate users.
-- Inspect users, owner metadata, list inventory, and instance settings.
+- Issue one-time setup/recovery links and hand inactive owners' lists to another active account.
+- Inspect users, per-user list counts, and instance settings.
 - Keep data local and easy to back up.
 
 Non-goal for MVP:
@@ -26,6 +27,7 @@ Primary goals:
 - Create wish, to-do, grocery, chore, and event lists.
 - Add and edit items.
 - Share lists with trusted people.
+- Transfer a list to its next owner and receive notifications about access and ownership changes.
 - Use public links when guests should view a list, claim wishlist items, or sign up for non-wishlist slots.
 - Receive due/reminder notifications.
 

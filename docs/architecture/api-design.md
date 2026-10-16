@@ -45,13 +45,19 @@ Rules:
 - `404 Not Found`: missing or private resource should not be discoverable.
 - `409 Conflict`: duplicate guest claim/signup or invalid state transition.
 
-## Auth endpoints
+## Auth and account endpoints
 
 - `POST /api/v1/auth/register`
 - `GET /api/v1/auth/settings`
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/logout`
 - `GET /api/v1/auth/me`
+- `GET /api/v1/auth/csrf`
+- `POST /api/v1/auth/magic-link` and `POST /api/v1/auth/magic-link/consume`
+- `POST /api/v1/auth/password-reset` and `POST /api/v1/auth/password-reset/consume`
+- `POST /api/v1/auth/change-password`
+
+Admins use `POST /api/v1/admin/users/with-setup` or `/admin/users/{id}/setup-link` to issue one-time account setup/recovery links. An active owner uses `POST /api/v1/lists/{id}/transfer`; an admin uses `POST /api/v1/admin/users/{id}/transfer-lists` only after deactivating the old owner. See [the endpoint contract](../api.md) for bodies, responses, and authorization.
 
 ## Public endpoints
 

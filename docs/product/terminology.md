@@ -3,7 +3,7 @@
 ## Actor terms
 
 - **Admin:** registered user with instance administration privileges.
-- **List owner:** registered user who created and owns a list.
+- **List owner:** registered user who currently owns a list; ownership can be transferred.
 - **Item owner:** user-visible label for the person, role, or agent responsible for making sure an item happens. This is coordination metadata, not an access grant.
 - **Assistant/helper:** user-visible label for a person, role, bot, or automation assisting with an item. Assistants do not receive permissions by being named.
 - **Registered user:** authenticated account on the same instance.
@@ -17,6 +17,9 @@
 - **Share token:** cryptographically random URL-safe token that exposes a public guest view of one list.
 - **Public share mode:** owner-selected behavior for a public link: `VIEW`, `WISH_CLAIM`, or `SIGNUP`.
 - **Internal share:** access grant from a list owner to another registered user, currently `READ` or `CONTRIBUTE`.
+- **Setup/recovery link:** one-time 24-hour admin-issued link that lets an active account choose a password; it uses the password-reset flow.
+- **Ownership handoff:** transfer of a list to another active account. An admin can hand off all lists of an inactive owner without seeing their content.
+- **Trash retention:** deleted lists, templates, and items remain recoverable for 14 days before daily purge.
 - **Claim/signup:** guest reservation of an open item to prevent duplicate purchases or duplicate slot signups.
 - **Notification:** in-app reminder or system message stored in the database.
 - **Setting:** global key/value configuration, such as registration enabled.

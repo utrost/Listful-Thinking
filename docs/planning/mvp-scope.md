@@ -37,7 +37,7 @@
 
 - Direct scrape utility endpoint.
 - Async URL-only wishlist item enrichment.
-- Jsoup with browser-like headers.
+- Validated-address HTTP(S) fetch with HtmlUnit parsing and browser-like headers.
 - Best-effort metadata extraction.
 
 ### Reminders
@@ -64,8 +64,13 @@
 - Multi-instance clustering.
 - Rich email templates.
 - Internet-facing HTTPS/HSTS/secure-cookie deployment profile.
-- Public-share-token hashing at rest.
-- Full admin/auth/public-share lifecycle audit logging.
+- Complete auth lifecycle audit logging (selected admin, ownership, and public-link events are implemented).
+
+## Implemented after the original MVP scope
+
+- Hashed public-share tokens, 56-day guest-link expiry, and 14-day Trash retention.
+- Admin-issued account setup/recovery links, signed-in password change, sharing notifications, and owner/admin list handoffs.
+- Today & upcoming, archive, templates, item revisions, verified SQLite backup/restore tooling, and desktop/mobile Playwright process coverage.
 
 ## MVP quality bar
 

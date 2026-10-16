@@ -1,5 +1,7 @@
 # Personal-data security review — 2026-09-26
 
+This is the RC2 security assessment from September. Later V17 retention and account/list handoffs are documented in [Current state and risk register](current-state-and-risk-register.md).
+
 Scope: candidate v0.2.0-rc.1, the Java/Vue source and resolved runtime dependencies, desktop/mobile behavior, and the Alice deployment. This is a focused source/configuration review with regression testing, not a claim that every possible vulnerability has been eliminated.
 
 ## Confirmed findings and remediation in 0.2.0-rc.2

@@ -340,11 +340,13 @@ Recommended first-run sequence:
 1. Start the instance privately.
 2. Register the first admin account.
 3. Confirm registration is disabled in the Admin panel.
-4. Create named local accounts for the people who should use the instance.
+4. Create named local accounts for the people who should use the instance. You can set an initial password or issue a one-time setup link so each person chooses their own.
 5. Configure SMTP only if you want email reminders, magic links, or password resets.
 6. Create public guest links only for lists that are safe to share by bearer URL.
 
 If you temporarily enable registration, disable it again after the intended users have joined.
+
+Admin-issued setup/recovery links last 24 hours and work without SMTP: copy the displayed link once and pass it privately to the user. With a deliverable account email, the server sends the link and omits it from the response. An admin can reissue a link only for an active account; the new link invalidates earlier account links. Signed-in users can change their own password. If an owner leaves, deactivate that account before using the admin transfer action to move all of its lists to another active user. The admin sees list counts, not private titles or items; the target cannot be the acting admin.
 
 ## Mail configuration
 
@@ -355,6 +357,7 @@ Configure SMTP when you want:
 - Magic login links.
 - Password reset links.
 - Email reminders.
+- Account setup/recovery links, when the target account has an email address.
 
 Environment shape:
 
@@ -380,7 +383,9 @@ Before updating:
 2. Back up `listful-thinking.sqlite`.
 3. Pull or copy the new source/image.
 4. Rebuild and restart the container.
-5. Re-run the health and login checks.
+5. Re-run readiness, login, and database integrity/foreign-key checks; verify the expected Flyway version and data counts.
+
+V17 introduces 14-day Trash retention and 56-day public-link expiry. Links active during V17 migration received 56 days from the upgrade. Back up before adopting V17; rolling back to a pre-V17 image requires its matching database snapshot. The current account/list handoff release adds no later schema migration. Keep backup retention and encryption independent of the app's Trash policy.
 
 Production-profile source checkout update:
 
@@ -404,6 +409,7 @@ Keep these defaults unless you have a concrete reason to change them:
 - `TRUST_FORWARDED_FOR=false` unless the proxy boundary is trusted and strips spoofed headers.
 - Do not publish raw database backups.
 - Rotate public guest links if a link was sent to the wrong person.
+- Expect guest links to expire after 56 days and Trash to purge after 14 days; protect and retain backups according to your own policy.
 - Keep the host OS, Docker, and reverse proxy updated.
 
 ## Troubleshooting
@@ -445,7 +451,7 @@ Those are separate release-readiness and operations topics. The current app is a
 
 ## Personal data and security updates
 
-Read the [personal-data security review](../security-review-2026-09-26.md) before storing sensitive information. Runtime SQLite files use mode 0600; protect the containing volume and backup directories too. The app does not encrypt list content end to end. Host/Docker administrators and backup holders remain trusted. Use encrypted storage and a retention policy, and prefer authenticated invitations over long-lived public links.
+Read the [personal-data security review](../security-review-2026-09-26.md) as a dated RC2 assessment before storing sensitive information. Runtime SQLite files use mode 0600; protect the containing volume and backup directories too. The app does not encrypt list content end to end. Host/Docker administrators and backup holders remain trusted. Use encrypted storage and a retention policy, and prefer authenticated invitations for private content. Public links expire after 56 days; copies in backups can outlast live deletion.
 
 Dependency verification must use the resolved runtime inventory, not just declared POM dependencies:
 

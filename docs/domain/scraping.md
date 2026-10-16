@@ -32,7 +32,7 @@ The scraper does **not** parse full HTML with regex.
 
 Current implementation uses:
 
-- **Jsoup** to fetch and parse HTML as a document.
+- A validated-address socket fetcher for HTTP(S), followed by **HtmlUnit** HTML parsing with scripting and external resource loading disabled.
 - **CSS selectors** to read OpenGraph, Twitter card, microdata, and product/gallery elements.
 - **Jackson** to parse JSON-LD blocks and walk nested `offers.price` structures.
 - A small regex only after extraction to normalize candidate price text, e.g. converting `39,90 €` into `39.90`.
@@ -152,11 +152,11 @@ Earlier smoke runs had working examples for Fotoimpex, IKEA, eBay, MUJI, and Tch
 
 - Some shops block data-center/server-side requests before product HTML is returned. Current examples include Cloudflare/security-check pages from Thalia, Bauhaus, Decathlon, and Conrad plus earlier Zalando/Etsy bot-protection responses.
 - Shop URLs age out or redirect to generic/category/404 pages; this is distinct from a parser gap and needs a fresh product URL before selector work.
-- The app does not run a browser automation stack for scraping. It uses server-side Jsoup requests only.
+- The app does not run a browser automation stack for scraping. It fetches only the validated URL and parses the returned HTML server-side with HtmlUnit.
 - No per-shop plugin architecture exists yet; selectors are centralized in `ScraperService`.
 - No metadata confidence score is shown in the UI.
 - No retry/proxy/cookie workflow is implemented for bot-protected shops.
-- The custom socket fetch path is intentionally conservative for SSRF protection; it may behave differently from a full browser or from Jsoup's built-in connection handling on unusual servers.
+- The custom socket fetch path is intentionally conservative for SSRF protection; it may behave differently from a full browser on unusual servers.
 
 Good next slices if more failures appear:
 

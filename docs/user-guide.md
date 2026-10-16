@@ -34,7 +34,7 @@ A user can:
 - Revoke public guest links for their own lists.
 - Share their own lists read-only or contributor-enabled with another registered user.
 - Revoke internal shares they created.
-- Receive in-app notifications for reminders.
+- Receive in-app notifications for reminders, changes to list access, and ownership handoffs.
 - Receive email reminders when SMTP is configured.
 
 A user cannot:
@@ -78,7 +78,7 @@ Signed-in users can change their password from the account control in the header
 
 ### Admin-created account setup and recovery
 
-An admin can create an account with the password field blank. The app generates a one-time setup link valid for 24 hours. If SMTP is configured and the account has an email address, it sends the link directly to that address. Otherwise, the admin sees the link once and must pass it to the user privately. The user opens the link, chooses a password, then signs in. A fresh link from the Admin panel can recover an active account without email. Issuing a new link invalidates earlier login, setup, and recovery links. The link never appears in audit records.
+An admin can create an account with the password field blank. The app generates a one-time setup link valid for 24 hours. If SMTP is configured and the account has an email address, it attempts to send the link directly. If delivery is unavailable or fails, the admin sees the link once and must pass it to the user privately. The user opens the link, chooses a password, then signs in. A fresh link from the Admin panel can recover an active account without email. Issuing a new link invalidates earlier login, setup, and recovery links. The link never appears in audit records.
 
 ### Magic links
 
@@ -104,7 +104,7 @@ Important behavior:
 
 ### When email is not configured
 
-Listful Thinking remains usable without email. Users can still log in with username/password, and reminders fall back to in-app notifications. Email-based login, password reset, and email reminders only send mail when SMTP settings are complete.
+Listful Thinking remains usable without email. Users can still log in with username/password, admins can pass setup/recovery links privately, and reminders fall back to in-app notifications. Email-based login, password reset, setup-link delivery, and email reminders require a configured mail server; authenticated SMTP additionally needs the provider's credentials and TLS settings.
 
 ## Lists users can create
 
@@ -364,14 +364,15 @@ The app can create reminders for dated work:
 
 - TODO item due dates
 - CHORE item due dates
-- EVENT target dates
 - EVENT item due dates
+
+An EVENT target date appears in Today & upcoming but does not itself trigger a reminder.
 
 Delivery behavior:
 
 - If SMTP is configured, the app can send email reminders.
-- If SMTP is missing or incomplete, the app creates in-app notifications instead.
-- Duplicate notifications for the same entity/day are avoided.
+- If mail delivery is unavailable or fails, the unread in-app reminder remains.
+- Duplicate reminders for the same item and due timestamp are avoided.
 
 GROCERY and WISH lists do not currently trigger due-date reminders.
 
@@ -506,14 +507,14 @@ Public links expose one safe list view, not the owner's whole account. Guests do
 
 ### Admin visibility
 
-Admins can see user and list metadata needed to operate the instance. The current admin inventory is not a hidden private item-content browser. A future break-glass support view, if added, should be explicit and audited.
+Admins can see user metadata and per-user list counts needed to operate the instance. The current admin inventory does not expose private list titles or items. A future support view, if added, should be explicit and audited.
 
 ## Troubleshooting
 
 ### Magic-link or password-reset email does not arrive
 
 - Check whether the user account has an email address.
-- Check that SMTP is fully configured: host, port, user, and password must all be present.
+- Check the mail host and port; authenticated providers also need credentials and STARTTLS settings.
 - Try username/password login; the app remains usable without email.
 - Ask an admin to verify that the account is active. Deactivated users cannot use magic-login or password-reset tokens.
 - Token links expire after 30 minutes and are one-time use; request a new link if the old one was opened already.
@@ -543,10 +544,10 @@ Admins can see user and list metadata needed to operate the instance. The curren
 
 ### Reminders do not appear
 
-- Reminder scans cover TODO item due dates, CHORE item due dates, EVENT target dates, and EVENT item due dates.
+- Reminder scans cover TODO, CHORE, and EVENT item due dates. An EVENT target date alone does not send a reminder.
 - Done items do not trigger due-date reminders.
 - Recurring chores stay open by advancing to their next due date after Done or Skip.
-- If SMTP is complete, reminders can go by email; otherwise in-app notifications are created.
+- If mail delivery succeeds, reminders can go by email; otherwise an unread in-app notification remains.
 - The default scan runs every minute and catches overdue items after downtime. Each due occurrence is recorded so repeated scans do not resend it.
 
 ## Current limitations

@@ -166,7 +166,7 @@ UI behavior:
 MVP rules:
 
 - Event lists require `target_date`.
-- Event lists can trigger reminders based on `target_date` and item `due_date`.
+- The `target_date` appears in Today & upcoming; reminder delivery uses event item `due_date`, not the list target date alone.
 - Event items reject shopping fields and recurrence rules in the MVP.
 - Public guest claiming is not the primary EVENT behavior, but a `SIGNUP` public link can turn event preparation items into guest-visible signup slots.
 - Event items use `OPEN` and `DONE`; wishlist statuses are rejected.

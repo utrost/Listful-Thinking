@@ -79,6 +79,12 @@ Use [Self-Hosting Handbook](deployment/self-hosting-handbook.md) for general pri
 - For schema releases, the live SQLite database has the expected Flyway version and columns after deployment.
 - The LAN IP does not answer on port `8080` while the service is meant to be Tailnet-only.
 
+## Current deployed main — 2026-10-16
+
+Merged code commit `f5b6b64` is running on Alice; deployment-record commit `39b4d2a` records the cutover. PR #51 added desktop/mobile Playwright user and admin processes; PR #52 added account setup/recovery, password change, sharing notifications, owner transfer, and inactive-owner admin handoff. [All six CI jobs passed](https://github.com/utrost/Listful-Thinking/actions/runs/38966842242) on the final feature commit, including strict dependency scanning and GUI smoke.
+
+The release image is `listful-thinking:handoff-20261016-f5b6b64` with ID `sha256:c387463d10361416fa3a75b334cfc4a902f2827fc6112b05bd07e4ddfd04d0ab`. V17 stayed unchanged. Consistent pre/post deployment SQLite copies passed integrity and foreign-key checks; 1 user, 1 list, and 3 items remained. Live readiness, Tailnet-only exposure, settings preservation, frontend assets, and desktop/mobile login-page loads passed. The [Alice runbook](deployment/alice-tailnet.md) holds the private backup location and records a recovered first cutover attempt.
+
 ## Security test matrix
 
 For the full current posture and known weak points, see [Current State and Risk Register](current-state-and-risk-register.md).
@@ -105,14 +111,16 @@ Implemented automated coverage:
 - Filter-level security rejects are written to `security_events`.
 - Notifications are owner-scoped.
 - Responsibility labels are preserved through item create/update/read paths and remain authorization-neutral.
+- Setup/recovery links use hashed one-time tokens, expire after 24 hours, and are never logged in raw form; password changes revoke old sessions and tokens.
+- Owner and inactive-owner admin transfers enforce active target and admin self-transfer boundaries, revoke public links, notify users, and audit the handoff.
+- Public links expire after 56 days; Trash purges deleted lists, templates, and items after 14 days.
 
 Known weak points and future hardening:
 
 - Alice/private deployment is Tailnet HTTP; public internet deployment needs HTTPS/TLS termination, verified HSTS, and `SESSION_COOKIE_SECURE=true`.
 - Public share token hashes are stored at rest; raw bearer tokens are returned only at generation time and legacy raw rows are migrated to hashes.
-- Structured audit rows currently cover filter-level rejects; extend to admin/auth/user/public-share lifecycle events.
-- CI has OSV scanning, but release images/JARs are not signed and no SBOM artifact is published.
-- Current GitHub Actions are green but emit action-runtime deprecation warnings; upgrade action majors as maintenance work.
+- Structured audit rows cover filter rejects and selected admin, ownership, and public-link events; full auth lifecycle coverage remains open.
+- CI has OSV scanning, and RC2 included a resolved runtime SBOM; release images and JARs are not signed.
 - `npm audit` fails closed when the npm registry audit endpoint is unavailable. That is the desired security posture, but it can create transient red frontend jobs during registry 503/timeout incidents.
 
 ## Review remediation release checks

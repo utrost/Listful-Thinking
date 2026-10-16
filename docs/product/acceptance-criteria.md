@@ -18,15 +18,19 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 - Login creates an authenticated session cookie.
 - Logout invalidates the session.
 - `GET /api/v1/auth/me` returns current user identity and role.
+- A signed-in user can change password by supplying the current password; old sessions and outstanding account links stop working.
+- An admin-issued setup/recovery link is one-time, hashed at rest, expires after 24 hours, and lets the user choose a password. The raw link is never recorded in audit details.
 
 ## Admin settings
 
 - Admins can list users.
 - Admins can create users while public registration is disabled.
 - Admins can create either `USER` or `ADMIN` accounts.
+- Admins can create an account without choosing its password and reissue a setup/recovery link for an active user. The response contains a link only if it was not emailed.
 - Admins can deactivate and reactivate users.
 - Deactivated users cannot log in or use email auth tokens.
 - Admins can view per-user list counts, but cannot view private list content without an explicit share.
+- An admin can transfer all lists from an inactive owner to a different active account, including archived lists, templates, and Trash; the admin receives a count without private titles/content and cannot transfer them to themselves.
 - Admins can read and update global settings.
 - Non-admin users cannot access admin endpoints.
 - Database settings override environment defaults where applicable.
@@ -58,6 +62,8 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 - Existing/missing-permission shares default to `READ`.
 - `CONTRIBUTE` shared users can add, edit, complete, and reopen supported items.
 - Owners can revoke internal sharing.
+- Active recipients receive in-app notifications when shares are added, changed, or revoked.
+- An owner can transfer a list to another active account. The old owner loses access, unrelated internal shares remain, a redundant share for the new owner is removed, the public link is revoked, both owners are notified, and an audit event is recorded.
 
 ## Public sharing
 
@@ -65,6 +71,8 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 - Owners can choose public mode `VIEW`, `WISH_CLAIM`, or `SIGNUP`.
 - Public tokens are URL-safe and generated with at least 128 bits of entropy.
 - Revoking public sharing makes the old token unusable.
+- Public links expire 56 days after issue and return `404` for reads/claims after expiry.
+- Trashed lists, templates, and items are permanently purged after 14 days; operator backups have an independent retention policy.
 - Public list responses do not expose owner email, internal user IDs, private share records, or admin fields.
 
 ## Guest claims
@@ -88,11 +96,11 @@ These criteria define the minimum behavior that must be proven by tests or smoke
 
 ## Reminders and notifications
 
-- Daily reminder logic detects due items or upcoming event targets.
+- The minute-based reminder scan detects unfinished due items within the next 24 hours, including overdue items; event target dates alone do not trigger reminder mail.
 - Done items do not trigger due-item reminders.
-- If complete SMTP configuration exists, reminder email is sent.
-- If SMTP is absent or incomplete, an in-app notification is created.
-- Duplicate notifications for the same entity/day are avoided.
+- When mail delivery succeeds, the reminder is sent by email.
+- An in-app notification is persisted first and remains unread when mail is unavailable or fails.
+- Repeated scans do not create duplicate reminders for the same item and full due timestamp.
 
 ## Internationalization
 
@@ -114,3 +122,8 @@ A smoke script must prove this path through real HTTP calls:
 7. Fetch public share as guest.
 8. Claim item as guest.
 9. Verify SQLite file exists under `/app/data`.
+
+## Current browser and release gates
+
+- Desktop and mobile Playwright journeys cover first admin setup, user login/recovery/password change, sharing permissions and notifications, owner transfer, and inactive-owner admin handoff against an isolated Docker database.
+- CI must pass backend, frontend, contracts, container smoke, GUI smoke, and strict dependency scanning before merge. Live deployment verification checks readiness, current assets, Tailnet-only binding, preserved settings, and SQLite integrity/foreign keys and counts.

@@ -14,6 +14,7 @@ Can:
 - Generate and revoke public share tokens.
 - Add and revoke internal shares.
 - Mark items purchased.
+- Transfer an owned list to another active account.
 
 Cannot:
 
@@ -73,6 +74,8 @@ Can:
 - View per-user list counts; private titles, descriptions and dates are not an administrative inventory.
 - Read/update global settings.
 - Enable/disable registration.
+- Issue one-time account setup/recovery links.
+- Transfer every list from an inactive owner to a different active account, including archived lists, templates, and Trash, without seeing private list titles or contents.
 
 MVP cannot by default:
 
@@ -87,7 +90,14 @@ Future extension point:
 - Owners manage internal shares with `GET/POST/DELETE /api/v1/lists/{id}/shares` endpoints.
 - Shared users can read the shared list detail and item collection.
 - `CONTRIBUTE` shared users can add and edit items. List update/delete, item delete, public-link management, and share management still require ownership.
+- Active recipients receive in-app notifications when a share is created, updated, or revoked.
 - Non-owners and non-shared users receive `404` for private resources to avoid leaking existence.
+
+## Ownership handoffs
+
+- An owner calls `POST /api/v1/lists/{id}/transfer` with the target username. The target must be a different active account. The previous owner loses access unless the new owner shares the list back.
+- An admin calls `POST /api/v1/admin/users/{id}/transfer-lists` only after deactivating the source account. The target cannot be the acting admin. The response returns a transferred count, not list content.
+- Both paths revoke active public links, retain unrelated internal shares, remove a redundant share for the new owner, notify the old and new owners, and create a required security audit row. Admin handoff is transactional across all owned lists.
 
 ## Implemented public sharing API behavior
 
@@ -98,6 +108,7 @@ Future extension point:
 - `WISH_CLAIM` is valid only for `WISH` lists; `SIGNUP` is valid only for non-`WISH` lists; `VIEW` is read-only for all list types.
 - Guest claiming/signup is allowed only in the mode intended for the list type and only for items that belong to the token's list.
 - Duplicate claims/signups return `409 item_already_claimed`; revoked or mismatched tokens/items return `404`.
+- New public links expire after 56 days; existing links were given 56 days at the V17 upgrade. Expired reads and claims return `404`.
 
 ## Required authorization checks
 

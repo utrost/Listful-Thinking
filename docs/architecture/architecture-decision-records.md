@@ -99,3 +99,21 @@ Consequences:
 
 - Item UI should handle placeholder and later refresh.
 - Scraper failures are logged/controlled, not fatal to item creation.
+
+## ADR-007: Reuse account tokens and transfer ownership transactionally
+
+Decision:
+
+- Admin-created accounts may use a one-time setup link instead of an admin-chosen password. Setup/recovery uses the existing hashed password-reset token flow with a 24-hour expiry.
+- List owner changes run in one backend service transaction that also revokes the public link, removes a redundant share for the new owner, writes notifications, and requires an audit row.
+- Admin handoff is limited to inactive source accounts and cannot target the acting admin; administrators receive only a transferred count.
+
+Reason:
+
+- A new account holder should choose their own password, including when SMTP is unavailable.
+- Ownership changes must keep list data and sharing consistent without granting admins routine access to private content.
+
+Consequences:
+
+- The handoff release needs no migration beyond V17; rollback to the prior V17 image does not require a schema downgrade.
+- Existing sessions and account links are invalidated when a password is set or changed. Owners must issue a fresh public link after transfer.

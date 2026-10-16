@@ -50,7 +50,7 @@ Private source archive, consistent pre-upgrade backup, original container config
 
 ## Previous deployment — recovery fix, 2026-09-26 10:24 UTC
 
-The current image is `listful-thinking:recovery-20260926`, also tagged `listful-thinking:alice`, ID `sha256:ad7746e61f0f16bc0345f1e60b1ebd04bdf1d070a3e8857258ac36830abf912e`.
+The image was `listful-thinking:recovery-20260926`, then tagged `listful-thinking:alice`, ID `sha256:ad7746e61f0f16bc0345f1e60b1ebd04bdf1d070a3e8857258ac36830abf912e`.
 
 Recovery now has its own email input validation and optional username, separate from password login. Reset-token pages have their own validated new-password form. The public auth settings report email availability. Missing SMTP configuration disables recovery with an explanation; failed SMTP submission returns an explicit error and rolls back token creation.
 
@@ -62,7 +62,7 @@ The consistent pre-upgrade backup, original configuration, and release record ar
 
 ## Previous deployment — review fixes, 2026-09-26
 
-The local review remediation build is deployed as `listful-thinking:alice` (also tagged `listful-thinking:review-20260926`). Image ID: `sha256:aabe46367fdde6473e454800e1c5d36890118b75671388dc6aedc7ad8fc2cbbb`.
+The local review remediation build was deployed as `listful-thinking:alice` (also tagged `listful-thinking:review-20260926`). Image ID: `sha256:aabe46367fdde6473e454800e1c5d36890118b75671388dc6aedc7ad8fc2cbbb`.
 
 This build includes the uncommitted fixes based on `7778df4`, including the final reminder rescheduling correction. Its exact source archive, original container configuration, verified pre-upgrade database, and release/verification records are stored privately under `data/deployments/20260926T092453Z/` in this checkout.
 
@@ -159,9 +159,11 @@ with zipfile.ZipFile(jar) as z:
         for n in names
         if n.startswith('BOOT-INF/classes/static/assets/') and n.endswith('.js')
     )
-    print('has V12 migration:', 'BOOT-INF/classes/db/migration/V12__add_item_responsibility_labels.sql' in names)
-    print('has ownerLabel:', 'ownerLabel' in body)
-    print('has assistantLabels:', 'assistantLabels' in body)
+    assert 'BOOT-INF/classes/db/migration/V17__retention_policy.sql' in names
+    assert 'BOOT-INF/classes/app/listful/lists/ListOwnershipService.class' in names
+    for marker in ['Share access', 'Transfer ownership', 'Issue setup or recovery link']:
+        assert marker in body, marker
+    print('V17 and handoff backend/frontend markers OK')
 PY
 rm -rf "$tmp"
 ```
@@ -224,7 +226,7 @@ html = Path('/tmp/listful-live-index.html').read_text()
 assert 'Listful Thinking' in html
 asset = re.findall(r'src="(/assets/[^"]+\.js)"', html)[0]
 body = urllib.request.urlopen('http://alice.taileb20d9.ts.net:8080' + asset, timeout=20).read().decode('utf-8', 'ignore')
-for marker in ['ownerLabel', 'assistantLabels', 'Owner / responsible', 'Assistants / helpers']:
+for marker in ['Share access', 'Transfer ownership', 'Issue setup or recovery link']:
     assert marker in body, marker
     print(marker, 'ok')
 PY
@@ -240,11 +242,12 @@ docker start listful-thinking-alice
 python3 - <<'PY' "$tmp/db.sqlite"
 import sqlite3, sys
 con = sqlite3.connect(sys.argv[1])
-print(con.execute('select version, description, success from flyway_schema_history order by installed_rank desc limit 3').fetchall())
-cols = [r[1] for r in con.execute('pragma table_info(items)').fetchall()]
-assert 'owner_label' in cols
-assert 'assistant_labels' in cols
-print('item_count=', con.execute('select count(*) from items').fetchone()[0])
+assert con.execute('pragma integrity_check').fetchone()[0] == 'ok'
+assert con.execute('pragma foreign_key_check').fetchall() == []
+version = con.execute('select version from flyway_schema_history where success=1 order by installed_rank desc limit 1').fetchone()[0]
+assert version == '17', version
+print('schema=', version)
+print('counts=', {table: con.execute(f'select count(*) from {table}').fetchone()[0] for table in ('users', 'lists', 'items')})
 PY
 rm -rf "$tmp"
 ```
@@ -271,5 +274,5 @@ A final browser smoke should load `http://alice.taileb20d9.ts.net:8080/` and sho
 
 - Alice serves Tailnet HTTP. Internet-facing use needs HTTPS/TLS termination, secure cookies, and a public deployment hardening pass.
 - Backup retention and encryption are host operations outside the repository.
-- The Docker image/JAR is not signed and no SBOM is published.
+- The Docker image/JAR is not signed; RC2 included a resolved runtime SBOM.
 - Admin support access remains intentionally metadata-focused.

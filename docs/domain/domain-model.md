@@ -14,6 +14,7 @@ Fields:
 - `password_hash`
 - `role`: `ADMIN` or `USER`
 - `active`
+- `session_version`
 - `created_at`
 
 Rules:
@@ -22,8 +23,9 @@ Rules:
 - The first user created on an empty instance becomes `ADMIN`.
 - Later public registrations become `USER` when registration is enabled.
 - Admin-created users can be created as either `USER` or `ADMIN`.
+- Admins may create an account with a password or issue a one-time setup link; users choose and can later change their own password. Password reset/change advances the session version so old sessions stop working.
 - Deactivated users cannot log in or use email auth tokens.
-- Admin role grants instance management and list metadata inventory, not blanket access to private item content.
+- Admin role grants instance management and per-user list counts, not blanket access to private list titles or item content.
 
 ## Lists
 
@@ -40,6 +42,8 @@ Fields:
 - `is_public`
 - `public_share_mode`: `VIEW`, `WISH_CLAIM`, or `SIGNUP`
 - `target_date`
+- `public_share_expires_at`
+- `archived`, `is_template`, and `deleted_at`
 - `created_at`
 
 Rules:
@@ -48,6 +52,8 @@ Rules:
 - Public sharing is opt-in per list.
 - Internal sharing is opt-in per list and per registered user.
 - `target_date` is required for `EVENT` lists and rejected for `WISH`, `TODO`, `GROCERY`, and `CHORE` lists.
+- Deleted lists enter Trash for 14 days; archives and templates are excluded from active lists, public access, and reminders.
+- Ownership can move to a different active user. An admin may transfer an inactive owner's lists without reading their content. A transfer revokes the public link, preserves unrelated internal shares, and removes any redundant share for the new owner.
 
 ## Items
 
@@ -126,6 +132,7 @@ Rules:
 - `SIGNUP` links allow guest reservations for non-`WISH` lists only.
 - Revocation clears or invalidates the token.
 - Re-enabling public sharing should create a new token.
+- A new link expires after 56 days; guests receive `404` after expiry. Links active when V17 was applied received 56 days from that upgrade.
 
 ## Notifications
 
@@ -136,4 +143,5 @@ Rules:
 - Store message key and arguments, not only rendered text.
 - Localize at display/email time.
 - Notifications belong to one user.
-- Reminder-generated notifications should be deduplicated for the same entity/day.
+- Reminder-generated notifications have a unique delivery key for the item ID and full due timestamp.
+- Share creation, permission changes, revocation, and owner transfer notify active recipients in-app. Reminder occurrences use a unique delivery key tied to item ID and due timestamp.

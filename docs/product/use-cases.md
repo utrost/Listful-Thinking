@@ -36,9 +36,9 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 **Current flow:**
 
 1. Admin opens the admin panel.
-2. Admin creates a user with username, optional email, password, and role.
+2. Admin creates a user with username, optional email, role, and either an initial password or a one-time setup link.
 3. Admin can activate or deactivate existing users.
-4. Admin can inspect users and the instance-wide list inventory with owner metadata.
+4. Admin can inspect user metadata and per-user list counts, without private list titles or items.
 
 **User stories:**
 
@@ -47,6 +47,8 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 - As an admin, I want to deactivate a user so old accounts can no longer log in or consume email auth links.
 - As an admin, I want to see all users with role, email, active state, and creation time so I can maintain the instance.
 - As an admin, I want to see per-user usage counts without viewing private list titles or content.
+- As an admin, I want to issue a fresh one-time recovery link for an active account when email is unavailable.
+- As an admin, I want to hand all lists from an inactive owner to a different active user without seeing their private list content.
 
 ### 3. Password, magic-link, and reset email access
 
@@ -58,14 +60,15 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 
 1. User can log in with username/password.
 2. User can request a magic login link by email.
-3. User can request a password reset email.
+3. User can request a password reset email, change a known password while signed in, or use an admin-issued setup/recovery link.
 4. Tokens are one-time and time-limited.
-5. If SMTP is not configured, the feature remains wired but outbound delivery is unavailable.
+5. If SMTP is not configured, an admin can pass a generated setup/recovery link privately; ordinary password login remains available.
 
 **User stories:**
 
 - As a user with an email address, I want to receive a magic login link so I can sign in without remembering my password.
 - As a user, I want to reset a forgotten password through email so I do not need admin database access.
+- As a user, I want to choose my own initial password and change it later without asking an admin to know it.
 - As an admin, I want email-based auth to be optional so the app still works in zero-config mode.
 - As an admin, I want deactivated accounts blocked from token flows so old email links cannot re-open access.
 
@@ -158,7 +161,7 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 
 1. User creates an `EVENT` list with a target date.
 2. User adds preparation items with optional due dates.
-3. Reminder scanning can detect upcoming event targets and due items.
+3. Reminder scanning detects due preparation items; the event target date appears in Today & upcoming but does not itself send a reminder.
 4. Owner can share the list with registered users.
 
 **User stories:**
@@ -181,6 +184,8 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 4. Read-only recipients can view the list and items.
 5. Contributor recipients can add, edit, complete, and reopen items where permitted.
 6. Owner can revoke the share.
+7. Active recipients receive an in-app notification when access is added, updated, or revoked.
+8. An owner can transfer a list to another active account; both users are notified and the public link is revoked.
 
 **User stories:**
 
@@ -188,6 +193,8 @@ Listful Thinking is for small trusted groups: households, families, clubs, works
 - As a list owner, I want to grant contributor access deliberately when a trusted user should help work the list.
 - As a recipient, I want shared lists visible beside my own lists so I do not need public links inside the household.
 - As a list owner, I want to revoke internal sharing so accidental access can be cleaned up.
+- As a recipient, I want to notice new or changed access in my inbox so I do not need to discover a shared list by chance.
+- As an owner, I want to transfer a list to its next owner without exporting and recreating its items.
 
 ### 10. Grocery shop mode
 
@@ -357,7 +364,7 @@ Promote a brainstormed use case when it satisfies most of these:
 These are the most natural next candidates from the brainstorm because they extend current features rather than requiring a new product shape.
 
 1. **Grocery/errand list polish** — quantity/category fields, grouping, one-tap done/reopen, hide completed, and clear completed exist; future work is staple suggestions and optional live collaboration.
-2. **Reusable packing/event templates** — basic safe list duplication exists; future work is explicit template management and trip-specific/default item handling.
+2. **Reusable packing/event templates** — private template creation and fresh instances exist; future work is richer trip-specific defaults and guided packing workflows.
 3. **Maintenance schedule list** — simple daily/weekly/biweekly/monthly/quarterly/annual chore recurrence exists; future work is maintenance history, mileage-based reminders, and specialized templates.
 4. **Signup sheet mode for public links** — basic `SIGNUP` links now support claimable non-wishlist slots/tasks; future work is guest contact notes and guest self-unclaim/edit flows.
 5. **Project parts list** — wishlist-like URL enrichment plus task-like status for hobby builds.

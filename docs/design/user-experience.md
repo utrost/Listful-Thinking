@@ -19,6 +19,7 @@ A calm place to keep wishes, plans, and everyday lists. The interface should hel
 5. Share: open Sharing → choose a public-link mode or invite an existing user. Explain read-only versus contribution and public access. Show copy/open actions when the link is created. Retain replacement warnings and confirmation flows.
 6. Manage a list: open List settings → edit title/details, duplicate, or explicitly confirm deletion. Explain why a populated list's type cannot change.
 7. Use a phone: select a list without a long grid of list cards; primary controls and items fit the viewport. Touch targets are at least 44px. Long titles, URLs and translations wrap.
+8. Hand off access: admin creates an account with a one-time setup link → user chooses a password → owner shares a list → recipient sees an inbox notice → owner transfers the list if responsibility changes. For a departed owner, admin deactivates the account and transfers its lists by count to a new active owner.
 
 ## Visual language
 Warm off-white background, white work surfaces, deep evergreen primary actions, restrained gold accents. A compact, legible system font, clear heading levels, consistent spacing and rounded rectangular controls. Avoid nested cards around every section and red delete buttons dominating each row. Use visible text instead of unexplained icons. No decorative stock imagery is needed.
@@ -30,7 +31,13 @@ Persistent labels; semantic navigation; active-page states; keyboard focus rings
 Use disposable Docker data, never change live lists to test the design. Run existing unit tests and production build. Playwright covers first-use onboarding, each list purpose, optional fields, search/no-results/reset, completion, edit/settings/delete confirmation, sharing/guest reservation, read-only access, admin navigation, authentication, desktop and mobile layouts. Capture screenshots at desktop and phone widths, review the hierarchy and density, then fix visual or interaction failures and rerun the affected checks.
 
 ## Scope
-This revision changes the interface and user guidance while retaining existing API behavior and list capabilities. Drag-and-drop ordering, cross-list dashboards, collaboration notifications and new account settings are future product work.
+The September workspace revision changed interface and guidance while retaining the then-current API. Drag-and-drop ordering remains future work. Today & upcoming, collaboration notifications, account password controls, and handoff flows were added in later releases.
+
+## October account and sharing iteration — 2026-10-16
+
+The current interface lets admins create an account with an emailed or copyable setup link and reissue a recovery link for an active account. Signed-in users can change their password. Sharing tells owners that the recipient receives an in-app notice; active recipients see grant, permission-change, and revocation messages. Transfer ownership is a separate deliberate action in Sharing. Admins see per-user list counts and can transfer all lists only after the previous owner is inactive, without opening private list content.
+
+Desktop/mobile Playwright journeys cover admin account setup, password recovery, shared-user access, permission changes, owner transfer, and inactive-owner admin handoff. The browser suite uses an isolated Docker database; the live Alice check covers login-page load only.
 
 ## Implemented revision and iteration record — 2026-09-26
 The implementation uses a desktop list rail and a phone list selector, Items/Sharing/List settings navigation, a separate Administration destination, purpose-specific copy, guided empty states, expandable item forms and row actions, and English/German language selection. The browser remembers the selected language and last list per account. Recovery is a secondary sign-in route; reset links open a dedicated new-password form and return to sign-in with a confirmation.

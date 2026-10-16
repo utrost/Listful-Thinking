@@ -1,5 +1,7 @@
 # Review remediation — 2026-09-26
 
+This records the September remediation. For the current deployed version and later account, retention, and sharing changes, see [Current state and risk register](current-state-and-risk-register.md).
+
 This change set addresses the fourteen prioritized findings in [the original review](review-2026-09-26.md), keeping the existing Docker/Spring Boot/Vue architecture. The initial verification below was performed before deployment. The fixes were subsequently deployed, real SMTP recovery was verified, and the workspace was redesigned; see the current deployment record and planning candidate.
 
 ## Implemented

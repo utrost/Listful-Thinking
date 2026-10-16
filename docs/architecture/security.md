@@ -36,6 +36,7 @@ Rules:
 - BCrypt verification is used for login and password-reset replacement hashes.
 - Login creates a server-side session.
 - Logout invalidates the session.
+- Password change and reset revoke existing sessions through the account session version and delete outstanding account tokens. Admin-issued setup/recovery links use hashed one-time reset tokens with a 24-hour lifetime; the normal self-service reset and magic links expire after 30 minutes.
 - The frontend uses `credentials: "include"`.
 
 ## CSRF
@@ -81,6 +82,7 @@ Controllers should remain thin and should not copy authorization rules.
 - Migrate legacy raw database values to hashes during Flyway startup; a compatibility path also hashes a legacy raw value if it is encountered during lookup.
 - Revocation invalidates old token.
 - Re-enable creates a new token.
+- Every public link expires 56 days after issue; a link active during the V17 upgrade received 56 days from that migration.
 - Existing public links keep working after migration, but the owner UI can only show the raw bearer token immediately after generating a link; if an owner loses the URL, they should revoke/recreate it.
 
 ## Public data exposure
@@ -106,19 +108,18 @@ Public DTOs must exclude:
 
 ## Admin boundaries
 
-Admins manage instance settings and users. MVP admins do not automatically have content-superuser access to every private list.
+Admins manage instance settings and users. They can issue setup/recovery links and transfer all lists from an inactive account to a different active account, but cannot browse private item content or transfer those lists to themselves. Owners can transfer individual lists to active accounts. Both handoff paths revoke the affected public link and record an audit event.
 
 ## Security logging
 
-The app records structured security events for filter-level rejects such as oversized request bodies, rate limits, and CSRF failures in the `security_events` table and logs them as `security_event` lines. Future work can extend the same service to admin/user/public-share lifecycle events.
+The app records structured security events for filter-level rejects such as oversized request bodies, rate limits, and CSRF failures in the `security_events` table and logs them as `security_event` lines. It also records selected admin/user, public-link, and ownership-handoff events. Raw bearer and setup links are excluded from audit details; full auth lifecycle coverage remains future work.
 
 ## Current weak points and future hardening
 
 - Alice currently runs as a private Tailnet HTTP deployment. Internet-facing use should add HTTPS/TLS termination, verify live HSTS, and set `SESSION_COOKIE_SECURE=true`.
 - Public tokens are hashed at rest. Public bearer parameters are redacted from application audit paths; migration V14 redacts historical database audit paths. Operators must separately rotate affected links and handle older external log archives.
-- Audit logging covers filter rejects, admin user/settings changes, and public link changes. Auth lifecycle audit coverage remains a follow-up.
-- CI includes OSV dependency scanning, but release images/JARs are not signed and no SBOM artifact is published.
-- GitHub Actions currently pass but emit upstream deprecation warnings for some action runtimes; upgrade action majors as maintenance work.
+- Audit logging covers filter rejects, selected admin user/settings changes, setup-link issuance, ownership handoffs, and public link changes. Auth lifecycle audit coverage remains a follow-up.
+- CI includes OSV dependency scanning, and RC2 included a resolved runtime SBOM; release images and JARs are not signed.
 - Backups, host encryption, and host firewall policy are deployment-environment responsibilities, not enforced by this application repository.
 
 ## Session and edit lifecycle

@@ -1,20 +1,22 @@
 # Current State and Risk Register
 
-Last updated: 2026-10-16 for post-RC2 source work. The last recorded Alice deployment is RC2 on 2026-09-26; no fresh live check is implied here.
+Last updated: 2026-10-16. Alice runs merged `main` code commit `f5b6b64` (PRs #51 and #52); deployment-record commit `39b4d2a` documents the live cutover. See the [verified deployment record](deployment/alice-tailnet.md).
 
-## Post-RC2 retention work
+## Current release since RC2
 
-Migration V17 gives existing active public links 56 days from upgrade because their original creation dates were not recorded. New links expire 56 days after creation; every guest read and claim checks expiry. Deleted lists, templates and items remain recoverable for 14 days, then a daily cleanup permanently removes them. Backups can retain older copies and require a separate operator retention policy. This work has not yet been deployed to Alice.
+Migration V17 gives links active at upgrade 56 days from that upgrade because their original creation dates were not recorded. New links expire 56 days after creation; every guest read and claim checks expiry. Deleted lists, templates and items remain recoverable for 14 days, then a daily cleanup permanently removes them. Backups can retain older copies and require a separate operator retention policy. V17 is deployed on Alice.
+
+Account and sharing work adds 24-hour one-time admin setup/recovery links, signed-in password change, in-app notifications for share changes, owner transfer to an active account, and audited admin transfer from an inactive owner to a different active account. Admin transfer includes archives, templates and Trash but does not expose private titles or content to the admin. The current user/admin and handoff journeys have desktop/mobile Playwright coverage.
 
 ## Planning candidate baseline
 
-The [planning candidate](planning/release-candidate-0.2.md) adds timezone-aware Today & upcoming, paused archives, recoverable deletion/Trash and personal templates. Migration V15 follows V14; back up before upgrade. The [workspace concept](design/user-experience.md) is implemented. The existing deployed baseline has verified real SMTP authentication and magic-link login. See the [deployment record](deployment/alice-tailnet.md) for the live version.
+The [planning candidate](planning/release-candidate-0.2.md) added timezone-aware Today & upcoming, paused archives, recoverable deletion/Trash and personal templates. The [workspace concept](design/user-experience.md) is implemented. Real SMTP authentication and magic-link login were verified on Alice in September; the latest deployment preserved those settings.
 
 ## September review remediation
 
 The [review](review-2026-09-26.md) records the pre-fix baseline at `7778df4`. The current work adds session rotation/reset revocation, audit redaction, shared-email recovery, shared-user UI fixes, CSRF refresh, item revisions, guarded list conversion, bounded import states, reminder catch-up/deduplication, mobile layout repairs, and verified backup/restore tooling. Migration V14 is forward-only; back up before upgrading. Older external audit logs are not rewritten by the database migration.
 
-The previously failing full container smoke script has been repaired and includes restored login/list checks; it is now a CI job. Historical verification below describes earlier commits, not the current checkout. See [remediation status](review-remediation-2026-09-26.md) for current checks and remaining scope.
+The previously failing full container smoke script has been repaired and includes restored login/list checks; it is now a CI job. Historical verification below describes earlier commits. See [September remediation status](review-remediation-2026-09-26.md) for that review's checks and remaining scope.
 
 This document describes what exists in the repository and the Alice deployment today. It intentionally includes weak points and deferred hardening work so the current state is not over-sold.
 
@@ -38,9 +40,12 @@ Implemented and verified MVP/post-MVP features include:
 
 - Session authentication with first-user admin bootstrap.
 - Admin registration toggle, user listing, user creation, and user activation/deactivation.
+- Admin-created accounts with one-time setup links, link reissue for account recovery without email, and signed-in password change.
 - Typed lists: `WISH`, `TODO`, `GROCERY`, `CHORE`, `EVENT`.
 - Owner list/item CRUD with type-specific validation.
 - Internal sharing with `READ` and `CONTRIBUTE` permissions.
+- In-app share/update/revocation notifications, list-owner transfer, and inactive-owner admin handoff with audit records.
+- Recoverable Trash for 14 days and public guest links that expire after 56 days.
 - Public links with explicit modes:
   - `VIEW`: read-only public view.
   - `WISH_CLAIM`: wishlist reservation; valid for `WISH` lists.
@@ -58,7 +63,7 @@ Implemented and verified MVP/post-MVP features include:
 Implemented controls:
 
 - Passwords are stored as salted BCrypt hashes. Regression tests prove plaintext is not persisted and same plaintext produces different hashes.
-- One-time magic-login and password-reset tokens are stored hashed, expire after 30 minutes, and cannot be reused.
+- One-time magic-login and self-service password-reset tokens are stored hashed, expire after 30 minutes, and cannot be reused. Admin-issued setup/recovery links use the reset flow with a 24-hour lifetime; issuing a new link invalidates earlier account links.
 - SQL-injection-shaped login usernames and public-share tokens are covered by regression tests; data access uses Spring Data/JPA derived queries or named parameters rather than string-built SQL.
 - API body size limit: default `MAX_REQUEST_BODY_BYTES=5100000`, sized for bounded wishlist image data URLs.
 - Sensitive POST endpoint rate limiting: default 60 requests / 60 seconds / client+path+method window, with bounded bucket map.
@@ -68,7 +73,7 @@ Implemented controls:
 - Security headers are emitted: CSP, Referrer-Policy, Permissions-Policy, plus HSTS only on secure requests.
 - Scraper accepts only HTTP(S), rejects private/local/link-local/metadata/multicast/CGNAT targets by default, connects to the validated resolved address, disables automatic redirects, revalidates redirects, applies timeouts, and caps downloaded HTML at 1 MiB.
 - Filter-level rejects such as body-limit, rate-limit, and CSRF failures are recorded in `security_events` and logged as `security_event` lines.
-- Structured audit rows are recorded for admin user creation, admin user activation/deactivation, admin registration-setting changes, and public-share creation/revocation. Audit details intentionally avoid passwords and raw public-share tokens.
+- Structured audit rows are recorded for admin user creation/setup-link issuance, activation/deactivation, registration-setting changes, list ownership handoffs, and public-share creation/revocation. Audit details intentionally avoid passwords and raw setup/public-share tokens.
 - Public DTOs exclude password hashes, owner emails, internal user IDs, internal shares, settings, admin flags, and notification data.
 - CI includes backend tests, frontend audit/test/build, and OSV dependency scanning for backend/frontend lockfiles.
 
@@ -78,7 +83,7 @@ These are known and intentionally documented:
 
 1. **No public-internet TLS profile yet.** Alice currently serves Tailnet HTTP. Public hosting needs HTTPS/TLS termination, HSTS in real browser traffic, and `SESSION_COOKIE_SECURE=true`.
 2. **CSRF protection is browser-metadata-aware.** Browser-style unsafe authenticated calls require a token, but non-browser clients without `Origin`/`Sec-Fetch-Site` are allowed for compatibility. This depends on `SameSite=Strict` cookies for browser protection.
-3. **Audit logging is still partial.** Filter-level rejects, selected admin/user-management changes, and public-share generation/revocation are logged and persisted as structured rows. Auth lifecycle events such as login success/failure, logout, magic-link use, and password-reset use are not yet all captured as structured audit rows.
+3. **Audit logging is still partial.** Filter-level rejects, selected admin/user-management changes, ownership handoffs, and public-share generation/revocation are logged and persisted as structured rows. Auth lifecycle events such as login success/failure, logout, magic-link use, and password-reset use are not yet all captured as structured audit rows.
 4. **No release signing.** RC2 published a resolved runtime SBOM and checksums, but the image/JAR artifacts are not signed.
 5. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
 6. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
@@ -88,21 +93,26 @@ These are known and intentionally documented:
 
 ## Verification evidence
 
-Recent verified implementation gates:
+Latest verified gates:
+
+- [All six CI jobs passed on PR #52](https://github.com/utrost/Listful-Thinking/actions/runs/38966842242), including backend, frontend, contracts, container smoke, strict dependency scan, and desktop/mobile Playwright smoke. PR #51 also passed its six checks before merge.
+- Alice runs image `sha256:c387463d10361416fa3a75b334cfc4a902f2827fc6112b05bd07e4ddfd04d0ab`. Live readiness, Tailnet-only binding, UID 1000, preserved application settings, current frontend asset, and desktop/mobile Chromium login pages passed. Pre/post deployment V17 SQLite copies passed integrity and foreign-key checks with unchanged counts (1 user, 1 list, 3 items).
+
+Earlier implementation evidence (historical):
 
 - GitHub Actions run `35335975768` passed on merged `main` commit `28349f7` for the responsibility-label list-type contract fix.
 - GitHub Actions run `35258643915` passed on merged `main` commit `f8920ab`, and GitHub Actions Node 20/runtime deprecation warnings were removed by upgrading official action majors.
 - Focused backend audit tests passed locally with `mvn -q -Dtest=AdminUsersControllerTests,AdminSettingsControllerTests,PublicShareTests test`.
 - GitHub Actions run `33962767179` passed on merged `main` commit `5a8c1f1` for the item responsibility implementation.
 - Alice deployment of `5a8c1f1` was verified with health, browser load, packaged asset markers, Flyway version `12`, `owner_label`/`assistant_labels` columns, item-count preservation, and Tailnet-only binding.
-- `mvn -q test` passed locally after the current hardening/public-share work.
+- `mvn -q test` passed locally after the September hardening/public-share work.
 - `npm test && npm run build && npm audit --omit=dev` passed locally.
 - `scripts/smoke.sh` passed with health, non-root runtime, admin/users/settings, list clone, item/chore recurrence, grocery clear-completed, public claim/signup, and SQLite volume checks.
 - Independent diff review for public-share mode work passed with no blocking security or logic issues.
 - GitHub Actions run `33841132405` passed on the implementation commit before this documentation-only update.
-- Current documentation commit backend and OSV jobs passed in CI. The frontend job is blocked by repeated `npm audit` 503/timeout responses from the npm registry, which also reproduced locally; this is documented above as an external fail-closed gate rather than a docs regression.
+- At that earlier documentation-only commit, backend and OSV jobs passed while `npm audit` received registry 503/timeout responses. The latest six-job run above passed, including the strict dependency scan.
 
-Docs-only verification for this update:
+Earlier docs-only verification:
 
 - `scripts/test-smoke-contract.sh` passed.
 - Markdown link check passed for 26 Markdown files.
