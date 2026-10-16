@@ -43,7 +43,7 @@ function cannotDeactivateAdminUser(user: AdminUserEntry) {
             <li v-for="user in adminUsers" :key="user.id">
               <span><strong>{{ user.username }}</strong> · {{ user.role }} · {{ user.active ? t('admin.active') : t('admin.inactive') }}</span>
               <small>{{ user.email ?? t('admin.noEmail') }}</small>
-              <button type="button" class="secondary subtle" :disabled="cannotDeactivateAdminUser(user)" @click="$emit('active', user.id, !user.active)">{{ user.active ? t('admin.deactivate') : t('admin.activate') }}</button>
+              <button type="button" class="secondary subtle" :aria-label="`${user.active ? t('admin.deactivate') : t('admin.activate')}: ${user.username}`" :disabled="cannotDeactivateAdminUser(user)" @click="$emit('active', user.id, !user.active)">{{ user.active ? t('admin.deactivate') : t('admin.activate') }}</button>
               <small v-if="cannotDeactivateAdminUser(user)" class="muted">{{ t('admin.lastActiveAdminHint') }}</small>
             </li>
           </ul>
@@ -51,7 +51,7 @@ function cannotDeactivateAdminUser(user: AdminUserEntry) {
           <p class="muted">{{ t('admin.listPrivacy') }}</p>
           <ul class="admin-user-list">
             <li v-for="list in adminLists" :key="list.ownerId">
-              <span><strong>{{ list.ownerUsername }}</strong> · {{ t('admin.listCount', { count: list.listCount }) }}</span>
+              <span><strong>{{ list.ownerUsername }}</strong> · {{ list.listCount === 1 ? t('admin.listCountOne') : t('admin.listCount', { count: list.listCount }) }}</span>
             </li>
           </ul>
         </section>

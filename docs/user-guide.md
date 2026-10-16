@@ -422,18 +422,7 @@ Start the app again, log in as that admin, and create or reactivate a second adm
 
 ### List inventory
 
-Admins can see a list inventory across the instance.
-
-The inventory shows list metadata such as:
-
-- list title
-- list type
-- public/private state
-- owner username
-- owner email, when present
-- creation time
-
-The inventory is not a private item-content browser.
+Admins can see a per-user list count across the instance. The view shows each owner's username and number of lists. It does not expose list titles, types, public-link state, item contents, or other private list details.
 
 ## Practical examples
 

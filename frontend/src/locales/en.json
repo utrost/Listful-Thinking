@@ -188,6 +188,7 @@
     "lastActiveAdminHint": "At least one active admin must remain.",
     "lists": "List usage",
     "role": "Role",
+    "listCountOne": "1 list",
     "listCount": "{count} lists",
     "listPrivacy": "Administration shows usage counts. List contents are visible only to their owner and people they share with."
   },
