@@ -3,7 +3,7 @@ package app.listful.config;
 import app.listful.api.ApiError;
 import app.listful.auth.ListfulUserPrincipal;
 import app.listful.security.SecurityAuditService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletException;

@@ -3,9 +3,8 @@ package app.listful.scraping;
 import app.listful.api.ValidationFailedException;
 import app.listful.config.SecurityHardeningProperties;
 import app.listful.scraping.dto.ScrapeResponse;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.ByteArrayInputStream;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +15,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,10 +24,17 @@ import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
+import org.htmlunit.StringWebResponse;
+import org.htmlunit.WebClient;
+import org.htmlunit.WebConnection;
+import org.htmlunit.WebRequest;
+import org.htmlunit.WebResponse;
+import org.htmlunit.html.DomElement;
+import org.htmlunit.html.DomNode;
+import org.htmlunit.html.DomText;
+import org.htmlunit.html.HtmlPage;
 import org.springframework.stereotype.Service;
+import tools.jackson.core.JacksonException;
 
 @Service
 public class ScraperService {
@@ -44,40 +51,40 @@ public class ScraperService {
     public ScrapeResponse scrape(String rawUrl) {
         URI uri = validateHttpUrl(rawUrl);
         try {
-            Document document = fetchDocument(uri);
+            HtmlPage document = fetchHtmlPage(uri);
             return extract(document);
         } catch (IOException ex) {
             throw new ValidationFailedException("Could not fetch URL metadata.");
         }
     }
 
-    ScrapeResponse extract(Document document) {
+    ScrapeResponse extract(HtmlPage document) {
         ProductMetadata product = jsonLdProduct(document);
         PriceMetadata price = firstPrice(
             new PriceMetadata(parsePrice(product.price()), product.priceCurrency()),
-            new PriceMetadata(parsePrice(meta(document, "meta[property=product:price:amount]")), null),
-            new PriceMetadata(parsePrice(attr(document, "[itemprop=price]", "content")), null),
-            new PriceMetadata(parsePrice(text(document, "[itemprop=price]")), null),
+            new PriceMetadata(parsePrice(meta(document, "meta[property=\"product:price:amount\"]")), null),
+            new PriceMetadata(parsePrice(attr(document, "[itemprop=\"price\"]", "content")), null),
+            new PriceMetadata(parsePrice(text(document, "[itemprop=\"price\"]")), null),
             new PriceMetadata(parsePrice(amazonVisiblePrice(document)), null)
         );
         return new ScrapeResponse(
             firstNonBlank(
                 product.name(),
-                meta(document, "meta[property=og:title]"),
-                meta(document, "meta[name=twitter:title]"),
+                meta(document, "meta[property=\"og:title\"]"),
+                meta(document, "meta[name=\"twitter:title\"]"),
                 text(document, "#productTitle"),
                 nonGenericPageTitle(text(document, "title"))
             ),
             firstNonBlank(
                 product.description(),
                 productDescription(document),
-                meta(document, "meta[property=og:description]"),
-                meta(document, "meta[name=description]")
+                meta(document, "meta[property=\"og:description\"]"),
+                meta(document, "meta[name=\"description\"]")
             ),
             absoluteUrl(document, firstNonBlank(
                 product.image(),
-                meta(document, "meta[property=og:image]"),
-                meta(document, "meta[name=twitter:image]"),
+                meta(document, "meta[property=\"og:image\"]"),
+                meta(document, "meta[name=\"twitter:image\"]"),
                 attr(document, "#landingImage", "data-old-hires"),
                 attr(document, "#landingImage", "src"),
                 productGalleryImage(document)
@@ -87,7 +94,7 @@ public class ScraperService {
         );
     }
 
-    private Document fetchDocument(URI startUri) throws IOException {
+    private HtmlPage fetchHtmlPage(URI startUri) throws IOException {
         URI uri = startUri;
         for (int redirect = 0; redirect <= 5; redirect++) {
             FetchResponse response = fetchOnce(uri);
@@ -95,7 +102,27 @@ public class ScraperService {
                 uri = validateRedirectLocation(uri, response.header("location"));
                 continue;
             }
-            return Jsoup.parse(new ByteArrayInputStream(response.body()), StandardCharsets.UTF_8.name(), uri.toString());
+            try (WebClient client = new WebClient()) {
+                client.getOptions().setJavaScriptEnabled(false);
+                client.getOptions().setCssEnabled(false);
+                client.getOptions().setDownloadImages(false);
+                URL pageUrl = uri.toURL();
+                String html = new String(response.body(), StandardCharsets.UTF_8);
+                // Only fetchOnce may use the network; parsing cannot follow embedded resources.
+                client.setWebConnection(new WebConnection() {
+                    @Override
+                    public WebResponse getResponse(WebRequest request) throws IOException {
+                        if (!request.getUrl().equals(pageUrl)) {
+                            throw new IOException("External HTML resources are disabled.");
+                        }
+                        return new StringWebResponse(html, StandardCharsets.UTF_8, pageUrl);
+                    }
+
+                    @Override
+                    public void close() {}
+                });
+                return client.getPage(pageUrl);
+            }
         }
         throw new ValidationFailedException("Too many redirects while scraping URL metadata.");
     }
@@ -351,31 +378,40 @@ public class ScraperService {
         }
     }
 
-    private String meta(Document document, String selector) {
+    private String meta(HtmlPage document, String selector) {
         return attr(document, selector, "content");
     }
 
-    private String attr(Document document, String selector, String attribute) {
-        Element element = document.selectFirst(selector);
+    private String attr(HtmlPage document, String selector, String attribute) {
+        DomElement element = document.querySelector(selector);
         if (element == null) {
             return null;
         }
-        return blankToNull(element.attr(attribute));
+        return blankToNull(element.getAttribute(attribute));
     }
 
-    private String text(Document document, String selector) {
-        Element element = document.selectFirst(selector);
-        return element == null ? null : blankToNull(element.text());
+    private String text(HtmlPage document, String selector) {
+        DomElement element = document.querySelector(selector);
+        return element == null ? null : blankToNull(element.asNormalizedText());
     }
 
-    private String text(Element root, String selector) {
-        Element element = root.selectFirst(selector);
-        return element == null ? null : blankToNull(element.text());
+    private String text(DomElement root, String selector) {
+        DomElement element = root.querySelector(selector);
+        return element == null ? null : blankToNull(element.asNormalizedText());
     }
 
-    private String ownText(Element root, String selector) {
-        Element element = root.selectFirst(selector);
-        return element == null ? null : blankToNull(element.ownText());
+    private String ownText(DomElement root, String selector) {
+        DomElement element = root.querySelector(selector);
+        if (element == null) {
+            return null;
+        }
+        StringBuilder ownText = new StringBuilder();
+        for (DomNode child : element.getChildren()) {
+            if (child instanceof DomText) {
+                ownText.append(child.getTextContent());
+            }
+        }
+        return blankToNull(ownText.toString());
     }
 
     private String firstNonBlank(String... values) {
@@ -407,7 +443,7 @@ public class ScraperService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private String absoluteUrl(Document document, String value) {
+    private String absoluteUrl(HtmlPage document, String value) {
         if (value == null) {
             return null;
         }
@@ -415,7 +451,7 @@ public class ScraperService {
             return value;
         }
         try {
-            return new URI(document.baseUri()).resolve(value).toString();
+            return new URI(document.getUrl().toString()).resolve(value).toString();
         } catch (IllegalArgumentException | URISyntaxException ex) {
             return value;
         }
@@ -430,8 +466,8 @@ public class ScraperService {
         return PriceMetadata.EMPTY;
     }
 
-    private String amazonVisiblePrice(Document document) {
-        Element price = document.selectFirst(".a-price");
+    private String amazonVisiblePrice(HtmlPage document) {
+        DomElement price = document.querySelector(".a-price");
         if (price == null) {
             return null;
         }
@@ -447,21 +483,21 @@ public class ScraperService {
         return fraction == null ? whole : whole + "." + fraction;
     }
 
-    private String productGalleryImage(Document document) {
-        Element image = document.selectFirst("img[itemprop=image], .product img[src], .product-detail img[src], .os_detail_galmain[src]");
+    private String productGalleryImage(HtmlPage document) {
+        DomElement image = document.querySelector("img[itemprop=\"image\"], .product img[src], .product-detail img[src], .os_detail_galmain[src]");
         if (image == null) {
             return null;
         }
-        Element imageLink = image.closest("a[href]");
-        String linkedImage = imageLink == null ? null : imageLink.attr("href");
+        DomElement imageLink = image.closest("a[href]");
+        String linkedImage = imageLink == null ? null : imageLink.getAttribute("href");
         if (looksLikeImageUrl(linkedImage)) {
             return linkedImage;
         }
-        return image.attr("src");
+        return image.getAttribute("src");
     }
 
-    private String productDescription(Document document) {
-        return text(document, "[itemprop=description], .productView-description, .product-description, .product-detail-description, #productDescription");
+    private String productDescription(HtmlPage document) {
+        return text(document, "[itemprop=\"description\"], .productView-description, .product-description, .product-detail-description, #productDescription");
     }
 
     private boolean looksLikeImageUrl(String value) {
@@ -489,10 +525,10 @@ public class ScraperService {
         }
     }
 
-    private ProductMetadata jsonLdProduct(Document document) {
-        for (Element script : document.select("script[type=application/ld+json]")) {
+    private ProductMetadata jsonLdProduct(HtmlPage document) {
+        for (DomNode script : document.querySelectorAll("script[type=\"application/ld+json\"]")) {
             try {
-                JsonNode root = objectMapper.readTree(script.data());
+                JsonNode root = objectMapper.readTree(script.getTextContent());
                 JsonNode product = findProduct(root);
                 if (product != null) {
                     OfferMetadata offer = offerMetadata(product.get("offers"));
@@ -504,7 +540,7 @@ public class ScraperService {
                         offer.priceCurrency()
                     );
                 }
-            } catch (IOException ignored) {
+            } catch (JacksonException ignored) {
                 // Bad JSON-LD should not make otherwise useful metadata fail.
             }
         }
