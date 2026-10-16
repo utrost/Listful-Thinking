@@ -31,6 +31,9 @@ small { display: block; color: var(--muted); line-height: 1.55; overflow-wrap: a
 .header-row { padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
 .signed-in .hero h1 { font-size: 1.4rem; letter-spacing: -.04em; }
 .account-actions { display: flex; align-items: center; justify-content: flex-end; gap: .65rem; flex-wrap: wrap; }
+.account-password { position: relative; }
+.account-password > summary { color: var(--green); border: 1px solid var(--border); border-radius: 10px; }
+.account-password > form { position: absolute; top: calc(100% + .4rem); right: 0; width: min(330px, calc(100vw - 2rem)); z-index: 20; box-shadow: 0 12px 28px #26372f20; }
 .account-name { color: var(--muted); font-size: .85rem; }
 .language-select select { width: auto; border: 0; background: transparent; font-size: .85rem; }
 .eyebrow { color: #8b6740; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .9rem; }
@@ -113,6 +116,8 @@ summary { font-weight: 600; min-height: 44px; display: list-item; padding: .7rem
 .admin-destination { max-width: 900px; margin: 0 auto; }
 .admin-destination > p { margin-top: .75rem; }
 .admin-panel { margin-top: 1.5rem; }
+.setup-link { padding: 1rem; background: #f6f8f3; }
+.transfer-ownership { border-top: 1px solid var(--border); padding-top: .75rem; }
 .admin-panel:not([open]) { display: block; }
 .notifications-panel { margin-top: 1rem; }
 .status { position: relative; z-index: 10; padding: .8rem 1rem; border: 1px solid #cadcbe; background: #f0f8e9; color: #36502c; border-radius: 10px; font-size: .9rem; margin-bottom: 1rem; }

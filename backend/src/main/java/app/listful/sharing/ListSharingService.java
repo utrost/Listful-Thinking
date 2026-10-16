@@ -5,9 +5,11 @@ import app.listful.api.ValidationFailedException;
 import app.listful.domain.ListEntity;
 import app.listful.domain.ListShare;
 import app.listful.domain.ListShareId;
+import app.listful.domain.Notification;
 import app.listful.domain.User;
 import app.listful.domain.enums.ListSharePermission;
 import app.listful.domain.repository.ListShareRepository;
+import app.listful.domain.repository.NotificationRepository;
 import app.listful.domain.repository.UserRepository;
 import app.listful.lists.ListAccessService;
 import app.listful.sharing.dto.ListShareResponse;
@@ -22,11 +24,13 @@ public class ListSharingService {
     private final ListAccessService listAccessService;
     private final ListShareRepository listShareRepository;
     private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
-    public ListSharingService(ListAccessService listAccessService, ListShareRepository listShareRepository, UserRepository userRepository) {
+    public ListSharingService(ListAccessService listAccessService, ListShareRepository listShareRepository, UserRepository userRepository, NotificationRepository notificationRepository) {
         this.listAccessService = listAccessService;
         this.listShareRepository = listShareRepository;
         this.userRepository = userRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -45,7 +49,14 @@ public class ListSharingService {
         if (sharedUser.getId().equals(actor.getId())) {
             throw new ValidationFailedException("Owners already have access to their lists.");
         }
-        return toResponse(listShareRepository.save(new ListShare(list, sharedUser, Instant.now(), permissionFor(request))));
+        boolean alreadyShared = listShareRepository.existsByListIdAndUserId(list.getId(), sharedUser.getId());
+        ListShareResponse response = toResponse(listShareRepository.save(new ListShare(list, sharedUser, Instant.now(), permissionFor(request))));
+        if (sharedUser.isActive()) {
+            notificationRepository.save(new Notification(sharedUser,
+                alreadyShared ? "notification.list_access_updated" : "notification.list_shared",
+                list.getId() + "|" + list.getTitle().replace('|', ' ') + "|" + actor.getUsername().replace('|', ' '), Instant.now()));
+        }
+        return response;
     }
 
     @Transactional
@@ -58,6 +69,10 @@ public class ListSharingService {
             throw new ResourceNotFoundException("Share not found");
         }
         listShareRepository.deleteById(id);
+        if (sharedUser.isActive()) {
+            notificationRepository.save(new Notification(sharedUser, "notification.list_share_revoked",
+                list.getId() + "|" + list.getTitle().replace('|', ' ') + "|" + actor.getUsername().replace('|', ' '), Instant.now()));
+        }
     }
 
     private ListShareResponse toResponse(ListShare share) {

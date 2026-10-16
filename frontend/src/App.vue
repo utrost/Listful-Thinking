@@ -10,6 +10,15 @@
         <div class="account-actions">
           <label class="language-select"><span class="sr-only">{{ t('ux.language') }}</span><select v-model="locale" :aria-label="t('ux.language')"><option value="en">English</option><option value="de">Deutsch</option></select></label>
           <span v-if="currentUser" class="account-name">{{ currentUser.username }}</span>
+          <details v-if="currentUser" class="account-password">
+            <summary>{{ t('auth.changePassword') }}</summary>
+            <form class="panel" @submit.prevent="handleChangePassword">
+              <label>{{ t('auth.currentPassword') }}<input v-model="passwordChangeForm.currentPassword" type="password" required autocomplete="current-password" /></label>
+              <label>{{ t('auth.newPassword') }}<input v-model="passwordChangeForm.newPassword" type="password" required minlength="8" autocomplete="new-password" /></label>
+              <label>{{ t('auth.confirmPassword') }}<input v-model="passwordChangeForm.confirmPassword" type="password" required minlength="8" autocomplete="new-password" /></label>
+              <button type="submit">{{ t('auth.changePassword') }}</button>
+            </form>
+          </details>
           <button v-if="currentUser?.role === 'ADMIN'" type="button" class="secondary subtle" :aria-pressed="adminView" @click="adminView = !adminView">{{ adminView ? t('ux.backToLists') : t('ux.administration') }}</button>
           <button v-if="currentUser" type="button" class="secondary subtle" :disabled="actionPending" @click="run(handleLogout)">{{ t('auth.logout') }}</button>
         </div>
@@ -89,7 +98,9 @@
           <p class="muted">{{ t('ux.adminHelp') }}</p>
         <AdminPanel v-if="currentUser.role === 'ADMIN'"
           :admin-settings="adminSettings" :admin-users="adminUsers" :admin-lists="adminLists" :admin-user-form="adminUserForm"
-          @refresh="run(handleLoadAdminPanel)" @registration="handleToggleRegistration" @create-user="handleAdminCreateUser" @active="handleToggleUserActive" />
+          :setup-link="adminSetupLink"
+          @refresh="run(handleLoadAdminPanel)" @registration="handleToggleRegistration" @create-user="handleAdminCreateUser" @active="handleToggleUserActive"
+          @setup-link="handleIssueAdminSetupLink" @transfer="handleAdminTransferLists" />
         </section>
         <div v-show="!adminView">
         <nav class="workspace-navigation" :aria-label="t('planning.navigation')">
@@ -251,6 +262,14 @@
                   <button type="button" class="danger subtle" @click="handleRevokeShare(share.username)">{{ t('sharing.revoke') }}</button>
                 </li>
               </ul>
+              <details class="transfer-ownership">
+                <summary>{{ t('sharing.transferOwnership') }}</summary>
+                <p class="muted">{{ t('sharing.transferHelp') }}</p>
+                <form class="inline-form" @submit.prevent="handleTransferOwnership">
+                  <input v-model="transferUsername" :aria-label="t('sharing.newOwner')" :placeholder="t('sharing.newOwner')" required />
+                  <button type="submit" class="danger">{{ t('sharing.transferOwnership') }}</button>
+                </form>
+              </details>
             </section>
 
             <section v-show="listView === 'items'" class="items-workspace">
@@ -433,6 +452,11 @@ import {
   createItem,
   retryItemImport,
   createAdminUser,
+  changePassword,
+  createAdminUserWithSetup,
+  issueAdminSetupLink,
+  transferInactiveUserLists,
+  transferListOwnership,
   cloneList,
   createList,
   createPublicShare,
@@ -474,6 +498,7 @@ import {
   type AdminSettings,
   type AdminListEntry,
   type AdminUserEntry,
+  type AdminSetupLink,
   type ItemEntry,
   type ListEntry,
   type ListShareEntry,
@@ -521,6 +546,8 @@ const authSettings = ref<AuthSettings | null>(null);
 const adminSettings = ref<AdminSettings | null>(null);
 const adminUsers = ref<AdminUserEntry[]>([]);
 const adminLists = ref<AdminListEntry[]>([]);
+const adminSetupLink = ref<AdminSetupLink | null>(null);
+const transferUsername = ref('');
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
 const magicToken = window.location.pathname === '/magic-login' ? new URLSearchParams(window.location.search).get('token') : '';
 const resetToken = ref(window.location.pathname === '/reset-password' ? new URLSearchParams(window.location.search).get('token') : null);
@@ -548,6 +575,7 @@ function validateRecoveryEmail() {
   return !recoveryEmailInvalid.value;
 }
 const resetPasswordForm = reactive({ password: '' });
+const passwordChangeForm = reactive({ currentPassword: '', newPassword: '', confirmPassword: '' });
 const adminUserForm = reactive<{ username: string; email: string; password: string; role: 'ADMIN' | 'USER' }>({ username: '', email: '', password: '', role: 'USER' });
 const listForm = reactive<{ title: string; description: string; type: ListType; targetDate: string }>({ title: '', description: '', type: 'WISH', targetDate: '' });
 const editingList = ref(false);
@@ -688,6 +716,16 @@ async function handleConsumePasswordReset() {
   });
 }
 
+async function handleChangePassword() {
+  await run(async () => {
+    if (passwordChangeForm.newPassword !== passwordChangeForm.confirmPassword) throw new Error(t('auth.passwordsDoNotMatch'));
+    await changePassword({ currentPassword: passwordChangeForm.currentPassword, newPassword: passwordChangeForm.newPassword });
+    Object.assign(passwordChangeForm, { currentPassword: '', newPassword: '', confirmPassword: '' });
+    await handleLogout();
+    message.value = t('auth.passwordChanged');
+  });
+}
+
 async function handleLogout() {
   hubView.value = 'lists';
   undoAction.value = null;
@@ -708,7 +746,9 @@ async function handleLogout() {
   Object.assign(registerForm, { username: '', email: '', password: '' });
   Object.assign(loginForm, { username: '', password: '' });
   Object.assign(emailAuthForm, { username: '', email: '' });
+  Object.assign(passwordChangeForm, { currentPassword: '', newPassword: '', confirmPassword: '' });
   Object.assign(shareForm, { username: '', permission: 'READ' });
+  transferUsername.value = '';
   resetPasswordForm.password = '';
   templateTitle.value = '';
   editingItemId.value = null;
@@ -724,6 +764,7 @@ async function handleLogout() {
   adminSettings.value = null;
   adminUsers.value = [];
   adminLists.value = [];
+  adminSetupLink.value = null;
   await loadAuthSettings();
 }
 
@@ -753,6 +794,7 @@ async function loadLists() {
 
 async function selectList(list: ListEntry) {
   savingTemplate.value = false;
+  transferUsername.value = '';
   listView.value = 'items';
   if (itemDetailsDisclosure.value) itemDetailsDisclosure.value.open = false;
   items.value = [];
@@ -912,12 +954,37 @@ async function handleToggleRegistration(registrationEnabled: boolean) {
 
 async function handleAdminCreateUser() {
   await run(async () => {
-    await createAdminUser({ ...adminUserForm, email: adminUserForm.email || undefined });
+    adminSetupLink.value = null;
+    if (adminUserForm.password) {
+      await createAdminUser({ ...adminUserForm, email: adminUserForm.email || undefined });
+    } else {
+      adminSetupLink.value = await createAdminUserWithSetup({ username: adminUserForm.username,
+        email: adminUserForm.email || undefined, role: adminUserForm.role });
+    }
     adminUserForm.username = '';
     adminUserForm.email = '';
     adminUserForm.password = '';
     adminUserForm.role = 'USER';
     await handleLoadAdminPanel();
+    message.value = t('admin.userCreated');
+  });
+}
+
+async function handleIssueAdminSetupLink(id: string) {
+  await run(async () => {
+    adminSetupLink.value = await issueAdminSetupLink(id);
+    message.value = t('admin.linkCreated');
+  });
+}
+
+async function handleAdminTransferLists(id: string, username: string) {
+  const source = adminUsers.value.find(user => user.id === id);
+  const count = adminLists.value.find(list => list.ownerId === id)?.listCount ?? 0;
+  if (!source || !window.confirm(t('admin.transferConfirm', { count, source: source.username, target: username }))) return;
+  await run(async () => {
+    const result = await transferInactiveUserLists(id, username);
+    await handleLoadAdminPanel();
+    message.value = result.transferred === 1 ? t('admin.transferredOne') : t('admin.transferred', { count: result.transferred });
   });
 }
 
@@ -942,6 +1009,18 @@ async function handleShareList() {
     shareForm.username = '';
     shareForm.permission = 'READ';
     shares.value = [share, ...shares.value.filter((existing) => existing.userId !== share.userId)];
+    message.value = t('sharing.accessGranted', { username: share.username });
+  });
+}
+
+async function handleTransferOwnership() {
+  const list = selectedList.value;
+  if (!list || !window.confirm(t('sharing.transferConfirm', { title: list.title, username: transferUsername.value }))) return;
+  await run(async () => {
+    await transferListOwnership(list.id, transferUsername.value);
+    transferUsername.value = '';
+    await loadLists();
+    message.value = t('sharing.transferred');
   });
 }
 

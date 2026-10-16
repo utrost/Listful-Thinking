@@ -4,6 +4,8 @@ import app.listful.domain.User;
 import app.listful.lists.dto.CloneListRequest;
 import app.listful.lists.dto.ListRequest;
 import app.listful.lists.dto.ListResponse;
+import app.listful.lists.dto.TransferOwnershipRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -22,9 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/lists")
 public class ListController {
     private final ListService listService;
+    private final ListOwnershipService ownershipService;
 
-    public ListController(ListService listService) {
+    public ListController(ListService listService, ListOwnershipService ownershipService) {
         this.listService = listService;
+        this.ownershipService = ownershipService;
     }
 
     @GetMapping
@@ -80,6 +84,14 @@ public class ListController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id, Authentication authentication) {
         listService.delete(currentUser(authentication), id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/transfer")
+    public ResponseEntity<Void> transfer(@PathVariable String id, @Valid @RequestBody TransferOwnershipRequest request,
+        Authentication authentication, HttpServletRequest httpRequest) {
+        ownershipService.transferOwnedList(currentUser(authentication), id, request.username(),
+            httpRequest.getRemoteAddr(), httpRequest.getRequestURI());
         return ResponseEntity.noContent().build();
     }
 

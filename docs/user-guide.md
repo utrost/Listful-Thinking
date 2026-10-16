@@ -57,7 +57,9 @@ An admin can do everything a regular user can do for their own lists, plus:
 - Choose whether a newly created user is `USER` or `ADMIN`.
 - See all users with username, email, role, active state, and creation time.
 - Activate or deactivate user accounts.
-- See an instance-wide list inventory with owner metadata.
+- See per-user list counts without list titles or item contents.
+- Issue one-time account setup or recovery links.
+- Transfer all lists from a deactivated account to an active account other than their own, with an audit record.
 
 An admin cannot, by default:
 
@@ -65,13 +67,18 @@ An admin cannot, by default:
 - Silently become another user.
 - Use admin status as a public guest identity.
 
-Admin list visibility is metadata-focused: it is meant for operating a small private instance, finding abandoned lists, and understanding ownership without turning admin into a hidden content-browsing role.
+Admin list visibility is count-focused: it supports account handover without turning admin into a hidden content-browsing role.
 
 ## Account access
 
 ### Username and password
 
 Users can log in with their username and password. Successful login creates a browser session. Logging out ends that session.
+Signed-in users can change their password from the account control in the header. This signs out existing sessions; sign in again with the new password.
+
+### Admin-created account setup and recovery
+
+An admin can create an account with the password field blank. The app generates a one-time setup link valid for 24 hours. If SMTP is configured and the account has an email address, it sends the link directly to that address. Otherwise, the admin sees the link once and must pass it to the user privately. The user opens the link, chooses a password, then signs in. A fresh link from the Admin panel can recover an active account without email. Issuing a new link invalidates earlier login, setup, and recovery links. The link never appears in audit records.
 
 ### Magic links
 
@@ -319,6 +326,13 @@ The shared user cannot, in the current MVP:
 - Generate or revoke public guest links.
 
 The list owner can revoke the internal share at any time.
+Sharing or changing access takes effect immediately. The recipient sees an in-app notification when they next open the app; revocation also creates a notification. The recipient does not need to accept an invitation.
+
+### Transfer ownership
+
+An owner can transfer a list to another active account from Sharing. The new owner gains full control, the previous owner loses access unless the new owner shares the list back, and both receive in-app notifications. Existing account shares remain, while the public link is revoked. The transfer is audited.
+
+For a departed owner, an admin can first deactivate the account, then transfer all of its lists to an active account other than the admin's own. This includes archived lists, templates, and Trash. The admin sees only the number of lists, never their titles or contents. This transfer requires confirmation and is audited.
 
 ### Public guest links
 
@@ -383,12 +397,12 @@ Admins can create accounts from the Admin panel.
 Required:
 
 - username
-- password
 - role: `USER` or `ADMIN`
 
 Optional:
 
 - email address
+- password (leave blank for a one-time setup link)
 
 Use this when the instance is private and the admin wants to add family members or collaborators without opening public registration.
 

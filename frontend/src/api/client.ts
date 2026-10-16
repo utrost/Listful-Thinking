@@ -63,6 +63,19 @@ export interface AdminCreateUserRequest {
   role: 'ADMIN' | 'USER';
 }
 
+export interface AdminSetupUserRequest {
+  username: string;
+  email?: string;
+  role: 'ADMIN' | 'USER';
+}
+
+export interface AdminSetupLink {
+  user: AdminUserEntry;
+  setupUrl: string | null;
+  expiresAt: string;
+  emailed: boolean;
+}
+
 export interface AdminUpdateUserRequest {
   active: boolean;
 }
@@ -405,6 +418,10 @@ export async function consumePasswordReset(request: PasswordResetConsumeRequest)
   await requestNoContent('/api/v1/auth/password-reset/consume', request);
 }
 
+export async function changePassword(request: { currentPassword: string; newPassword: string }): Promise<void> {
+  await requestNoContent('/api/v1/auth/change-password', request);
+}
+
 async function requestNoContent(path: string, body: unknown): Promise<void> {
   const response = await fetchWithApiErrors(path, {
     method: 'POST',
@@ -431,6 +448,22 @@ export async function createAdminUser(request: AdminCreateUserRequest): Promise<
   });
 }
 
+export async function createAdminUserWithSetup(request: AdminSetupUserRequest): Promise<AdminSetupLink> {
+  return requestJson<AdminSetupLink>('/api/v1/admin/users/with-setup', {
+    method: 'POST', body: JSON.stringify(request)
+  });
+}
+
+export async function issueAdminSetupLink(id: string): Promise<AdminSetupLink> {
+  return requestJson<AdminSetupLink>(`/api/v1/admin/users/${id}/setup-link`, { method: 'POST' });
+}
+
+export async function transferInactiveUserLists(id: string, username: string): Promise<{ transferred: number }> {
+  return requestJson<{ transferred: number }>(`/api/v1/admin/users/${id}/transfer-lists`, {
+    method: 'POST', body: JSON.stringify({ username })
+  });
+}
+
 export async function updateAdminUser(id: string, request: AdminUpdateUserRequest): Promise<AdminUserEntry> {
   return requestJson<AdminUserEntry>(`/api/v1/admin/users/${id}`, {
     method: 'PATCH',
@@ -451,6 +484,10 @@ export async function updateAdminSettings(request: UpdateAdminSettingsRequest): 
 
 export async function getLists(): Promise<ListEntry[]> {
   return requestJson<ListEntry[]>('/api/v1/lists');
+}
+
+export async function transferListOwnership(id: string, username: string): Promise<void> {
+  await requestNoContent(`/api/v1/lists/${id}/transfer`, { username });
 }
 
 export async function getList(id: string): Promise<ListEntry> {

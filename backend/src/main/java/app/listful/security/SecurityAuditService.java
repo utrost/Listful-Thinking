@@ -31,4 +31,10 @@ public class SecurityAuditService {
         }
         logger.info("security_event type={} actorId={} clientIp={} path={}", type, actorId, clientIp, path);
     }
+
+    public void recordRequired(String type, String actorId, String clientIp, String path, String details) {
+        repository.save(new SecurityEvent(type, actorId, clientIp, redactPath(path),
+            details == null ? null : details.substring(0, Math.min(details.length(), 2000)), Instant.now()));
+        logger.info("security_event type={} actorId={} clientIp={} path={}", type, actorId, clientIp, redactPath(path));
+    }
 }

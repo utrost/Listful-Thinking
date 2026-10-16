@@ -6,6 +6,7 @@ import app.listful.auth.dto.AuthUserResponse;
 import app.listful.auth.dto.EmailLinkRequest;
 import app.listful.auth.dto.LoginRequest;
 import app.listful.auth.dto.PasswordResetConsumeRequest;
+import app.listful.auth.dto.PasswordChangeRequest;
 import app.listful.auth.dto.RegisterRequest;
 import app.listful.auth.dto.TokenRequest;
 import app.listful.config.SecurityHardeningFilter;
@@ -75,6 +76,16 @@ public class AuthController {
     @PostMapping("/password-reset/consume")
     public ResponseEntity<Void> consumePasswordReset(@Valid @RequestBody PasswordResetConsumeRequest request) {
         authService.consumePasswordReset(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequest request, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()
+            || !(authentication.getPrincipal() instanceof ListfulUserPrincipal principal)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        authService.changePassword(principal.user(), request);
         return ResponseEntity.noContent().build();
     }
 

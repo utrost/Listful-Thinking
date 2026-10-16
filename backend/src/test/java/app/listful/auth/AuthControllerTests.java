@@ -343,6 +343,25 @@ class AuthControllerTests {
         return captor.getValue();
     }
 
+    @Test
+    void emailedSetupLinkIsDeliveredDirectlyWithoutReturningTheSecretToAdmin() throws Exception {
+        MockHttpSession admin = registerAndReturnSession("admin", "admin@example.test", "password one");
+        mockMvc.perform(post("/api/v1/admin/users/with-setup").session(admin).contentType("application/json")
+                .content("{\"username\":\"newmember\",\"email\":\"newmember@example.test\",\"role\":\"USER\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.emailed").value(true))
+            .andExpect(jsonPath("$.setupUrl").value(org.hamcrest.Matchers.nullValue()));
+        SimpleMailMessage mail = sentMail();
+        assertThat(mail.getTo()).containsExactly("newmember@example.test");
+        String token = extractToken(mail.getText());
+        mockMvc.perform(post("/api/v1/auth/password-reset/consume").contentType("application/json")
+                .content("{\"token\":\"%s\",\"password\":\"member chosen password\"}".formatted(token)))
+            .andExpect(status().isNoContent());
+        mockMvc.perform(post("/api/v1/auth/login").contentType("application/json")
+                .content("{\"username\":\"newmember\",\"password\":\"member chosen password\"}"))
+            .andExpect(status().isOk());
+    }
+
     private String extractToken(String body) {
         Matcher matcher = Pattern.compile("token=([A-Za-z0-9_-]+)").matcher(body);
         assertThat(matcher.find()).isTrue();
