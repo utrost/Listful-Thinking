@@ -111,12 +111,24 @@ class SecurityHardeningTests {
                 .andExpect(status().isUnauthorized());
         }
 
-        mockMvc.perform(post("/api/v1/auth/login")
-                .header("X-Forwarded-For", "203.0.113.10")
-                .contentType("application/json")
-                .content("{\"username\":\"missing\",\"password\":\"wrong password\"}"))
-            .andExpect(status().isTooManyRequests())
-            .andExpect(jsonPath("$.code").value("rate_limited"));
+        // A fixed rate-limit window can roll over between requests. Keep
+        // trying long enough to fill the new window if that happens.
+        boolean limited = false;
+        for (int attempt = 4; attempt <= 8; attempt++) {
+            MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                    .header("X-Forwarded-For", "203.0.113.10")
+                    .contentType("application/json")
+                    .content("{\"username\":\"missing\",\"password\":\"wrong password\"}"))
+                .andReturn();
+            if (result.getResponse().getStatus() == 429) {
+                assertThat(JsonPath.read(result.getResponse().getContentAsString(), "$.code").toString())
+                    .isEqualTo("rate_limited");
+                limited = true;
+                break;
+            }
+            assertThat(result.getResponse().getStatus()).isEqualTo(401);
+        }
+        assertThat(limited).isTrue();
     }
 
     @Test

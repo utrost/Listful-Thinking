@@ -4,6 +4,7 @@ import app.listful.auth.dto.AuthUserResponse;
 import app.listful.auth.dto.EmailLinkRequest;
 import app.listful.auth.dto.LoginRequest;
 import app.listful.auth.dto.PasswordResetConsumeRequest;
+import app.listful.auth.dto.PasswordChangeRequest;
 import app.listful.auth.dto.RegisterRequest;
 import app.listful.auth.dto.TokenRequest;
 import app.listful.domain.AuthToken;
@@ -12,6 +13,7 @@ import app.listful.domain.enums.UserRole;
 import app.listful.domain.repository.AuthTokenRepository;
 import app.listful.domain.repository.UserRepository;
 import app.listful.settings.dto.AdminCreateUserRequest;
+import app.listful.settings.dto.AdminSetupUserRequest;
 import app.listful.settings.SettingService;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -34,6 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private static final SecureRandom secureRandom = new SecureRandom();
+    public record SetupLink(String url, Instant expiresAt, boolean emailed) {}
+    public record SetupAccount(User user, SetupLink link) {}
 
     private final UserRepository userRepository;
     private final AuthTokenRepository authTokenRepository;
@@ -125,6 +129,40 @@ public class AuthService {
     }
 
     @Transactional
+    public SetupAccount createUserWithSetup(AdminSetupUserRequest request) {
+        String username = normalizeUsername(request.username());
+        if (userRepository.existsByUsername(username)) throw new UsernameAlreadyExistsException();
+        User user = userRepository.save(new User(username, normalizeEmail(request.email()),
+            passwordEncoder.encode(newToken()), request.role(), Instant.now()));
+        return new SetupAccount(user, issueSetupLink(user));
+    }
+
+    @Transactional
+    public SetupLink issueSetupLink(User user) {
+        if (!user.isActive()) throw new app.listful.api.ConflictException("inactive_user", "Activate this account before issuing a setup link.");
+        Instant expiresAt = Instant.now().plus(Duration.ofHours(24));
+        String rawToken = newToken();
+        authTokenRepository.deleteByUserId(user.getId());
+        authTokenRepository.save(new AuthToken(user, tokenHash(rawToken), AuthToken.PASSWORD_RESET, expiresAt, Instant.now()));
+        String url = publicBaseUrl + "/reset-password?token=" + rawToken;
+        boolean emailed = false;
+        if (emailRecoveryAvailable() && user.getEmail() != null) {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(user.getEmail());
+            if (mailFrom != null && !mailFrom.isBlank()) message.setFrom(mailFrom);
+            message.setSubject("Set your Listful Thinking password");
+            message.setText("Open this one-time link within 24 hours: " + url);
+            try {
+                mailSender.send(message);
+                emailed = true;
+            } catch (MailException ex) {
+                logger.warn("Account setup email delivery failed ({})", ex.getClass().getSimpleName());
+            }
+        }
+        return new SetupLink(emailed ? null : url, expiresAt, emailed);
+    }
+
+    @Transactional
     public void sendMagicLink(EmailLinkRequest request) {
         sendTokenEmail(request, AuthToken.MAGIC_LINK, "Your Listful Thinking magic link", "/magic-login");
     }
@@ -147,6 +185,16 @@ public class AuthService {
         AuthToken token = consumeToken(request.token(), AuthToken.PASSWORD_RESET);
         token.getUser().setPasswordHash(passwordEncoder.encode(request.password()));
         authTokenRepository.deleteByUserId(token.getUser().getId());
+    }
+
+    @Transactional
+    public void changePassword(User actor, PasswordChangeRequest request) {
+        User user = userRepository.findById(actor.getId()).orElseThrow(() -> new BadCredentialsException("Invalid account"));
+        if (!user.isActive() || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
+            throw new BadCredentialsException("Invalid password");
+        }
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        authTokenRepository.deleteByUserId(user.getId());
     }
 
     public AuthUserResponse toResponse(User user) {
