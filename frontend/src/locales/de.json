@@ -188,6 +188,7 @@
     "lastActiveAdminHint": "Mindestens ein aktiver Admin muss verbleiben.",
     "lists": "Listennutzung",
     "role": "Rolle",
+    "listCountOne": "1 Liste",
     "listCount": "{count} Listen",
     "listPrivacy": "Die Verwaltung zeigt Nutzungszahlen. Listeninhalte sehen nur Eigentümer und Personen, mit denen sie geteilt wurden."
   },
