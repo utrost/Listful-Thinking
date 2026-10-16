@@ -1,6 +1,10 @@
 # Current State and Risk Register
 
-Last updated: 2026-09-26 for the 0.2.0-rc.1 candidate.
+Last updated: 2026-10-16 for post-RC2 source work. The last recorded Alice deployment is RC2 on 2026-09-26; no fresh live check is implied here.
+
+## Post-RC2 retention work
+
+Migration V17 gives existing active public links 56 days from upgrade because their original creation dates were not recorded. New links expire 56 days after creation; every guest read and claim checks expiry. Deleted lists, templates and items remain recoverable for 14 days, then a daily cleanup permanently removes them. Backups can retain older copies and require a separate operator retention policy. This work has not yet been deployed to Alice.
 
 ## Planning candidate baseline
 
@@ -75,11 +79,11 @@ These are known and intentionally documented:
 1. **No public-internet TLS profile yet.** Alice currently serves Tailnet HTTP. Public hosting needs HTTPS/TLS termination, HSTS in real browser traffic, and `SESSION_COOKIE_SECURE=true`.
 2. **CSRF protection is browser-metadata-aware.** Browser-style unsafe authenticated calls require a token, but non-browser clients without `Origin`/`Sec-Fetch-Site` are allowed for compatibility. This depends on `SameSite=Strict` cookies for browser protection.
 3. **Audit logging is still partial.** Filter-level rejects, selected admin/user-management changes, and public-share generation/revocation are logged and persisted as structured rows. Auth lifecycle events such as login success/failure, logout, magic-link use, and password-reset use are not yet all captured as structured audit rows.
-4. **No release signing/SBOM publication.** CI scans dependencies with OSV, but published images/JARs are not signed and no SBOM artifact is published.
+4. **No release signing.** RC2 published a resolved runtime SBOM and checksums, but the image/JAR artifacts are not signed.
 5. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
 6. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
 7. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.
-8. **Admin support access is intentionally limited.** Admins can manage users/settings and see list metadata inventory, but do not have a general audited content-superuser workflow.
+8. **Admin support access is intentionally limited.** Admins can manage users/settings and see per-user list counts, but do not have a general audited content-superuser workflow.
 9. **Backup scheduling/encryption are operator responsibilities.** The repository now provides a consistent SQLite snapshot helper and restore verification; retention, encryption, and host hardening remain deployment responsibilities.
 
 ## Verification evidence
@@ -110,5 +114,5 @@ If the app moves beyond private Tailnet use, prioritize:
 
 1. Add an HTTPS reverse-proxy deployment profile and set `SESSION_COOKIE_SECURE=true`; verify HSTS on the live HTTPS endpoint.
 2. Extend structured audit logging to the remaining auth lifecycle events.
-3. Publish SBOM and sign release images/artifacts.
+3. Sign release images/artifacts and continue publishing the resolved runtime SBOM.
 4. Add a small admin/security view or CLI for reviewing `security_events` without raw DB access.

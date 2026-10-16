@@ -1,5 +1,6 @@
 package app.listful.planning;
 
+import app.listful.domain.RetentionPolicy;
 import app.listful.domain.repository.ItemRepository;
 import app.listful.domain.repository.ListRepository;
 import app.listful.lists.CurrentUser;
@@ -59,7 +60,11 @@ public class PlanningController {
     @Transactional(readOnly = true)
     public List<TrashedItem> trash(Authentication authentication) {
         var actor = CurrentUser.from(authentication);
-        return items.findDeletedOwnedItems(actor.getId()).stream().map(item -> new TrashedItem(item.getId(),
+        Instant now = clock.instant();
+        return items.findDeletedOwnedItems(actor.getId()).stream()
+            .filter(item -> RetentionPolicy.isRestorable(item.getDeletedAt(), now))
+            .filter(item -> !item.getList().isDeleted() || RetentionPolicy.isRestorable(item.getList().getDeletedAt(), now))
+            .map(item -> new TrashedItem(item.getId(),
             item.getList().getId(), item.getList().getTitle(), item.getName(), item.getDeletedAt().toString(), item.getList().isArchived())).toList();
     }
 }

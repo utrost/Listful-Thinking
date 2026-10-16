@@ -41,6 +41,7 @@ class PlanningLifecycleTests {
     @BeforeEach void resetData() {
         items.deleteAll(); shares.deleteAll(); lists.deleteAll(); users.deleteAll();
         when(clock.withZone(any())).thenAnswer(call -> Clock.fixed(now, call.getArgument(0)));
+        when(clock.instant()).thenReturn(now);
     }
     MockHttpSession user(String name) throws Exception {
         return (MockHttpSession)mvc.perform(post("/api/v1/auth/register").contentType("application/json")
@@ -112,6 +113,33 @@ class PlanningLifecycleTests {
         mvc.perform(put("/api/v1/items/"+itemId).session(owner).header("If-Match","\"0\"").contentType("application/json").content("{\"name\":\"Stale overwrite\"}"))
             .andExpect(status().isConflict());
         assertThat(read(owner,"/api/v1/trash/items").size()).isZero();
+    }
+
+    @Test void trashStopsListingAndRestoringAtTheTwoWeekDeadline() throws Exception {
+        var owner = user("owner");
+        var listId = id(list(owner, "A list", "TODO"));
+        var itemId = id(item(owner, listId, "A task", null));
+        mvc.perform(delete("/api/v1/items/" + itemId).session(owner)).andExpect(status().isNoContent());
+        var deletedItem = items.findById(itemId).orElseThrow();
+        deletedItem.setDeletedAt(now.minus(Duration.ofDays(14)).plusMillis(1));
+        items.saveAndFlush(deletedItem);
+        assertThat(read(owner, "/api/v1/trash/items").size()).isEqualTo(1);
+        deletedItem = items.findById(itemId).orElseThrow();
+        deletedItem.setDeletedAt(now.minus(Duration.ofDays(14)));
+        items.saveAndFlush(deletedItem);
+        assertThat(read(owner, "/api/v1/trash/items").size()).isZero();
+        mvc.perform(post("/api/v1/items/" + itemId + "/restore").session(owner)).andExpect(status().isNotFound());
+
+        mvc.perform(delete("/api/v1/lists/" + listId).session(owner)).andExpect(status().isNoContent());
+        var deletedList = lists.findById(listId).orElseThrow();
+        deletedList.setDeletedAt(now.minus(Duration.ofDays(14)).plusMillis(1));
+        lists.saveAndFlush(deletedList);
+        assertThat(read(owner, "/api/v1/lists/library?state=trash").size()).isEqualTo(1);
+        deletedList = lists.findById(listId).orElseThrow();
+        deletedList.setDeletedAt(now.minus(Duration.ofDays(14)));
+        lists.saveAndFlush(deletedList);
+        assertThat(read(owner, "/api/v1/lists/library?state=trash").size()).isZero();
+        mvc.perform(post("/api/v1/lists/" + listId + "/restore").session(owner)).andExpect(status().isNotFound());
     }
 
     @Test void deletingAndRestoringAListKeepsItemsButDoesNotResurrectPublicLinks() throws Exception {

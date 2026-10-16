@@ -8,7 +8,9 @@ The [user experience concept](docs/design/user-experience.md) describes the list
 
 ## Release candidate 0.2.0-rc.2
 
-The [planning candidate](docs/planning/release-candidate-0.2.md) adds Today & upcoming, archives and recoverable Trash/Undo, and reusable personal templates. The version also includes the reliability/security repairs and redesigned workspace. Back up before upgrading: schema migrations V14 and V15 are forward-only; older-image rollback needs the matching database backup.
+The [planning candidate](docs/planning/release-candidate-0.2.md) adds Today & upcoming, archives and recoverable Trash/Undo, and reusable personal templates. The version also includes the reliability/security repairs and redesigned workspace. Back up before upgrading: schema migrations V14–V16 are forward-only; older-image rollback needs the matching database backup.
+
+Post-RC2 source work adds a 14-day Trash retention and 56-day public-link expiry through migration V17. Back up before adopting V17; older images need a matching pre-V17 database snapshot for rollback. Backup retention remains an operator decision.
 
 ## What it does
 

@@ -24,7 +24,7 @@ vi.mock('./api/client', async (importOriginal) => {
 
 const todoList = {
   id: 'list-1', title: 'Tasks', description: null, type: 'TODO' as const,
-  publicList: false, shareToken: null, publicShareMode: 'VIEW' as const,
+  publicList: false, shareToken: null, publicShareMode: 'VIEW' as const, publicShareExpiresAt: null,
   targetDate: null, access: 'OWNER' as const, createdAt: '2026-01-01T00:00:00Z'
 };
 const todoItem = {

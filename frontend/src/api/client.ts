@@ -87,6 +87,7 @@ export interface ListEntry {
   publicList: boolean;
   shareToken: string | null;
   publicShareMode: PublicShareMode;
+  publicShareExpiresAt: string | null;
   targetDate: string | null;
   access: 'OWNER' | 'READ' | 'CONTRIBUTE';
   createdAt: string;
@@ -167,6 +168,7 @@ export interface PublicShareToken {
   shareToken: string;
   shareUrl: string;
   mode: PublicShareMode;
+  expiresAt: string;
 }
 
 export interface PublicItemEntry {

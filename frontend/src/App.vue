@@ -183,6 +183,7 @@
                   <button type="button" class="secondary subtle" @click="pendingDeleteListId = null">{{ t('lists.deleteCancel') }}</button>
                 </template>
               </div>
+              <p v-if="pendingDeleteListId === selectedList.id" class="muted">{{ t('lists.deleteRetention') }}</p>
               <div v-if="selectedList.access === 'OWNER'" class="button-row lifecycle-actions">
                 <button v-if="!selectedList.template && !selectedList.archived" type="button" class="secondary" @click="handleArchiveSelected">{{ t('planning.archiveList') }}</button>
                 <button v-if="selectedList.archived" type="button" @click="handleRestoreList(selectedList)">{{ t('planning.restore') }}</button>
@@ -228,6 +229,7 @@
                 <button v-if="selectedList.publicList" type="button" class="danger subtle" @click="handleRevokePublicShare">{{ t('sharing.revokePublic') }}</button>
               </div>
               <p v-if="selectedList.publicList" class="muted">{{ t('sharing.activeLinkHint') }}</p>
+              <p v-if="selectedList.publicList && selectedList.publicShareExpiresAt" class="muted">{{ t('sharing.expiresAt', { date: formatDate(selectedList.publicShareExpiresAt) }) }}</p>
               <p v-if="selectedList.publicList && selectedList.shareToken" class="copyable-link">{{ publicShareUrl(selectedList.shareToken) }}</p>
               <div v-if="selectedList.shareToken" class="button-row">
                 <button type="button" class="secondary" @click="run(() => copyShareLink(selectedList!.shareToken!))">{{ t('sharing.copyLink') }}</button>
@@ -956,7 +958,7 @@ async function handleCreatePublicShare() {
   if (selectedList.value.publicList && !window.confirm(t('sharing.replaceWarning'))) return;
   await run(async () => {
     const token = await createPublicShare(selectedList.value!.id, publicShareMode.value);
-    selectedList.value = { ...selectedList.value!, publicList: token.publicList, shareToken: token.shareToken, publicShareMode: token.mode };
+    selectedList.value = { ...selectedList.value!, publicList: token.publicList, shareToken: token.shareToken, publicShareMode: token.mode, publicShareExpiresAt: token.expiresAt };
     lists.value = lists.value.map((list) => list.id === selectedList.value!.id ? selectedList.value! : list);
   });
 }
@@ -967,7 +969,7 @@ async function handleRevokePublicShare() {
     await revokePublicShare(selectedList.value!.id);
     const defaultMode = selectedList.value!.type === 'WISH' ? 'WISH_CLAIM' : 'VIEW';
     publicShareMode.value = defaultMode;
-    selectedList.value = { ...selectedList.value!, publicList: false, shareToken: null, publicShareMode: defaultMode };
+    selectedList.value = { ...selectedList.value!, publicList: false, shareToken: null, publicShareMode: defaultMode, publicShareExpiresAt: null };
     lists.value = lists.value.map((list) => list.id === selectedList.value!.id ? selectedList.value! : list);
   });
 }

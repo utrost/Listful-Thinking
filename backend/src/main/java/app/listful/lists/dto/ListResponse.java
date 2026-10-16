@@ -8,6 +8,7 @@ public record ListResponse(
     boolean publicList,
     String shareToken,
     String publicShareMode,
+    String publicShareExpiresAt,
     String targetDate,
     String access,
     boolean archived,

@@ -21,6 +21,7 @@ test.describe('Public wishlist sharing @gui @sharing', () => {
     const sharePanel = page.locator('.share-panel');
     await expect(sharePanel.locator('select').first()).toHaveValue('WISH_CLAIM');
     await sharePanel.getByRole('button', { name: 'Create public link' }).click();
+    await expect(sharePanel.getByText(/This link expires on/)).toBeVisible();
 
     const publicLink = page.locator('.copyable-link');
     await expect(publicLink).toContainText('/s/');

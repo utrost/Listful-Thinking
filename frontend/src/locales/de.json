@@ -64,6 +64,7 @@
     "deleteConfirm": "Löschen bestätigen",
     "deleteCancel": "Liste behalten",
     "delete": "Liste löschen",
+    "deleteRetention": "Diese Liste kann zwei Wochen lang aus dem Papierkorb wiederhergestellt werden. Ihr öffentlicher Link funktioniert ab jetzt nicht mehr.",
     "type": "Listentyp",
     "types": {
       "WISH": "Wunschliste",
@@ -131,8 +132,8 @@
     "reopenWish": "Wunsch wieder öffnen",
     "delete": "Löschen",
     "currency": "Währung (EUR, USD…)",
-    "deleteWarning": "Diesen Eintrag in den Papierkorb verschieben? Du kannst ihn später wiederherstellen.",
-    "clearWarning": "Alle erledigten Einkäufe in den Papierkorb verschieben? Du kannst dies rückgängig machen.",
+    "deleteWarning": "Diesen Eintrag in den Papierkorb verschieben? Du kannst ihn zwei Wochen lang wiederherstellen.",
+    "clearWarning": "Alle erledigten Einkäufe in den Papierkorb verschieben? Du kannst sie zwei Wochen lang wiederherstellen.",
     "importPending": "Produktdetails werden geladen…",
     "retryImport": "Import erneut versuchen",
     "statuses": {
@@ -164,7 +165,8 @@
     "permission": "Freigabeberechtigung",
     "replacePublic": "Öffentlichen Link ersetzen",
     "replaceWarning": "Diesen öffentlichen Link ersetzen? Bisher geteilte Links funktionieren danach nicht mehr.",
-    "activeLinkHint": "Ein öffentlicher Link ist aktiv. Kopiere einen neuen Link sofort: Er wird nur einmal angezeigt. Beim Ersetzen wird der bisherige Link ungültig.",
+    "activeLinkHint": "Ein öffentlicher Link ist acht Wochen lang aktiv. Kopiere einen neuen Link sofort: Er wird nur einmal angezeigt. Beim Ersetzen wird der bisherige Link ungültig.",
+    "expiresAt": "Dieser Link läuft am {date} ab.",
     "copyLink": "Link kopieren",
     "openLink": "Link öffnen",
     "copied": "Link kopiert."
@@ -205,7 +207,7 @@
     "contributorHelp": "Mit dir geteilt: Du kannst Einträge hinzufügen und bearbeiten. Der Eigentümer verwaltet die Freigaben und Einstellungen.",
     "settingsHelp": "Ändere die Angaben dieser Liste, erstelle eine Kopie oder lösche sie.",
     "typeLocked": "Solange Einträge vorhanden sind, bleibt der Listentyp fest. Erstelle für einen anderen Zweck eine neue Liste.",
-    "sharingHelp": "Jeder mit einem öffentlichen Link kann diese Liste samt Notizen, Bildern und Gästenamen ohne Konto lesen. Der Link bleibt bis zum Widerruf gültig. Lade für persönliche Inhalte stattdessen bestimmte Personen ein.",
+    "sharingHelp": "Jeder mit einem öffentlichen Link kann diese Liste samt Notizen, Bildern und Gästenamen ohne Konto lesen. Der Link läuft nach acht Wochen oder beim Widerruf ab. Lade für persönliche Inhalte stattdessen bestimmte Personen ein.",
     "publicLink": "Link teilen",
     "invitePeople": "Person mit einem Konto einladen",
     "inviteHelp": "Mit Lesezugriff können Personen Einträge ansehen. Mit Schreibzugriff können sie diese auch hinzufügen und bearbeiten.",
@@ -289,7 +291,7 @@
       "today": "Termine aus deinen eigenen und geteilten Listen. Heute ist dein lokaler Kalendertag; demnächst umfasst die folgenden sieben Tage.",
       "archive": "Bewahre abgeschlossene oder pausierte Listen auf. Archivierte Listen senden keine Erinnerungen und sind bis zur Wiederherstellung für Mitwirkende ausgeblendet.",
       "templates": "Wiederverwendbare Ausgangspunkte für Reisen, Einkäufe und Veranstaltungen. Jede Verwendung erstellt eine unabhängige private Liste.",
-      "trash": "Gelöschte Listen und Einträge bleiben hier, bis du sie wiederherstellst. In dieser Version gibt es keine automatische endgültige Löschung. Öffentliche Links werden nicht wieder aktiviert."
+      "trash": "Gelöschte Listen und Einträge lassen sich zwei Wochen lang wiederherstellen. Danach werden sie endgültig gelöscht. Öffentliche Links werden nicht wieder aktiviert."
     },
     "empty": {
       "archive": "Noch keine archivierten Listen.",
@@ -299,7 +301,7 @@
     "emptyHelp": {
       "archive": "Verwende Liste archivieren in den Einstellungen, um eine Liste zu pausieren.",
       "templates": "Öffne die Einstellungen einer Liste und wähle Als Vorlage speichern. Verwende sie hier für einen neuen Anfang.",
-      "trash": "Gelöschte Listen, Vorlagen und Einträge lassen sich hier wiederherstellen – auch nach dem Neuladen oder erneuten Anmelden."
+      "trash": "Gelöschte Listen, Vorlagen und Einträge lassen sich hier zwei Wochen lang wiederherstellen – auch nach dem Neuladen oder erneuten Anmelden."
     },
     "groups": {
       "overdue": "Überfällig",

@@ -69,6 +69,7 @@ test.describe('Planning release candidate @planning @smoke', () => {
     await page.getByRole('button', { name: 'Delete: Keep this task', exact: true }).click();
     await page.reload();
     await page.getByRole('button', { name: 'Trash', exact: true }).click();
+    await expect(page.locator('.planning-hub')).toContainText('can be restored for two weeks');
     await expect(page.locator('.trash-items')).toContainText('Keep this task');
     await page.getByRole('button', { name: 'Restore: Keep this task', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Restore: Keep this task', exact: true })).toHaveCount(0);
