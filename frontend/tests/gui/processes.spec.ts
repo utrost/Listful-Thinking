@@ -113,10 +113,10 @@ test.describe('User and administrator processes @gui @smoke', () => {
     await page.getByRole('button', { name: 'Add item' }).click();
     await page.getByRole('button', { name: 'Sharing', exact: true }).click();
     const sharePanel = page.locator('.share-panel');
-    const shareForm = sharePanel.locator('form.inline-form');
+    const shareForm = sharePanel.locator('form.inline-form').first();
     await shareForm.getByLabel('Username').fill(username);
     await shareForm.getByLabel('Share permission').selectOption('READ');
-    await shareForm.getByRole('button', { name: 'Invite' }).click();
+    await shareForm.getByRole('button', { name: 'Share access' }).click();
     const share = sharePanel.locator('.chip-list li').filter({ hasText: username });
     await expect(share).toContainText('READ');
 
@@ -131,7 +131,7 @@ test.describe('User and administrator processes @gui @smoke', () => {
 
     await shareForm.getByLabel('Username').fill(username);
     await shareForm.getByLabel('Share permission').selectOption('CONTRIBUTE');
-    await shareForm.getByRole('button', { name: 'Invite' }).click();
+    await shareForm.getByRole('button', { name: 'Share access' }).click();
     await expect(share).toContainText('CONTRIBUTE');
     await member.reload();
     await expect(member.locator('.composer-disclosure')).toBeVisible();
