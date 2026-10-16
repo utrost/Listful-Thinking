@@ -15,13 +15,13 @@ import app.listful.domain.repository.SecurityEventRepository;
 import app.listful.domain.repository.SettingRepository;
 import app.listful.domain.repository.UserRepository;
 import app.listful.scraping.ScraperService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -273,7 +273,7 @@ class SecurityHardeningTests {
 
     private static final class ContentLengthHidingRequest extends ContentCachingRequestWrapper {
         private ContentLengthHidingRequest(HttpServletRequest request) {
-            super(request);
+            super(request, 5_100_000);
         }
 
         @Override

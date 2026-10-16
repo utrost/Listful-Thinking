@@ -16,11 +16,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
@@ -48,6 +49,7 @@ class ScraperControllerTests {
     private HttpServer server;
     private volatile String lastUserAgent;
     private volatile String lastAcceptLanguage;
+    private final AtomicInteger secondaryRequests = new AtomicInteger();
     private MockHttpSession session;
 
     @BeforeEach
@@ -59,6 +61,7 @@ class ScraperControllerTests {
         settingRepository.deleteAll();
         userRepository.deleteAll();
         session = register("owner");
+        secondaryRequests.set(0);
         startFixtureServer();
     }
 
@@ -192,8 +195,26 @@ class ScraperControllerTests {
             .andExpect(jsonPath("$.message", containsString("HTTP")));
     }
 
+    @Test
+    void parsingFetchedHtmlDoesNotRequestEmbeddedResources() throws Exception {
+        mvc.perform(post("/api/v1/utils/scrape").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/embedded-resources\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("Safe product"));
+
+        org.assertj.core.api.Assertions.assertThat(secondaryRequests.get()).isZero();
+    }
+
     private void startFixtureServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/embedded-resources", exchange -> respond(exchange, """
+            <html><head><meta property="og:title" content="Safe product"><link rel="stylesheet" href="/trap"></head>
+            <body><iframe src="/trap"></iframe><img src="/trap"><script src="/trap"></script></body></html>
+            """));
+        server.createContext("/trap", exchange -> {
+            secondaryRequests.incrementAndGet();
+            respond(exchange, "unexpected resource request");
+        });
         server.createContext("/og", exchange -> {
             lastUserAgent = exchange.getRequestHeaders().getFirst("User-Agent");
             lastAcceptLanguage = exchange.getRequestHeaders().getFirst("Accept-Language");

@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import app.listful.api.ValidationFailedException;
 import app.listful.config.SecurityHardeningProperties;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.net.URI;
 import org.junit.jupiter.api.Test;
 

@@ -8,15 +8,15 @@ import static org.mockito.Mockito.*;
 import app.listful.domain.repository.*;
 import app.listful.domain.enums.ItemStatus;
 import app.listful.notifications.ReminderService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import java.time.*;
 import java.util.*;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.*;
@@ -36,7 +36,7 @@ class PlanningLifecycleTests {
     @Autowired UserRepository users;
     @Autowired NotificationRepository notifications;
     @Autowired ReminderService reminders;
-    @MockBean Clock clock;
+    @MockitoBean Clock clock;
     final Instant now = Instant.parse("2026-03-29T10:00:00Z");
     @BeforeEach void resetData() {
         items.deleteAll(); shares.deleteAll(); lists.deleteAll(); users.deleteAll();
