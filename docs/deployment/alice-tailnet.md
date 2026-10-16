@@ -4,9 +4,17 @@ This document records the current private deployment contract for the Listful Th
 
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
-## Latest deployment — 0.2.0-rc.2 privacy/security fixes, 2026-09-26
+## Latest deployment — security upgrade and retention policy, 2026-10-16
 
-Image `listful-thinking:v0.2.0-rc.2`, also tagged `listful-thinking:alice`, ID `sha256:e20e3b4c1c97a411c8ac8fae65dc153a84c62c8edc2642ffe65a4a4f1e105c1e`.
+Merged `main` commit `74de4dc` is deployed as `listful-thinking:retention-20261016-74de4dc` (also tagged `listful-thinking:alice`), image ID `sha256:1c0ef5013bd683e3a2180dfdfb349c8a4fca76552910e8412ad9f4bca2ea96a8`. This includes the runtime and HTML-parser security upgrade from PR #50 and the 14-day Trash and 56-day public-link retention policy from PR #49.
+
+A stopped-container pre-V17 SQLite backup was verified with `integrity_check` and `foreign_key_check`. V17 passed on an isolated restore and then on the live volume while the candidate was bound only to localhost. The migration preserved 1 account, 1 list, and 3 items. All six CI jobs passed on the deployed commit. Live health, Tailnet-only binding, frontend retention copy, and a Chromium login-page check passed. The runtime remains UID 1000; the SQLite directory and file retain modes 0700 and 0600. The existing application settings, including email recovery, were preserved.
+
+Private backups, the original container configuration, migration preflight, and deployment verification are in `data/deployments/20261016T185002Z/`. The final backup is `listful-thinking-final-pre-v17.sqlite`. The previous RC2 container is retained stopped as `listful-thinking-alice-pre-v17-20261016` with restart disabled. Rollback to RC2 requires restoring the matching pre-V17 database backup before starting that container; do not run the RC2 image against V17.
+
+## Previous deployment — 0.2.0-rc.2 privacy/security fixes, 2026-09-26
+
+Image `listful-thinking:v0.2.0-rc.2`, then tagged `listful-thinking:alice`, ID `sha256:e20e3b4c1c97a411c8ac8fae65dc153a84c62c8edc2642ffe65a4a4f1e105c1e`.
 
 See the [security review](../security-review-2026-09-26.md) and [RC2 notes](../releases/0.2.0-rc.2.md). V15→V16 migration was verified on a separate copy before deployment. Live readiness, SQLite integrity/foreign keys, original counts (1 account, 1 list, 3 items), non-root runtime, preserved binding/volume and enabled email recovery passed. SQLite is mode 0600 and its directory is 0700. Desktop/mobile login/recovery UI, cache headers and layout passed. SMTP hostname-verified STARTTLS and authentication passed without sending email.
 
