@@ -42,6 +42,8 @@ Fields:
 - `is_public`
 - `public_share_mode`: `VIEW`, `WISH_CLAIM`, or `SIGNUP`
 - `target_date`
+- `source_url` optional HTTP(S) page that inspired the list
+- `event_location` optional location for `EVENT` lists
 - `public_share_expires_at`
 - `archived`, `is_template`, and `deleted_at`
 - `created_at`
@@ -52,6 +54,7 @@ Rules:
 - Public sharing is opt-in per list.
 - Internal sharing is opt-in per list and per registered user.
 - `target_date` is required for `EVENT` lists and rejected for `WISH`, `TODO`, `GROCERY`, and `CHORE` lists.
+- `event_location` is allowed only for `EVENT` lists. Website event capture saves the date, source, and location after user review.
 - Deleted lists enter Trash for 14 days; archives and templates are excluded from active lists, public access, and reminders.
 - Ownership can move to a different active user. An admin may transfer an inactive owner's lists without reading their content. A transfer revokes the public link, preserves unrelated internal shares, and removes any redundant share for the new owner.
 
@@ -64,15 +67,19 @@ Fields:
 - `id`
 - `list_id`
 - `name`
+- `description`
 - `url`
 - `image_url`
 - `price`
+- `price_currency`, `price_checked_at`, `variant_note`, `seller`, and `availability` for reviewed wishlist products
+- `source_url` optional HTTP(S) page used for a one-off import
 - `status`: `OPEN`, `CLAIMED`, `PURCHASED`, or `DONE` depending on list type
 - `due_date`
 - `recurrence_rule`
 - `quantity`
 - `category`
 - `reserved_by_guest`
+- `claim_token_hash` for a guest's reservation correction/release capability
 - `owner_label` optional user-visible responsible person/role/agent label
 - `assistant_labels` optional user-visible helper/assistant labels
 
@@ -86,6 +93,9 @@ Rules:
 - `DONE` is used by TODO/GROCERY/CHORE/EVENT-style work items.
 - Type-specific fields are interpreted by the parent list type.
 - `quantity` and `category` are grocery-specific.
+- A website draft can suggest product fields, recipe ingredients, event details, or how-to steps. The user reviews and edits it before creating lists/items. The app does not store the fetched HTML or synchronize later page changes.
+- `source_url` may be present on any imported item. Wishlist shopping details remain type-specific. Price-check time records when a price was entered or refreshed; it does not promise a current price.
+- The claimant receives the raw claim-control token once. Only its hash is stored. The claimant can use it to rename or release their reservation while the matching public link is active; the owner can release a mistaken claim. Regular public wishlist reads and owner item reads hide the guest's name.
 - `owner_label` is item-level responsibility metadata, distinct from the registered account that owns the parent list. It may name a household member, roommate, role, or automation/agent label and is intentionally instance-local free text for the MVP.
 - `assistant_labels` records optional helpers or assistants that can support or watch the item. Assistants can be people, roles, bots, or local automations; they do not receive permissions by being named here.
 - Responsibility labels are display/coordination metadata only. Authorization still follows the parent list and internal/public share rules.

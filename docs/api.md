@@ -163,6 +163,8 @@ Returns a non-deleted list to its owner; an internally shared user can read it o
 
 Updates owned list metadata, or returns `404` when not owned.
 
+This is a full metadata update: send existing `sourceUrl` and `eventLocation` values when they should be preserved. An omitted nullable field clears that field.
+
 ### `POST /api/v1/lists/{id}/clone`
 
 Creates an owner-only duplicate of a list. The clone copies list metadata and items with fresh list/item IDs, but does not copy public share tokens or internal shares.
@@ -233,6 +235,8 @@ Type validation:
 ### `PUT /api/v1/items/{id}`
 
 Updates an item when its parent list is owned by the authenticated user or shared with `CONTRIBUTE` permission. Send the current item version as `If-Match: "<version>"`; missing or stale versions return `409 stale_item`. Returns `404` for missing or inaccessible items.
+
+This is a full item update. Include existing capture fields (`sourceUrl`, `variantNote`, `seller`, `availability`, and price/currency) when they should be retained; omitted nullable fields are cleared. The frontend sends the current values during edits and status changes.
 
 When a recurring `CHORE` item is updated to `DONE`, the API stores `lastCompletedAt`, advances `dueDate` by the recurrence rule, and returns the item as `OPEN` for the next occurrence.
 
@@ -326,6 +330,8 @@ Requires authentication and uses the same guarded HTTP(S) fetch path as `/utils/
 
 `kind` is `PRODUCT`, `RECIPE`, `EVENT`, `HOWTO`, or `PAGE`. Clients should allow correction before persisting. A failed read need not prevent manual entry with the original source URL.
 
+`EVENT` includes recognized Schema.org event subtypes such as `MusicEvent`. `sourceUrl` is the final URL after validated redirects; it may differ from the submitted URL or point to a localized page. The draft is transient until the user saves it.
+
 Non-HTTP(S) URLs return `400 validation_failed`.
 
 ## Public access
@@ -381,7 +387,7 @@ Request:
 
 Responses:
 
-- `200 OK` with updated public item and a one-time `claimToken` returned only to the claimant. Store it privately for later correction or release. Subsequent public wishlist reads hide guest names from the owner and other guests.
+- `200 OK` with updated public item and a `claimToken` revealed only in the claim response. Store it privately for later correction or release; the token can be reused for those controls while the claim and public link remain active. Subsequent public wishlist reads hide guest names from the owner and other guests.
 - `404 Not Found` when token/item do not match or token was revoked.
 - `409 Conflict` with `item_already_claimed` when the item is no longer open.
 

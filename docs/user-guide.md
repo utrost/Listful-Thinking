@@ -277,7 +277,7 @@ These labels are coordination metadata only. They do not create accounts, grant 
 
 Use the item review controls on a selected list to keep longer lists navigable:
 
-- Search matches item name, notes/description, category, and URL.
+- Search matches item name, notes/description, category, product URL, source URL, variant, and seller.
 - Filters show all, open, completed, claimed, purchased, overdue, or upcoming items.
 - Sorting can keep the current created order or order by due date, category, or status.
 
@@ -292,6 +292,8 @@ For `WISH` lists, product URLs appear as **View product** links in signed-in and
 Open **Save from a website** on the signed-in lists page and paste an HTTP(S) page URL. Review the suggested title, details, and destination before saving. Product pages can become wishlist entries; recipe ingredients can become grocery items; how-to steps can become tasks; event pages can become dated event lists with location and optional preparation tasks. Remove irrelevant lines and edit prices, variants, dates, and names. When the page cannot be read, enter the details manually while keeping the original source URL.
 
 The app warns about a similar product URL already in the chosen wishlist, ignoring common tracking parameters. The warning does not block a deliberate second entry. Imported lines are saved one by one; if saving stops partway through, the remaining lines stay in the review form for retry. This flow captures a snapshot and does not keep entries synchronized with the source page.
+
+Some sites redirect to a localized page. Review the suggested language, price, and source link before saving; the saved source may be the final redirected URL. If a shop blocks extraction, the manual draft keeps the pasted URL.
 
 ## Working with list metadata
 

@@ -14,6 +14,7 @@ Can:
 - Generate and revoke public share tokens.
 - Add and revoke internal shares.
 - Mark items purchased.
+- Release a mistaken guest reservation on an owned item.
 - Transfer an owned list to another active account.
 
 Cannot:
@@ -52,6 +53,7 @@ Can:
 - In `VIEW` mode: read only, with no guest mutation form.
 - In `WISH_CLAIM` mode: claim an open item on a `WISH` list with a guest name.
 - In `SIGNUP` mode: reserve/sign up for an open item on a non-`WISH` list with a guest name.
+- After claiming, rename or release their own reservation when they present the claim-control token returned to that claimant.
 
 Cannot:
 
@@ -107,6 +109,8 @@ Future extension point:
 - Public links have explicit modes: `VIEW`, `WISH_CLAIM`, and `SIGNUP`.
 - `WISH_CLAIM` is valid only for `WISH` lists; `SIGNUP` is valid only for non-`WISH` lists; `VIEW` is read-only for all list types.
 - Guest claiming/signup is allowed only in the mode intended for the list type and only for items that belong to the token's list.
+- Claim-control tokens are random and stored only as hashes. Rename/release requires the matching active public link, item, and claim token; a released item can be claimed again. The owner can release a mistaken claim through the authenticated item API.
+- Wishlist guest names are hidden from the list owner's item response and from later public reads. The claimant sees the name on the immediate claim/rename response. Non-wishlist `SIGNUP` labels remain visible for coordination.
 - Duplicate claims/signups return `409 item_already_claimed`; revoked or mismatched tokens/items return `404`.
 - New public links expire after 56 days; existing links were given 56 days at the V17 upgrade. Expired reads and claims return `404`.
 

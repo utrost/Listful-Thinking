@@ -85,6 +85,8 @@ Status: complete for MVP release smoke and docs.
 
 After RC2, V17 added 14-day Trash retention and 56-day public links. Subsequent work shipped admin-issued account setup/recovery, signed-in password change, sharing notifications, owner transfer, and admin handoff from inactive owners. Alice runs this merged `main` state; see the [deployment record](deployment/alice-tailnet.md). Event countdown/grouping and structured assignments remain future work.
 
+The `feature/web-capture-imports` candidate adds a reviewed page-to-list flow, structured event source/location, wishlist variant and seller details, and guest claim correction/release with V18. Local desktop/mobile browser tests and opt-in live-page checks passed; merge, CI, and Alice deployment remain separate release steps. Installable HTTPS and mobile Web Share Target support remain future work.
+
 ## Current risk register
 
 The current implemented state and known weak points are tracked in [current-state-and-risk-register.md](current-state-and-risk-register.md). It is the canonical place to check whether the app is private-Tailnet-ready versus public-internet-ready.

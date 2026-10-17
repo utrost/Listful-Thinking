@@ -20,6 +20,7 @@ A calm place to keep wishes, plans, and everyday lists. The interface should hel
 6. Manage a list: open List settings → edit title/details, duplicate, or explicitly confirm deletion. Explain why a populated list's type cannot change.
 7. Use a phone: select a list without a long grid of list cards; primary controls and items fit the viewport. Touch targets are at least 44px. Long titles, URLs and translations wrap.
 8. Hand off access: admin creates an account with a one-time setup link → user chooses a password → owner shares a list → recipient sees an inbox notice → owner transfers the list if responsibility changes. For a departed owner, admin deactivates the account and transfers its lists by count to a new active owner.
+9. Capture a page: paste a URL → inspect the suggested product, recipe, event, or how-to details → correct names, variants, price, date, or lines → choose a list → save. Show a manual draft when extraction fails and a warning when a wishlist may already contain the same product URL.
 
 ## Visual language
 Warm off-white background, white work surfaces, deep evergreen primary actions, restrained gold accents. A compact, legible system font, clear heading levels, consistent spacing and rounded rectangular controls. Avoid nested cards around every section and red delete buttons dominating each row. Use visible text instead of unexplained icons. No decorative stock imagery is needed.
@@ -32,6 +33,10 @@ Use disposable Docker data, never change live lists to test the design. Run exis
 
 ## Scope
 The September workspace revision changed interface and guidance while retaining the then-current API. Drag-and-drop ordering remains future work. Today & upcoming, collaboration notifications, account password controls, and handoff flows were added in later releases.
+
+## October website capture candidate — 2026-10-17
+
+The `feature/web-capture-imports` branch adds a reviewed URL import flow and guest reservation correction/release. The UI saves a source-linked snapshot; it does not monitor a site for later changes. A live Playwright run on a disposable database passed four product/recipe/event journeys. MUJI redirected an English product URL to a German localized page under the scraper's German-first language header, so the suggested title and stored final source URL were localized. The user can edit the title before saving. Mobile Web Share Target integration remains a later task for an installable HTTPS deployment.
 
 ## October account and sharing iteration — 2026-10-16
 

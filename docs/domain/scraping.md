@@ -163,7 +163,7 @@ Earlier smoke runs had working examples for Fotoimpex, IKEA, eBay, MUJI, and Tch
 
 ## Known limitations and possible next slices
 
-- Some shops block data-center/server-side requests before product HTML is returned. Current examples include Cloudflare/security-check pages from Thalia, Bauhaus, Decathlon, and Conrad plus earlier Zalando/Etsy bot-protection responses.
+- Some shops block data-center/server-side requests before product HTML is returned. The September 2026 checks found Cloudflare/security-check pages from Thalia, Bauhaus, Decathlon, and Conrad plus earlier Zalando/Etsy bot-protection responses; re-check a live URL before assuming that status still holds.
 - Shop URLs age out or redirect to generic/category/404 pages; this is distinct from a parser gap and needs a fresh product URL before selector work.
 - The app does not run a browser automation stack for scraping. It fetches only the validated URL and parses the returned HTML server-side with HtmlUnit.
 - No per-shop plugin architecture exists yet; selectors are centralized in `ScraperService`.
@@ -176,4 +176,4 @@ Good next slices if more failures appear:
 1. Add regression fixtures for each new shop markup pattern before changing selectors.
 2. Split extraction into small strategy classes: social metadata, JSON-LD, microdata, gallery images, shop-specific fallbacks.
 3. Add structured scrape diagnostics so the UI/admin can distinguish `blocked`, `network_error`, `no_metadata`, and `parsed`.
-4. Optionally add a manual “paste metadata” workflow for shops that intentionally block server-side scraping.
+4. Improve the existing manual draft for blocked sites, for example by allowing a user to paste selected text from a page and split it into reviewed fields.

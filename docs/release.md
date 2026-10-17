@@ -2,6 +2,12 @@
 
 Use this checklist before tagging or publishing a Listful Thinking image.
 
+## V18 website capture candidate — repository branch only
+
+`feature/web-capture-imports` contains reviewed website capture, wishlist product fields, event source/location, and guest claim controls. Migration V18 adds columns to `items` and `lists`. This branch has not been merged or deployed on Alice; the live deployment below remains V17. Before a V18 deployment, make a verified pre-V18 SQLite backup, test migration on a restored copy, and prepare to restore that backup if rolling back to a V17 image.
+
+Local verification completed on 2026-10-17: full backend suite, 73 frontend unit tests, frontend production build, documentation contract, desktop/mobile deterministic capture Playwright journeys, and a guest claim/correction/release browser journey. Four additional Playwright journeys fetched public pages without mocking extraction: MUJI product, Good Food recipe, Berliner Philharmoniker `MusicEvent`, and King Arthur recipe. Event subtype detection was corrected after the first live run, then the focused backend scraper suite and all four live journeys passed. Run the opt-in live suite from `frontend/` with `LIVE_WEB_CAPTURE=1 npx playwright test tests/gui/live-capture.spec.ts --project=chromium-desktop`; external sites may change.
+
 ## Local quality gates
 
 Run from the repository root:
@@ -103,6 +109,8 @@ Implemented automated coverage:
 - Revoked public tokens fail.
 - SQL-injection-shaped login usernames and public-share tokens do not authenticate or resolve records.
 - Duplicate guest claims return conflict.
+- V18 guest controls require a hashed per-claim token for rename/release, and ordinary wishlist reads hide guest names. The owner can release a mistaken reservation.
+- V18 typed extraction uses the guarded scraper fetch path; user-reviewed list/item writes persist only selected fields and source URLs.
 - Oversized API JSON bodies return `413 payload_too_large` before controller parsing.
 - Sensitive POST endpoints return `429 rate_limited` after too many requests from one client/window.
 - Scraper rejects non-HTTP(S) schemes, private/local/metadata network targets, unsafe redirect targets, and caps downloaded HTML at 1 MiB.

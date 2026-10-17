@@ -6,11 +6,11 @@ It is meant for a household, family, club, care team, or small private group tha
 
 The [user experience concept](docs/design/user-experience.md) describes the list workspace, navigation, user guidance, and browser validation.
 
-## Current release status
+## Release and branch status
 
-The [September planning candidate](docs/planning/release-candidate-0.2.md) added Today & upcoming, archives and recoverable Trash/Undo, and reusable personal templates. It also included the reliability/security repairs and redesigned workspace. Schema migrations V14–V16 are forward-only; older-image rollback needs the matching database backup.
+The private Alice Tailnet instance runs the merged `main` build at schema **V17**. It includes 14-day recoverable Trash, 56-day public links, account setup/recovery, password changes, sharing notifications, and ownership handoffs. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified live image and database.
 
-The current `main` build is deployed on the private Alice Tailnet instance. Migration V17 adds 14-day Trash retention and 56-day public-link expiry. Later work adds admin-issued account setup/recovery links, password changes, sharing notifications, owner transfer, and audited admin transfer of inactive owners' lists. Back up before adopting V17; older images need a matching pre-V17 database snapshot for rollback. Backup retention remains an operator decision. See the [deployment record](docs/deployment/alice-tailnet.md) and [current state](docs/current-state-and-risk-register.md).
+This `feature/web-capture-imports` branch adds reviewed website capture, richer wishlist details, guest reservation controls, and schema **V18**. These changes are committed and tested locally; they are **not deployed on Alice**. Back up and test V18 on a restored database before upgrading any persistent instance. Rolling an older image back requires its matching pre-V18 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
 
 ## What it does
 
@@ -19,22 +19,29 @@ The current `main` build is deployed on the private Alice Tailnet instance. Migr
 - **Registered-user collaboration:** list owners can share read-only or contributor access with another local account. Contributors can add and update items; owners keep destructive/list-management control.
 - **Account and ownership handoffs:** admins can issue one-time setup/recovery links, users can change passwords, owners can transfer lists to active users, and admins can transfer lists from inactive accounts without browsing private content.
 - **Public guest sharing:** owners can create public links with modes for read-only viewing, wishlist claiming, or signup-style participation.
-- **Website capture:** preview product, recipe, event, and how-to pages; edit the suggested details; then save wishes, grocery lines, event plans, or tasks. Wishlist entries track exact variants, seller, availability, source, and when the price was checked. Guests can correct or release their own reservations.
+- **Website capture (this branch):** paste an HTTP(S) page, review product/recipe/event/how-to suggestions, then save wishes, grocery lines, dated event plans, or tasks. Wishlist entries keep exact variants, seller, availability, source, and price-check time. A possible duplicate is flagged before saving.
+- **Guest reservation control (this branch):** claimants can correct their name or release a reservation from the same browser; an owner can release a mistaken claim. Wishlist owners and other guests do not see the claimant's name.
 - **Grocery/shop mode:** use quantity/category fields, group by category, hide completed items, and clear completed grocery items after shopping.
 - **Chores and events:** use due dates, simple recurrence for chores, skip/postpone actions, target dates for events, and owner/helper labels for coordination.
 - **Notifications:** due-item reminders and sharing/ownership changes appear in-app; reminders can also be sent by email when SMTP is configured.
 - **Admin bootstrap:** the first registered account becomes admin; admins can manage registration, create users with a password or setup link, activate/deactivate users, and inspect per-user list counts.
 
-## Current status
+## Architecture and deployment posture
 
 The current implementation is an MVP/post-MVP private self-hosting foundation:
 
 - Spring Boot backend with session auth, CSRF protection, Flyway migrations, SQLite persistence, URL scraping, reminders, admin endpoints, and security hardening.
 - Vue frontend served by the backend as a single web app.
 - Single-container Docker build path with persistent `/app/data` volume.
-- Automated smoke and Playwright coverage for auth, admin settings/users, typed lists, account setup, password change, list handoffs, internal sharing, item workflows, public links, guest claiming/signup, responsibility labels, and container runtime checks.
+- Automated smoke, unit, and Playwright coverage for auth, admin settings/users, typed lists, account setup, password change, handoffs, sharing, capture, item workflows, guest reservations, and container runtime checks.
 
 Deployment posture: **private Tailnet/self-hosted ready** with a general [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md). Public internet deployments must use HTTPS, secure cookies, and reverse-proxy hardening as described in that handbook and tracked in [Current state and risk register](docs/current-state-and-risk-register.md).
+
+### Save from a website
+
+Open **Save from a website** after signing in, paste a page URL, and review every suggested field before saving. Products can become wishlist items; recipe ingredients become editable grocery lines; how-to steps become tasks; and events become dated lists with a location and optional preparation tasks. If a public page cannot be read, the page link remains in a manual draft. Line imports keep unsaved lines available for retry if a later save fails. This captures a snapshot, with no ongoing synchronization or automatic price tracking. Mobile Web Share Target integration is not yet available; paste the URL into the app.
+
+Live Playwright checks used real [MUJI](https://www.muji.eu/products/set-of-5-planted-tree-paper-notebooks-b5-4594), [Good Food](https://www.bbcgoodfood.com/recipes/easy-pancakes), [Berliner Philharmoniker](https://www.berliner-philharmoniker.de/en/concert/calendar/57042/), and [King Arthur Baking](https://www.kingarthurbaking.com/recipes/simply-perfect-pancakes-recipe) pages. The MUJI URL redirected to a German localized page, so its suggested title and final source URL were localized; both were visible for review. See the [dated extraction evidence](docs/domain/scraping.md).
 
 ## Requirements
 
@@ -215,6 +222,24 @@ The production-style path is still the integrated Spring Boot app that serves th
 
 ## Verify a build
 
+Run the local backend and frontend checks:
+
+```bash
+(cd backend && mvn test)
+(cd frontend && npm ci && npm test && npm run build)
+```
+
+Playwright starts an isolated Docker stack with disposable SQLite data. From the repository root:
+
+Install the Chromium browser once if Playwright has not done so: `(cd frontend && npx playwright install chromium)`.
+
+```bash
+(cd frontend && npx playwright test tests/gui/capture.spec.ts tests/gui/sharing.spec.ts)
+(cd frontend && LIVE_WEB_CAPTURE=1 npx playwright test tests/gui/live-capture.spec.ts --project=chromium-desktop)
+```
+
+The first command uses deterministic fixtures for capture and guest controls. The second makes real requests to public sites and is opt-in because their content and access can change. Neither command targets Alice. See [Release verification](docs/release.md) for the full gate list.
+
 Run the full container smoke test:
 
 ```bash
@@ -278,7 +303,7 @@ Domain and architecture:
 - [Item responsibility metadata](docs/domain/item-responsibility.md)
 - [Permissions and sharing](docs/domain/permissions-and-sharing.md)
 - [List types](docs/domain/list-types.md)
-- [Scraping](docs/domain/scraping.md)
+- [Website extraction and scraping](docs/domain/scraping.md)
 - [Reminders and notifications](docs/domain/reminders.md)
 - [Security architecture](docs/architecture/security.md)
 - [Architecture decisions](docs/architecture/architecture-decision-records.md)

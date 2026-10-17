@@ -47,6 +47,8 @@ Use one consistent timestamp representation across migrations/entities/API. Reco
 
 Flyway has reached V18 in the repository. V14 adds item revisions, notification delivery keys, and audit-path redaction; V15 adds archive/template/Trash state; V16 adds session/token versions; V17 adds public-link expiry. V18 adds item source/product metadata and hashed guest-claim control tokens, plus list source URL/event location. New account setup and ownership handoff features reuse these tables.
 
+V18 adds nullable `variant_note`, `seller`, `availability`, `price_checked_at`, `source_url`, and `claim_token_hash` to `items`, plus `source_url` and `event_location` to `lists`. The migration does not backfill these values for existing records. The raw guest claim-control token is never stored in SQLite. Alice remains on V17 until a separate verified deployment.
+
 ## Indexing principles
 
 Index every authorization lookup path:
@@ -62,6 +64,8 @@ Index every authorization lookup path:
 All mutable state must live under `/app/data`. A self-hoster should use SQLite's online backup API for a running database or stop the container before copying the file. Copying a live database file without its journal can lose committed data.
 
 For schema-changing deployments, take a verified backup before replacing the container and test migrations on a restored copy. Older images may need the matching pre-migration database to roll back. Check `integrity_check`, `foreign_key_check`, the latest successful Flyway row by `installed_rank`, and key table counts. The [Alice runbook](../deployment/alice-tailnet.md) records the current contract.
+
+For V18 specifically, keep a verified pre-V18 snapshot if rollback to the V17 image might be needed. A code rollback alone is not a database rollback.
 
 Trash is recoverable for 14 days; a daily purge removes expired deleted lists, templates, and items. Public links expire 56 days after issue. Database backups have a separate operator retention policy and may retain older content.
 

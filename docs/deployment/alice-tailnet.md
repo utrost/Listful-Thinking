@@ -2,6 +2,8 @@
 
 This document records the current private deployment contract for the Listful Thinking instance on Alice and the safe redeploy procedure.
 
+The `feature/web-capture-imports` V18 candidate is not included in this V17 deployment. Its migration and rollback preflight are described in the [release checklist](../release.md).
+
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
 ## Latest deployment — account and list handoffs, 2026-10-16
