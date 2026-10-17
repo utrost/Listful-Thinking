@@ -1,0 +1,11 @@
+# Optional overlay: docker compose -f compose.public.yml -f compose.public.smtp.yml ...
+services:
+  listful-thinking:
+    environment:
+      MAIL_PASS_FILE: /run/secrets/mail_password
+    secrets:
+      - mail_password
+
+secrets:
+  mail_password:
+    file: ./secrets/mail-password

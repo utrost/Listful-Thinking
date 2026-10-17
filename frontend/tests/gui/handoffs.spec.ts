@@ -84,6 +84,9 @@ test.describe('Account and list handoffs @gui @smoke', () => {
     const receiverContext = await browser.newContext({ baseURL: origin, viewport: page.viewportSize()! });
     const receiver = await receiverContext.newPage();
     await login(receiver, receiverName, 'handoff-test-password');
+    await expect(receiver.locator('.notifications-panel > summary')).toContainText('Notifications');
+    await expect(receiver.locator('.notifications-panel .notification-list')).toBeHidden();
+    await receiver.locator('.notifications-panel > summary').click();
     await expect(receiver.locator('.notifications-panel')).toContainText(`${title} was shared with you by ${ownerName}`);
     await expect(receiver.getByRole('heading', { name: title })).toBeVisible();
 

@@ -4,6 +4,7 @@
 **/dist
 **/target
 /data
+/secrets
 backend/data
 *.sqlite
 *.sqlite-shm

@@ -16,6 +16,9 @@ import app.listful.settings.dto.AdminCreateUserRequest;
 import app.listful.settings.dto.AdminSetupUserRequest;
 import app.listful.settings.SettingService;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -31,6 +34,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class AuthService {
@@ -46,10 +51,14 @@ public class AuthService {
     private final JavaMailSender mailSender;
     private final String publicBaseUrl;
     private final String dummyCredentialHash;
+    private final TransactionTemplate registrationTransaction;
     @Value("${spring.mail.host:}") private String mailHost;
     public boolean emailRecoveryAvailable() { return mailHost != null && !mailHost.isBlank(); }
 
     @Value("${listful.mail-from:}") private String mailFrom;
+    @Value("${listful.bootstrap.require-token:true}") private boolean requireBootstrapToken;
+    @Value("${listful.bootstrap.token-file:}") private String bootstrapTokenFile;
+    @Value("${listful.bootstrap.token:}") private String bootstrapToken;
 
     public AuthService(
         UserRepository userRepository,
@@ -57,6 +66,7 @@ public class AuthService {
         SettingService settingService,
         PasswordEncoder passwordEncoder,
         JavaMailSender mailSender,
+        PlatformTransactionManager transactionManager,
         @Value("${listful.public-base-url:http://localhost:8080}") String publicBaseUrl
     ) {
         this.userRepository = userRepository;
@@ -66,34 +76,68 @@ public class AuthService {
         this.dummyCredentialHash = passwordEncoder.encode("non-account timing equalization");
         this.mailSender = mailSender;
         this.publicBaseUrl = publicBaseUrl;
+        this.registrationTransaction = new TransactionTemplate(transactionManager);
     }
 
-    @Transactional
-    public User register(RegisterRequest request) {
-        String username = normalizeUsername(request.username());
-        boolean firstUser = userRepository.count() == 0;
+    public synchronized User register(RegisterRequest request) {
+        // Hold the lock through commit so two first-user requests cannot both get ADMIN.
+        return registrationTransaction.execute(status -> {
+            String username = normalizeUsername(request.username());
+            boolean firstUser = userRepository.count() == 0;
 
-        if (!firstUser && !settingService.registrationEnabled()) {
-            throw new RegistrationDisabledException();
-        }
+            if (firstUser && requireBootstrapToken && !validBootstrapToken(request.bootstrapToken())) {
+                throw new BootstrapTokenException();
+            }
 
-        if (userRepository.existsByUsername(username)) {
-            throw new UsernameAlreadyExistsException();
-        }
+            if (!firstUser && !settingService.registrationEnabled()) {
+                throw new RegistrationDisabledException();
+            }
 
-        UserRole role = firstUser ? UserRole.ADMIN : UserRole.USER;
-        return userRepository.save(new User(
-            username,
-            normalizeEmail(request.email()),
-            passwordEncoder.encode(request.password()),
-            role,
-            Instant.now()
-        ));
+            if (userRepository.existsByUsername(username)) {
+                throw new UsernameAlreadyExistsException();
+            }
+
+            UserRole role = firstUser ? UserRole.ADMIN : UserRole.USER;
+            return userRepository.save(new User(
+                username,
+                normalizeEmail(request.email()),
+                passwordEncoder.encode(request.password()),
+                role,
+                Instant.now()
+            ));
+        });
     }
 
     @Transactional(readOnly = true)
     public boolean registrationAvailable() {
-        return userRepository.count() == 0 || settingService.registrationEnabled();
+        return userRepository.count() == 0 ? bootstrapConfigured() : settingService.registrationEnabled();
+    }
+
+    @Transactional(readOnly = true)
+    public boolean bootstrapRequired() {
+        return userRepository.count() == 0 && requireBootstrapToken;
+    }
+
+    public boolean bootstrapConfigured() {
+        return !requireBootstrapToken || expectedBootstrapToken() != null;
+    }
+
+    private boolean validBootstrapToken(String supplied) {
+        String expected = expectedBootstrapToken();
+        return expected != null && supplied != null
+            && MessageDigest.isEqual(expected.getBytes(StandardCharsets.UTF_8), supplied.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private String expectedBootstrapToken() {
+        String value = bootstrapToken;
+        if (bootstrapTokenFile != null && !bootstrapTokenFile.isBlank()) {
+            try {
+                value = Files.readString(Path.of(bootstrapTokenFile), StandardCharsets.UTF_8).trim();
+            } catch (IOException | RuntimeException ex) {
+                return null;
+            }
+        }
+        return value != null && value.length() >= 32 && value.length() <= 256 ? value : null;
     }
 
     @Transactional(readOnly = true)

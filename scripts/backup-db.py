@@ -20,6 +20,8 @@ def backup(source: Path, destination: Path) -> None:
                 live.backup(snapshot)
                 if snapshot.execute('PRAGMA integrity_check').fetchall() != [('ok',)]:
                     raise RuntimeError('Backup integrity check failed')
+                if snapshot.execute('PRAGMA foreign_key_check').fetchall():
+                    raise RuntimeError('Backup foreign-key check failed')
         # Hard-link publishes atomically and never overwrites another backup.
         os.link(temporary, destination)
     finally:

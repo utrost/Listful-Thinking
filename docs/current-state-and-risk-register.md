@@ -2,6 +2,10 @@
 
 Last updated: 2026-10-17. Alice runs merged `main` code commit `ea97030` (PR #53) at schema V18. See the [verified deployment record](deployment/alice-tailnet.md).
 
+## RC3 public self-hosting candidate
+
+RC3 adds a first-admin setup code, public-hosting startup checks, a Caddy HTTPS Compose profile with trusted forwarding headers, resource limits, a bounded scraper, a verified live backup and upgrade path, AGPL-3.0 licensing with a source-code offer, and a strict container scan plus signed multiarch image release workflow. Alice remains a separate private Tailnet deployment. The public profile has a [dedicated operator runbook](deployment/public-self-hosting.md); verify the matching tag workflow, published digest, and GHCR visibility before installing it.
+
 V18 adds reviewed website capture, structured event source/location, wishlist product details and guest claim controls. All six PR CI jobs passed, an isolated copy of Alice's database migrated cleanly, and the live V18 deployment passed data and browser checks. The mobile Web Share Target remains a later HTTPS/installability task.
 
 ## V18 release evidence and limits
@@ -40,7 +44,7 @@ Current production-like deployment is a private self-hosted MVP on Alice:
 - Latest live health check returned `{"status":"ok"}`.
 - Deployment runbook: [Alice Tailnet Deployment](deployment/alice-tailnet.md).
 
-This is considered acceptable for a family/private Tailnet MVP. It is not yet a public-internet deployment profile.
+Alice remains a family/private Tailnet deployment. The RC3 public-internet profile is a separate deployment path for independent self-hosters.
 
 ## Implemented product surface
 
@@ -91,10 +95,10 @@ Implemented controls:
 
 These are known and intentionally documented:
 
-1. **No public-internet TLS profile yet.** Alice currently serves Tailnet HTTP. Public hosting needs HTTPS/TLS termination, HSTS in real browser traffic, and `SESSION_COOKIE_SECURE=true`.
+1. **Public profile has not yet been validated across independent hosts.** Alice currently serves Tailnet HTTP. The new public profile needs a real-domain certificate, secure-cookie, restore, and update check on each self-hoster's host.
 2. **CSRF protection is browser-metadata-aware.** Browser-style unsafe authenticated calls require a token, but non-browser clients without `Origin`/`Sec-Fetch-Site` are allowed for compatibility. This depends on `SameSite=Strict` cookies for browser protection.
 3. **Audit logging is still partial.** Filter-level rejects, selected admin/user-management changes, ownership handoffs, and public-share generation/revocation are logged and persisted as structured rows. Auth lifecycle events such as login success/failure, logout, magic-link use, and password-reset use are not yet all captured as structured audit rows.
-4. **No release signing.** RC2 published a resolved runtime SBOM and checksums, but the image/JAR artifacts are not signed.
+4. **Public image signatures require per-release verification.** The tag workflow adds SBOM, provenance, and keyless image signing after a strict container scan; confirm the published digest and signature before recommending a tag.
 5. **`npm audit` is an external availability gate.** CI intentionally fails closed if the npm registry audit endpoint returns 503 or times out. OSV scanning is a second dependency gate, but a transient npm registry outage can still make the frontend job red without any code/documentation regression.
 6. **Scraping is intentionally best-effort.** Many shops block server-side/data-center requests or return stale/generic pages. There is no browser automation, no cookie/proxy workflow, no confidence score, and no per-shop plugin architecture.
 7. **Responsibility labels are not structured actors yet.** `ownerLabel` and `assistantLabels` are free-text metadata. Structured members, assistant agents, notification routing, rotations, and permissions remain future slices.

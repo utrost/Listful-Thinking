@@ -26,6 +26,7 @@ test.describe('Focused list experience @ux', () => {
     await page.locator('.composer-disclosure > summary').click();
     await expect(page.getByText('1 open · 1 total', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete: A beautiful notebook', exact: true })).toBeHidden();
+    if (info.project.name.includes('mobile')) await page.getByRole('button', { name: 'Search & filter' }).click();
     await page.getByLabel('Search items').fill('nothing matches this');
     await expect(page.getByRole('heading', { name: 'No matching items.' })).toBeVisible();
     await page.getByRole('button', { name: 'Reset search & filters' }).click();
@@ -35,7 +36,7 @@ test.describe('Focused list experience @ux', () => {
     await page.getByRole('button', { name: 'Sharing', exact: true }).click();
     await expect(page.locator('.item-composer')).toBeHidden();
     await expect(page.getByRole('heading', { name: 'Share a link' })).toBeVisible();
-    await expect(page.getByText('Read-only lets people view items. Contributors can also add and update them.')).toBeVisible();
+    await expect(page.getByText('Read-only lets people view items; contributors can add and update them.', { exact: false })).toBeVisible();
     await page.screenshot({ path: `/tmp/listful-ux-${info.project.name}-sharing.png`, fullPage: true });
     await page.getByRole('button', { name: 'List settings', exact: true }).click();
     await page.getByRole('button', { name: 'Edit list', exact: true }).click();

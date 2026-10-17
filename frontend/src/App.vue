@@ -6,12 +6,13 @@
         <div>
           <h1>{{ t('app.title') }}</h1>
           <p v-if="!currentUser && !publicToken" class="intro">{{ t('app.intro') }}</p>
+          <p class="source-offer"><a :href="sourceCodeUrl" target="_blank" rel="noopener noreferrer">{{ t('app.sourceCode') }}</a> · AGPL-3.0</p>
         </div>
         <div class="account-actions">
           <label class="language-select"><span class="sr-only">{{ t('ux.language') }}</span><select v-model="locale" :aria-label="t('ux.language')"><option value="en">English</option><option value="de">Deutsch</option></select></label>
           <span v-if="currentUser" class="account-name">{{ currentUser.username }}</span>
           <details v-if="currentUser" class="account-password">
-            <summary>{{ t('auth.changePassword') }}</summary>
+            <summary>{{ t('auth.account') }}</summary>
             <form class="panel" @submit.prevent="handleChangePassword">
               <label>{{ t('auth.currentPassword') }}<input v-model="passwordChangeForm.currentPassword" type="password" required autocomplete="current-password" /></label>
               <label>{{ t('auth.newPassword') }}<input v-model="passwordChangeForm.newPassword" type="password" required minlength="8" autocomplete="new-password" /></label>
@@ -39,15 +40,20 @@
         <ul class="item-list">
           <li v-for="item in publicList?.items ?? []" :key="item.id">
             <PrivateImage v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" />
-            <span>
+            <span :class="{ 'wish-content': publicList?.type === 'WISH' }">
               <strong>{{ item.name }}</strong>
               <small v-if="item.description">{{ item.description }}</small>
-              <small v-if="item.variantNote">{{ t('capture.variant') }}: {{ item.variantNote }}</small>
-              <small v-if="item.seller">{{ t('capture.seller') }}: {{ item.seller }}</small>
+              <small v-if="item.variantNote" class="wish-variant">{{ item.variantNote }}</small>
+              <div v-if="publicList?.type === 'WISH'" class="wish-facts">
+                <span v-if="item.price != null" class="wish-price">{{ formatPrice(item.price, item.priceCurrency) }}</span>
+                <small v-if="item.seller">{{ t('capture.seller') }}: {{ item.seller }}</small>
+                <small v-if="item.availability">{{ t('capture.availability') }}: {{ item.availability }}</small>
+                <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
+              </div>
               <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ t('items.viewProduct') }}</a>
               <small v-if="item.dueDate">{{ formatDate(item.dueDate) }}</small>
-              <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
-                  <small>{{ t(`items.statuses.${item.status}`) }}<template v-if="item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template></small>
+              <small v-if="publicList?.type !== 'WISH' && item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
+              <span class="wish-state">{{ t(`items.statuses.${item.status}`) }}<template v-if="publicList?.type !== 'WISH' && item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template></span>
             </span>
             <form v-if="publicList?.mode !== 'VIEW' && item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
               <input v-model="guestName" :aria-label="t('sharing.guestName')" :placeholder="t('sharing.guestName')" required />
@@ -84,14 +90,16 @@
         </details>
         <form v-if="!resetToken && (authSettings?.registrationAvailable ?? false)" class="panel" @submit.prevent="handleRegister">
           <h2>{{ t('auth.register') }}</h2>
+          <p v-if="authSettings?.bootstrapRequired" class="muted">{{ t('auth.bootstrapHelp') }}</p>
           <label>{{ t('auth.username') }}<input v-model="registerForm.username" :aria-label="t('auth.username')" required minlength="3" /></label>
           <label>{{ t('auth.email') }}<input v-model="registerForm.email" :aria-label="t('auth.email')" type="email" /></label>
           <label>{{ t('auth.password') }}<input v-model="registerForm.password" :aria-label="t('auth.password')" type="password" required minlength="8" /></label>
+          <label v-if="authSettings?.bootstrapRequired">{{ t('auth.bootstrapToken') }}<input v-model="registerForm.bootstrapToken" :aria-label="t('auth.bootstrapToken')" type="password" required autocomplete="off" /></label>
           <button type="submit">{{ t('auth.register') }}</button>
         </form>
         <section v-else-if="!resetToken && authSettings && !authSettings.registrationAvailable" class="panel">
           <h2>{{ t('auth.register') }}</h2>
-          <p class="muted">{{ t('auth.registrationDisabled') }}</p>
+          <p class="muted">{{ t(authSettings.bootstrapRequired && !authSettings.bootstrapConfigured ? 'auth.bootstrapUnavailable' : 'auth.registrationDisabled') }}</p>
         </section>
 
         <form v-if="resetToken" class="panel" @submit.prevent="handleConsumePasswordReset">
@@ -113,28 +121,31 @@
           @setup-link="handleIssueAdminSetupLink" @transfer="handleAdminTransferLists" />
         </section>
         <div v-show="!adminView">
-        <nav class="workspace-navigation" :aria-label="t('planning.navigation')">
+        <div class="workspace-toolbar"><nav class="workspace-navigation" :aria-label="t('planning.navigation')">
           <button v-for="view in (['lists', 'today', 'archive', 'templates', 'trash'] as const)" :key="view" type="button" :aria-current="hubView === view ? 'page' : undefined" @click="showHub(view)">{{ t(`planning.views.${view}`) }}</button>
-        </nav>
-        <WebCapture :lists="lists" @saved="handleCaptureSaved" />
+        </nav><button type="button" class="capture-entry" @click="openCapture()">{{ t('capture.open') }}</button></div>
+        <dialog ref="captureDialog" class="capture-dialog" @close="captureVisible = false">
+          <div class="capture-dialog-actions"><button type="button" class="secondary subtle" @click="closeCapture">{{ t('capture.close') }}</button></div>
+          <WebCapture ref="webCapture" :lists="lists" @saved="handleCaptureSaved" @progress="handleCaptureProgress" />
+        </dialog>
         <div v-if="undoAction" class="undo-notice" role="status"><span>{{ undoAction.label }}</span><button type="button" class="secondary" @click="handleUndo">{{ t('planning.undo') }}</button><button type="button" class="secondary subtle" @click="undoAction = null">{{ t('planning.dismiss') }}</button></div>
         <PlanningHub v-if="hubView !== 'lists'" :key="hubView" :view="hubView" :overview="overview" :library="libraryLists" :trash-items="trashItems" :pending="actionPending" :ready="hubReady"
           @refresh="showHub(hubView)" @open="openHubList" @complete="completeAgenda" @restore="handleRestoreList" @restore-item="handleRestoreItem" @instantiate="handleInstantiateTemplate" @delete="handleDeleteTemplate" />
         <div v-show="hubView === 'lists'">
-        <div class="section-header">
+        <div class="section-header lists-heading">
           <h2>{{ t('lists.title') }}</h2>
           <p class="muted workspace-intro">{{ t('ux.listsHelp') }}</p>
         </div>
 
-        <section v-if="notifications.length" class="panel notifications-panel">
-          <h3>{{ t('notifications.title') }}</h3>
+        <details v-if="notifications.length" class="panel notifications-panel">
+          <summary>{{ t('notifications.title') }} <span class="count-badge">{{ notifications.length }}</span></summary>
           <ul class="notification-list">
             <li v-for="notification in notifications" :key="notification.id">
               <span>{{ notification.message }}</span>
               <button type="button" class="secondary subtle" @click="handleMarkNotificationRead(notification.id)">{{ t('notifications.markRead') }}</button>
             </li>
           </ul>
-        </section>
+        </details>
 
 
 
@@ -290,20 +301,20 @@
             </section>
 
             <section v-show="listView === 'items'" class="items-workspace">
-              <p class="list-purpose">{{ t(`ux.purpose.${selectedList.type}`) }}</p>
+              <p v-if="!items.length" class="list-purpose">{{ t(`ux.purpose.${selectedList.type}`) }}</p>
             <details v-if="selectedList.access !== 'READ' && !selectedList.archived" ref="itemComposerDisclosure" class="composer-disclosure" :open="items.length === 0">
               <summary>{{ t('ux.addToList') }}</summary>
             <form class="inline-form item-composer" @paste="currentItemFields.showImageUrl && handleImagePaste($event, itemForm)" @submit.prevent="handleCreateItem">
               <div class="quick-add">
               <label>{{ t('items.newName') }}<input v-model="itemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" /></label>
-              <label v-if="currentItemFields.showUrl">{{ t('ux.productUrl') }}<input v-model="itemForm.url" aria-label="URL" placeholder="URL" @change="handleScrapeItemUrl" /></label>
+              <label v-if="currentItemFields.showUrl">{{ t('ux.productUrl') }}<input v-model="itemForm.url" type="url" aria-label="URL" placeholder="https://…" /></label>
               <label v-if="currentItemFields.showQuantity">{{ t('items.quantity') }}<input v-model="itemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" /></label>
               <button type="submit">{{ t('items.create') }}</button>
+              <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="openCaptureFromItem">{{ t('capture.reviewLink') }}</button>
               </div>
               <details ref="itemDetailsDisclosure" class="item-details">
                 <summary>{{ t('ux.moreDetails') }}</summary>
                 <div class="details-fields">
-                <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="handleScrapeItemUrl">{{ t('items.previewUrl') }}</button>
               <label>{{ t('items.description') }}<textarea v-model="itemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea></label>
               <label v-if="currentItemFields.showImageUrl">{{ t('items.imageUrl') }}<input v-model="itemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" /></label>
               <label v-if="currentItemFields.showImageUrl">{{ t('items.uploadImage') }}<input type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, itemForm)" /></label>
@@ -327,7 +338,7 @@
             </form>
             </details>
 
-            <div v-if="selectedList.type === 'GROCERY' && !selectedList.archived && !selectedList.template" class="button-row shop-controls">
+            <div v-if="selectedList.type === 'GROCERY' && !selectedList.archived && !selectedList.template && items.some(item => item.status === 'DONE' || item.status === 'PURCHASED')" class="button-row shop-controls">
               <label class="toggle-row">
                 <input v-model="hideCompletedGroceries" type="checkbox" />
                 <span>{{ t('items.hideCompleted') }}</span>
@@ -335,7 +346,8 @@
               <button v-if="selectedList.access === 'OWNER'" type="button" class="danger subtle" @click="handleClearCompletedGroceries">{{ t('items.clearCompleted') }}</button>
             </div>
 
-            <section class="item-review-controls" :aria-label="t('items.reviewControlsLabel')">
+            <section class="item-review-controls" :class="{ 'mobile-review-open': mobileReviewOpen }" :aria-label="t('items.reviewControlsLabel')">
+              <button type="button" class="secondary subtle mobile-review-toggle" :aria-expanded="mobileReviewOpen" @click="mobileReviewOpen = !mobileReviewOpen">{{ t('ux.searchFilter') }}</button>
               <label>{{ t('items.search') }}<input v-model="itemReviewForm.query" type="search" :placeholder="t('items.searchPlaceholder')" /></label>
               <details class="filter-options"><summary>{{ t('ux.filterSort') }}</summary><div class="filter-fields">
               <label>{{ t('items.filter') }}
@@ -425,19 +437,27 @@
                   <button type="submit">{{ t('items.save') }}</button>
                   <button type="button" class="secondary subtle" @click="handleCancelEditItem">{{ t('items.cancel') }}</button>
                 </form>
-                <span v-else class="item-content">
+                <span v-else class="item-content" :class="{ 'wish-content': selectedList.type === 'WISH' }">
                   <strong>{{ item.name }}</strong>
                   <small v-if="item.description">{{ item.description }}</small>
+                  <small v-if="selectedList.type === 'WISH' && item.variantNote" class="wish-variant">{{ item.variantNote }}</small>
+                  <div v-if="selectedList.type === 'WISH'" class="wish-facts">
+                    <span v-if="item.price != null" class="wish-price">{{ formatPrice(item.price, item.priceCurrency) }}</span>
+                    <small v-if="item.seller">{{ t('capture.seller') }}: {{ item.seller }}</small>
+                    <small v-if="item.availability">{{ t('capture.availability') }}: {{ item.availability }}</small>
+                    <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
+                  </div>
                   <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ t('items.viewProduct') }}</a>
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                   <small v-if="item.dueDate">{{ formatDate(item.dueDate) }}</small>
-                  <small v-if="item.variantNote">{{ t('capture.variant') }}: {{ item.variantNote }}</small>
-                  <small v-if="item.seller">{{ t('capture.seller') }}: {{ item.seller }}</small>
-                  <small v-if="item.availability">{{ t('capture.availability') }}: {{ item.availability }}</small>
-                  <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
+                  <small v-if="selectedList.type !== 'WISH' && item.variantNote">{{ t('capture.variant') }}: {{ item.variantNote }}</small>
+                  <small v-if="selectedList.type !== 'WISH' && item.seller">{{ t('capture.seller') }}: {{ item.seller }}</small>
+                  <small v-if="selectedList.type !== 'WISH' && item.availability">{{ t('capture.availability') }}: {{ item.availability }}</small>
+                  <small v-if="selectedList.type !== 'WISH' && item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
                   <a v-if="item.sourceUrl && !item.url && safeProductUrl(item.sourceUrl)" :href="safeProductUrl(item.sourceUrl)!" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
-                  <small>{{ t(`items.statuses.${item.status}`) }}<template v-if="item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ formatDate(item.lastCompletedAt) }}</template></small>
+                  <span v-if="selectedList.type === 'WISH'" class="wish-state">{{ t(`items.statuses.${item.status}`) }}</span>
+                  <small v-else>{{ t(`items.statuses.${item.status}`) }}<template v-if="item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ formatDate(item.lastCompletedAt) }}</template></small>
                 </span>
                 <button v-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" :aria-label="`${t('items.done')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
                 <button v-else-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" :aria-label="`${t('items.reopen')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
@@ -519,7 +539,6 @@ import {
   consumePasswordReset,
   revokeListShare,
   revokePublicShare,
-  scrapeUrl,
   shareListWithUser,
   skipChoreItem,
   postponeChoreItem,
@@ -574,9 +593,15 @@ function handleMobileListSelection(event: Event) {
 const lists = ref<ListEntry[]>([]);
 const selectedList = ref<ListEntry | null>(null);
 const items = ref<ItemEntry[]>([]);
+const mobileReviewOpen = ref(false);
 const hideCompletedGroceries = ref(false);
 const shares = ref<ListShareEntry[]>([]);
 const notifications = ref<NotificationEntry[]>([]);
+const captureDialog = ref<HTMLDialogElement | null>(null);
+const webCapture = ref<InstanceType<typeof WebCapture> | null>(null);
+const captureVisible = ref(false);
+let captureFromItem = false;
+let captureTrigger: HTMLElement | null = null;
 const authSettings = ref<AuthSettings | null>(null);
 const adminSettings = ref<AdminSettings | null>(null);
 const adminUsers = ref<AdminUserEntry[]>([]);
@@ -584,6 +609,7 @@ const adminLists = ref<AdminListEntry[]>([]);
 const adminSetupLink = ref<AdminSetupLink | null>(null);
 const transferUsername = ref('');
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
+const sourceCodeUrl = safeProductUrl(import.meta.env.VITE_SOURCE_CODE_URL ?? '') ?? 'https://github.com/utrost/Listful-Thinking';
 const magicToken = window.location.pathname === '/magic-login' ? new URLSearchParams(window.location.search).get('token') : '';
 const resetToken = ref(window.location.pathname === '/reset-password' ? new URLSearchParams(window.location.search).get('token') : null);
 if (magicToken || resetToken.value) window.history.replaceState({}, '', window.location.pathname);
@@ -599,7 +625,7 @@ let importPoll: number | undefined;
 let importPollDeadline = 0;
 const messageKind = ref<'status' | 'error'>('status');
 
-const registerForm = reactive({ username: '', email: '', password: '' });
+const registerForm = reactive({ username: '', email: '', password: '', bootstrapToken: '' });
 const loginForm = reactive({ username: '', password: '' });
 const emailAuthForm = reactive({ email: '', username: '' });
 const recoveryEmailInput = ref<HTMLInputElement | null>(null);
@@ -709,6 +735,7 @@ async function handleRegister() {
   await run(async () => {
     currentUser.value = await register(registerForm);
     registerForm.password = '';
+    registerForm.bootstrapToken = '';
     await loadLists();
     await loadNotifications();
     await maybeLoadAdminPanel();
@@ -780,7 +807,7 @@ async function handleLogout() {
   Object.assign(listForm, { title: '', description: '', type: 'WISH', targetDate: '', sourceUrl: '', eventLocation: '' });
   Object.assign(editListForm, listForm);
   Object.assign(adminUserForm, { username: '', email: '', password: '', role: 'USER' });
-  Object.assign(registerForm, { username: '', email: '', password: '' });
+  Object.assign(registerForm, { username: '', email: '', password: '', bootstrapToken: '' });
   Object.assign(loginForm, { username: '', password: '' });
   Object.assign(emailAuthForm, { username: '', email: '' });
   Object.assign(passwordChangeForm, { currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -852,6 +879,7 @@ async function selectList(list: ListEntry) {
 
 function resetItemReviewForm() {
   Object.assign(itemReviewForm, defaultItemReviewState());
+  mobileReviewOpen.value = false;
 }
 
 async function loadListDetails() {
@@ -886,7 +914,54 @@ async function handleCreateList() {
   });
 }
 
+type CaptureStart = Parameters<InstanceType<typeof WebCapture>['begin']>[0];
+
+async function openCapture(start: CaptureStart = {}) {
+  captureTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  captureFromItem = Boolean(start?.listId);
+  const dialog = captureDialog.value;
+  if (!dialog) return;
+  if (!dialog.open) {
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  }
+  captureVisible.value = true;
+  await nextTick();
+  void webCapture.value?.begin(start);
+}
+
+function closeCapture() {
+  const dialog = captureDialog.value;
+  if (dialog?.open) {
+    if (typeof dialog.close === 'function') dialog.close();
+    else dialog.removeAttribute('open');
+  }
+  captureVisible.value = false;
+  captureFromItem = false;
+  captureTrigger?.focus();
+}
+
+function openCaptureFromItem() {
+  if (!selectedList.value) return;
+  void openCapture({ url: itemForm.url.trim() || undefined, listId: selectedList.value.id,
+    title: itemForm.name, description: itemForm.description, imageUrl: itemForm.imageUrl,
+    price: itemForm.price, priceCurrency: itemForm.priceCurrency, variantNote: itemForm.variantNote,
+    seller: itemForm.seller, availability: itemForm.availability });
+}
+
+async function handleCaptureProgress(listId: string) {
+  await run(async () => {
+    hubView.value = 'lists';
+    await loadLists();
+    const list = lists.value.find(candidate => candidate.id === listId);
+    if (list) await selectList(list);
+  });
+}
+
 async function handleCaptureSaved(listId: string) {
+  const fromItem = captureFromItem;
+  closeCapture();
+  if (fromItem) resetItemForm();
   await run(async () => {
     hubView.value = 'lists';
     await loadLists();
@@ -1161,28 +1236,6 @@ function publicShareUrl(token: string) {
   return `${window.location.origin}/s/${token}`;
 }
 
-async function handleScrapeItemUrl() {
-  if (!itemForm.url) return;
-  const requestedUrl = itemForm.url;
-  await run(async () => {
-    const scraped = await scrapeUrl({ url: requestedUrl });
-    if (itemForm.url !== requestedUrl) return;
-    if (!itemForm.name && scraped.title) {
-      itemForm.name = scraped.title;
-    }
-    if (!itemForm.description && scraped.description) {
-      itemForm.description = scraped.description;
-    }
-    if (!itemForm.imageUrl && scraped.imageUrl) {
-      itemForm.imageUrl = scraped.imageUrl;
-    }
-    if (itemForm.price == null && scraped.price !== null) {
-      itemForm.price = scraped.price;
-      itemForm.priceCurrency = scraped.priceCurrency ?? '';
-    }
-  });
-}
-
 type ImageForm = { imageUrl: string };
 
 function setImageFromFile(file: File | undefined, form: ImageForm) {
@@ -1214,6 +1267,10 @@ function handleImageFileInput(event: Event, form: ImageForm) {
 
 async function handleCreateItem() {
   if (!selectedList.value) return;
+  if (selectedList.value.type === 'WISH' && itemForm.url.trim()) {
+    openCaptureFromItem();
+    return;
+  }
   await run(async () => {
     const fields = currentItemFields.value;
     const created = await createItem(selectedList.value!.id, {

@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Semaphore;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
@@ -44,6 +45,7 @@ public class ScraperService {
     private static final String ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8";
     private final ObjectMapper objectMapper;
     private final SecurityHardeningProperties securityProperties;
+    private final Semaphore fetchSlots = new Semaphore(2, true);
 
     public ScraperService(ObjectMapper objectMapper, SecurityHardeningProperties securityProperties) {
         this.objectMapper = objectMapper;
@@ -196,6 +198,10 @@ public class ScraperService {
     }
 
     private HtmlPage fetchHtmlPage(URI startUri) throws IOException {
+        if (!fetchSlots.tryAcquire()) {
+            throw new ScraperBusyException();
+        }
+        try {
         URI uri = startUri;
         for (int redirect = 0; redirect <= 5; redirect++) {
             FetchResponse response = fetchOnce(uri);
@@ -226,6 +232,9 @@ public class ScraperService {
             }
         }
         throw new ValidationFailedException("Too many redirects while scraping URL metadata.");
+        } finally {
+            fetchSlots.release();
+        }
     }
 
     private FetchResponse fetchOnce(URI uri) throws IOException {
@@ -266,7 +275,14 @@ public class ScraperService {
             if (uri.getHost() == null || uri.getHost().isBlank()) {
                 throw new ValidationFailedException("URL must include a host.");
             }
+            if (uri.getRawUserInfo() != null) {
+                throw new ValidationFailedException("URL credentials are not allowed.");
+            }
             rejectPrivateAddress(uri);
+            if (!securityProperties.isScraperAllowPrivateAddresses() && uri.getPort() > 0
+                && uri.getPort() != 80 && uri.getPort() != 443) {
+                throw new ValidationFailedException("Only standard web ports can be scraped.");
+            }
             return uri;
         } catch (URISyntaxException ex) {
             throw new ValidationFailedException("URL is invalid.");

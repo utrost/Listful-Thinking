@@ -1,0 +1,88 @@
+services:
+  listful-thinking:
+    image: ${LISTFUL_IMAGE:?Set LISTFUL_IMAGE to a versioned Listful Thinking image or digest}
+    expose:
+      - "8080"
+    environment:
+      PUBLIC_HOSTING: "true"
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL to the HTTPS site origin}
+      SESSION_COOKIE_SECURE: "true"
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      BOOTSTRAP_TOKEN_FILE: /run/secrets/bootstrap_token
+      SYSTEM_LANG: ${SYSTEM_LANG:-en}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-25}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_AUTH: ${MAIL_AUTH:-false}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
+      MAIL_FROM: ${MAIL_FROM:-}
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-60}
+      RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
+      RATE_LIMIT_MAX_BUCKETS: ${RATE_LIMIT_MAX_BUCKETS:-10000}
+      TRUST_FORWARDED_FOR: "true"
+      MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-5100000}
+      SCRAPER_ALLOW_PRIVATE_ADDRESSES: "false"
+      CSRF_ENABLED: "true"
+    secrets:
+      - bootstrap_token
+    volumes:
+      - listful-data:/app/data
+    read_only: true
+    tmpfs:
+      # sqlite-jdbc extracts its native library into /tmp and loads it at startup.
+      - /tmp:rw,exec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health/ready | grep -q '\"status\":\"ok\"'"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  caddy:
+    image: caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+    depends_on:
+      listful-thinking:
+        condition: service_healthy
+    environment:
+      LISTFUL_DOMAIN: ${LISTFUL_DOMAIN:?Set LISTFUL_DOMAIN to the public DNS name}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.public:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 256m
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+secrets:
+  bootstrap_token:
+    file: ./secrets/bootstrap-token
+
+volumes:
+  listful-data:
+  caddy-data:
+  caddy-config:

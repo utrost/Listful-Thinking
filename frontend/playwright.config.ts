@@ -17,7 +17,7 @@ export default defineConfig({
     video: 'retain-on-failure'
   },
   webServer: {
-    command: `bash -lc 'COMPOSE_PROJECT_NAME=listful-thinking-gui docker compose --env-file .env.example -f compose.prod.yml down --remove-orphans && rm -rf /tmp/listful-thinking-gui-data && mkdir -p /tmp/listful-thinking-gui-data && chmod 777 /tmp/listful-thinking-gui-data && RATE_LIMIT_MAX_REQUESTS=1000 COMPOSE_PROJECT_NAME=listful-thinking-gui LISTFUL_PORT=${port} LISTFUL_DATA_BIND=/tmp/listful-thinking-gui-data docker compose --env-file .env.example -f compose.prod.yml up --build --force-recreate'`,
+    command: `bash -lc 'COMPOSE_PROJECT_NAME=listful-thinking-gui docker compose --env-file .env.example -f compose.prod.yml down --remove-orphans && rm -rf /tmp/listful-thinking-gui-data && mkdir -p /tmp/listful-thinking-gui-data && chmod 777 /tmp/listful-thinking-gui-data && BOOTSTRAP_TOKEN=listful-gui-first-admin-setup-code-for-tests RATE_LIMIT_MAX_REQUESTS=1000 COMPOSE_PROJECT_NAME=listful-thinking-gui LISTFUL_PORT=${port} LISTFUL_DATA_BIND=/tmp/listful-thinking-gui-data docker compose --env-file .env.example -f compose.prod.yml up --build --force-recreate'`,
     cwd: '..',
     url: `${baseURL}/api/v1/health/ready`,
     timeout: 300_000,

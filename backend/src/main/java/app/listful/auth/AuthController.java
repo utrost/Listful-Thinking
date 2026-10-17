@@ -106,7 +106,9 @@ public class AuthController {
 
     @GetMapping("/settings")
     public AuthSettingsResponse settings() {
-        return new AuthSettingsResponse(authService.registrationAvailable(), authService.emailRecoveryAvailable());
+        boolean bootstrapRequired = authService.bootstrapRequired();
+        return new AuthSettingsResponse(authService.registrationAvailable(), authService.emailRecoveryAvailable(),
+            bootstrapRequired, !bootstrapRequired || authService.bootstrapConfigured());
     }
 
     @GetMapping("/me")
@@ -122,6 +124,12 @@ public class AuthController {
     ResponseEntity<ApiError> registrationDisabled(RegistrationDisabledException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(new ApiError("registration_disabled", message("auth.registration_disabled")));
+    }
+
+    @ExceptionHandler(BootstrapTokenException.class)
+    ResponseEntity<ApiError> bootstrapTokenInvalid(BootstrapTokenException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(new ApiError("bootstrap_token_invalid", "A valid first-admin setup code is required."));
     }
 
     @ExceptionHandler(UsernameAlreadyExistsException.class)

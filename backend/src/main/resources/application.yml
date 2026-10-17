@@ -43,7 +43,12 @@ listful:
   mail-from: ${MAIL_FROM:}
   system-lang: ${SYSTEM_LANG:en}
   registration-enabled: ${REGISTRATION_ENABLED:false}
+  bootstrap:
+    require-token: true
+    token-file: ${BOOTSTRAP_TOKEN_FILE:}
+    token: ${BOOTSTRAP_TOKEN:}
   public-base-url: ${PUBLIC_BASE_URL:http://localhost:8080}
+  public-hosting: ${PUBLIC_HOSTING:false}
   security:
     csrf-enabled: ${CSRF_ENABLED:true}
     rate-limit-enabled: ${RATE_LIMIT_ENABLED:true}

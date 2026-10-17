@@ -13,7 +13,7 @@ test.describe('Live website capture @live', () => {
 
   async function readPage(page: import('@playwright/test').Page, url: string) {
     const capture = page.locator('.web-capture');
-    await capture.locator('summary').click();
+    await page.getByRole('button', { name: 'Save from a website' }).click();
     await capture.getByLabel('Page URL').fill(url);
     const responsePromise = page.waitForResponse(response => response.url().endsWith('/api/v1/utils/extract'));
     await capture.getByRole('button', { name: 'Read page' }).click();
@@ -44,6 +44,7 @@ test.describe('Live website capture @live', () => {
     const wish = lists.find((list: { title: string }) => list.title === 'Live capture wishlist');
     const items = await (await page.request.get(`/api/v1/lists/${wish.id}/items`)).json();
     expect(items[0]).toMatchObject({ variantNote: 'B5, set of 5', price: 5.95, priceCurrency: 'EUR', sourceUrl: draft.sourceUrl });
+    await page.getByRole('button', { name: 'Save from a website' }).click();
     await capture.getByLabel('Page URL').fill(productUrl);
     await capture.getByRole('button', { name: 'Read page' }).click();
     await capture.getByLabel('Destination list').selectOption(wish.id);
@@ -74,6 +75,7 @@ test.describe('Live website capture @live', () => {
     expect(draft.kind).toBe('EVENT');
     expect(draft.eventStart).toContain('2026-10-21');
     expect(draft.eventLocation).toBeTruthy();
+    await capture.locator('.capture-more > summary').click();
     await capture.getByLabel('Preparation tasks (optional)').fill('Plan journey');
     await capture.getByRole('button', { name: 'Save reviewed draft' }).click();
     await expect(page.getByRole('heading', { name: draft.title, exact: true })).toBeVisible();
@@ -86,7 +88,7 @@ test.describe('Live website capture @live', () => {
   test('keeps a real source link when the user replaces the extracted details', async ({ page }) => {
     await bootstrapOrLoginAdmin(page);
     const capture = page.locator('.web-capture');
-    await capture.locator('summary').click();
+    await page.getByRole('button', { name: 'Save from a website' }).click();
     await capture.getByLabel('Page URL').fill(sometimesBlockedUrl);
     const responsePromise = page.waitForResponse(response => response.url().endsWith('/api/v1/utils/extract'));
     await capture.getByRole('button', { name: 'Read page' }).click();
