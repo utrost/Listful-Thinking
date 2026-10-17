@@ -38,6 +38,8 @@ export async function bootstrapOrLoginAdmin(page: Page) {
   const registerButton = registerForm.getByRole('button', { name: 'Register' });
   const canSelfRegister = await registerButton.waitFor({ state: 'visible', timeout: 3_000 }).then(() => true).catch(() => false);
   if (canSelfRegister) {
+    const setupCode = registerForm.getByLabel('First-admin setup code');
+    if (await setupCode.count()) await setupCode.fill('listful-gui-first-admin-setup-code-for-tests');
     await registerForm.getByLabel('Username').fill('admin');
     await registerForm.getByLabel('Email').fill('admin@example.test');
     await registerForm.getByLabel('Password').fill('listful-admin-password');

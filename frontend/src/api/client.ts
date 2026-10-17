@@ -13,6 +13,7 @@ export interface RegisterRequest {
   username: string;
   email?: string;
   password: string;
+  bootstrapToken?: string;
 }
 
 export interface LoginRequest {
@@ -41,6 +42,8 @@ export interface AdminSettings {
 export interface AuthSettings {
   emailRecoveryAvailable?: boolean;
   registrationAvailable: boolean;
+  bootstrapRequired?: boolean;
+  bootstrapConfigured?: boolean;
 }
 
 export interface UpdateAdminSettingsRequest {

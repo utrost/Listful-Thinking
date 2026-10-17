@@ -46,35 +46,39 @@ Required differences from private HTTP:
 PUBLIC_BASE_URL=https://lists.example.org
 SESSION_COOKIE_SECURE=true
 REGISTRATION_ENABLED=false
-TRUST_FORWARDED_FOR=false
+TRUST_FORWARDED_FOR=true
 RATE_LIMIT_ENABLED=true
 CSRF_ENABLED=true
 SCRAPER_ALLOW_PRIVATE_ADDRESSES=false
+PUBLIC_HOSTING=true
 ```
 
 You must also terminate HTTPS in a reverse proxy such as Caddy, nginx, Traefik, or an equivalent front door. The example below uses Caddy because it can obtain and renew certificates automatically.
 
-`TRUST_FORWARDED_FOR=true` is **not** normally required. Enable it only if all of these are true:
+For other proxy setups, enable `TRUST_FORWARDED_FOR=true` only if all of these are true:
 
 1. Listful Thinking is reachable only through your reverse proxy, not directly from the internet.
 2. The reverse proxy overwrites or strips inbound `X-Forwarded-For` from clients.
 3. You want rate-limit/audit client IPs to use the original client address instead of the proxy address.
 
-If you are unsure, leave `TRUST_FORWARDED_FOR=false`. That is safer than trusting spoofable client-provided headers.
+The shipped public Compose profile meets these conditions. For a different proxy, leave it false until the header boundary has been verified.
 
 ## Local quickstart versus production profile
 
 Use the default `docker-compose.yml` for a quick local first look:
 
 ```bash
-docker compose up --build
+cp .env.example .env
+python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
+# Paste the generated value into BOOTSTRAP_TOKEN in .env.
+docker compose --env-file .env up --build
 ```
 
 Use the production profile for a longer-lived self-hosted instance:
 
 ```bash
 cp .env.example .env
-# edit .env before starting
+# Set BOOTSTRAP_TOKEN as above, and edit the other .env settings before starting.
 mkdir -p data
 sudo chown 1000:1000 data
 docker compose --env-file .env -f compose.prod.yml up --build -d
@@ -94,7 +98,7 @@ Check health:
 curl -fsS http://localhost:8080/api/v1/health
 ```
 
-Open `http://localhost:8080`, register the first account, and keep that account safe. The first account becomes `ADMIN`.
+Open `http://localhost:8080`, enter the setup code from `.env` while registering the first account, and keep that account safe. The first account becomes `ADMIN`.
 
 Stop the production profile:
 
@@ -185,102 +189,112 @@ The release smoke script performs an isolated restore and verifies readiness, lo
 
 ## Public HTTPS example with Caddy
 
-This is a public-internet example. Replace `lists.example.org` with your real domain.
+Use the shipped [public self-hosting profile](public-self-hosting.md) and its `compose.public.yml`, `Caddyfile.public`, `.env.public.example`, and backup/upgrade scripts. It requires `PUBLIC_BASE_URL=https://lists.example.org`, `SESSION_COOKIE_SECURE=true`, and `TRUST_FORWARDED_FOR=true` because the reverse proxy overwrites or strips inbound `X-Forwarded-For`. The app is not exposed on a host port. Caddy publishes only 80 and 443 and handles TLS, `Strict-Transport-Security`, and request-size limits. The first admin must enter the private setup code generated with `scripts/create-bootstrap-secret.sh`.
 
-Prerequisites:
+Start from the repository root. Copy and edit the public environment file; replace the placeholder image with a published versioned tag or digest. Then generate the secret and validate Compose before starting:
 
-- The DNS `A`/`AAAA` record for `lists.example.org` points to your host.
-- Ports `80` and `443` reach Caddy from the internet.
-- The Listful Thinking app port is not exposed directly to the public internet.
+```bash
+cp .env.public.example .env.public
+# Edit LISTFUL_DOMAIN, PUBLIC_BASE_URL and LISTFUL_IMAGE in .env.public.
+scripts/create-bootstrap-secret.sh
+docker compose --env-file .env.public -f compose.public.yml config --quiet
+docker compose --env-file .env.public -f compose.public.yml up -d
+```
 
-Use this shape as `compose.public.yml`:
+The following is the complete shipped Compose example. Keep [the file](../../compose.public.yml) and [its Caddyfile](../../Caddyfile.public) beside one another. The app uses a named SQLite volume, a mounted setup secret, a read-only root filesystem, and no host port; Caddy owns ports 80 and 443. Run `scripts/backup-public.sh` regularly and use `scripts/upgrade-public.sh` when changing image versions.
 
+<!-- compose-public-example-start -->
 ```yaml
 services:
   listful-thinking:
-    build: .
-    image: listful-thinking:prod
+    image: ${LISTFUL_IMAGE:?Set LISTFUL_IMAGE to a versioned Listful Thinking image or digest}
+    expose:
+      - "8080"
     environment:
-      SYSTEM_LANG: ${SYSTEM_LANG:-en}
+      PUBLIC_HOSTING: "true"
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?Set PUBLIC_BASE_URL to the HTTPS site origin}
+      SESSION_COOKIE_SECURE: "true"
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}
-      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
+      BOOTSTRAP_TOKEN_FILE: /run/secrets/bootstrap_token
+      SYSTEM_LANG: ${SYSTEM_LANG:-en}
       MAIL_HOST: ${MAIL_HOST:-}
       MAIL_PORT: ${MAIL_PORT:-25}
       MAIL_USER: ${MAIL_USER:-}
-      MAIL_PASS: ${MAIL_PASS:-}
       MAIL_AUTH: ${MAIL_AUTH:-false}
       MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
       MAIL_FROM: ${MAIL_FROM:-}
-      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_ENABLED: "true"
       RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-60}
       RATE_LIMIT_WINDOW_SECONDS: ${RATE_LIMIT_WINDOW_SECONDS:-60}
       RATE_LIMIT_MAX_BUCKETS: ${RATE_LIMIT_MAX_BUCKETS:-10000}
-      TRUST_FORWARDED_FOR: ${TRUST_FORWARDED_FOR:-false}
+      TRUST_FORWARDED_FOR: "true"
       MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-5100000}
-      SCRAPER_ALLOW_PRIVATE_ADDRESSES: ${SCRAPER_ALLOW_PRIVATE_ADDRESSES:-false}
-      CSRF_ENABLED: ${CSRF_ENABLED:-true}
-    expose:
-      - "8080"
+      SCRAPER_ALLOW_PRIVATE_ADDRESSES: "false"
+      CSRF_ENABLED: "true"
+    secrets:
+      - bootstrap_token
     volumes:
       - listful-data:/app/data
+    read_only: true
+    tmpfs:
+      # sqlite-jdbc extracts its native library into /tmp and loads it at startup.
+      - /tmp:rw,exec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
     restart: unless-stopped
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health/ready | grep -q '\"status\":\"ok\"'"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   caddy:
-    image: caddy:2
+    image: caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
     depends_on:
-      - listful-thinking
+      listful-thinking:
+        condition: service_healthy
+    environment:
+      LISTFUL_DOMAIN: ${LISTFUL_DOMAIN:?Set LISTFUL_DOMAIN to the public DNS name}
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./Caddyfile.public:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
       - caddy-config:/config
     restart: unless-stopped
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
+    mem_limit: 256m
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+secrets:
+  bootstrap_token:
+    file: ./secrets/bootstrap-token
 
 volumes:
   listful-data:
   caddy-data:
   caddy-config:
 ```
-
-Create `Caddyfile`:
-
-```caddyfile
-lists.example.org {
-  encode zstd gzip
-
-  header {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains"
-    X-Content-Type-Options "nosniff"
-  }
-
-  reverse_proxy listful-thinking:8080 {
-    header_up X-Forwarded-Proto {scheme}
-    header_up X-Forwarded-Host {host}
-    header_up X-Forwarded-For {remote_host}
-  }
-}
-```
-
-Create `.env.public`:
-
-```env
-PUBLIC_BASE_URL=https://lists.example.org
-SESSION_COOKIE_SECURE=true
-REGISTRATION_ENABLED=false
-TRUST_FORWARDED_FOR=false
-RATE_LIMIT_ENABLED=true
-CSRF_ENABLED=true
-SCRAPER_ALLOW_PRIVATE_ADDRESSES=false
-```
-
-Start it:
-
-```bash
-docker compose --env-file .env.public -f compose.public.yml up --build -d
-```
+<!-- compose-public-example-end -->
 
 ## Public HTTPS verification checklist
 
@@ -301,7 +315,7 @@ curl -fsSI https://lists.example.org/ | grep -i '^strict-transport-security:'
 Expected result includes something like:
 
 ```text
-strict-transport-security: max-age=31536000; includeSubDomains
+strict-transport-security: max-age=31536000
 ```
 
 Secure session cookie after login:
@@ -337,8 +351,8 @@ This should still return the normal page headers. It does **not** prove `TRUST_F
 
 Recommended first-run sequence:
 
-1. Start the instance privately.
-2. Register the first admin account.
+1. Generate a setup code and start the instance.
+2. Register the first admin account with that code.
 3. Confirm registration is disabled in the Admin panel.
 4. Create named local accounts for the people who should use the instance. You can set an initial password or issue a one-time setup link so each person chooses their own.
 5. Configure SMTP only if you want email reminders, magic links, or password resets.
@@ -397,7 +411,7 @@ docker compose --env-file .env -f compose.prod.yml up --build -d
 curl -fsS http://localhost:8080/api/v1/health
 ```
 
-For the default development/named-volume profile, use `docker compose up --build -d` instead. Keep the same profile and data path that created your instance. For public HTTPS, use the public compose command and verify HSTS plus the secure session cookie again.
+For the default development/named-volume profile, use `docker compose up --build -d` instead. Keep the same profile and data path that created your instance. For public HTTPS, set a versioned image and run `scripts/upgrade-public.sh`; it makes a verified backup first. Verify HSTS plus the secure session cookie again.
 
 ## Security baseline for small self-hosters
 
@@ -445,9 +459,8 @@ Scraping is best-effort. Some shops block server-side requests or return generic
 
 - Hosted SaaS operation.
 - Multi-tenant public service operation.
-- Image and artifact signing. RC2 includes a resolved runtime SBOM.
 - A full audited admin-superuser workflow.
-- Automated backup scheduling, retention, or encryption. The repository includes a manual verified snapshot helper and restore checks.
+- Managed backup scheduling, retention, or encryption. The repository includes a live verified snapshot helper and restore checks; schedule it on the host.
 
 Those are separate release-readiness and operations topics. The current app is aimed at small self-hosted instances first.
 

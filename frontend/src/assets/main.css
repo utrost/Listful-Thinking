@@ -38,6 +38,7 @@ small { display: block; color: var(--muted); line-height: 1.55; overflow-wrap: a
 .language-select select { width: auto; border: 0; background: transparent; font-size: .85rem; }
 .eyebrow { color: #8b6740; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .9rem; }
 .intro { color: var(--muted); margin-top: .8rem; }
+.source-offer { color: var(--muted); font-size: .76rem; margin: .35rem 0 0; }
 .app-content { padding: 0; border: 0; margin: 0; min-width: 0; }
 .app-content:disabled { opacity: .75; }
 .workspace-intro { margin: 0; font-size: .85rem; }

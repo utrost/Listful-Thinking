@@ -3,6 +3,7 @@
     "title": "Listful Thinking",
     "tagline": "Wishlists, chores, and event lists for self-hosters.",
     "intro": "Your wishes, plans, and everyday lists, together.",
+    "sourceCode": "Get the source code",
     "working": "Working…"
   },
   "auth": {
@@ -25,6 +26,9 @@
     "passwordsDoNotMatch": "The new passwords do not match.",
     "passwordChanged": "Password changed. Log in with the new password.",
     "registrationDisabled": "Self-registration is currently disabled. Ask an administrator to create your account.",
+    "bootstrapToken": "First-admin setup code",
+    "bootstrapHelp": "Enter the setup code from your server's bootstrap secret. It is needed only for the first account.",
+    "bootstrapUnavailable": "First-admin setup is not configured. Create a bootstrap secret on the server, then reload this page.",
     "recovery": "Account recovery",
     "recoveryHelp": "Enter your account email. No password is needed. For a shared email address, also enter your username.",
     "optionalUsername": "Username (optional)",
@@ -88,6 +92,7 @@
     "conflict": "That change conflicts with the current list state. Refresh and try again.",
     "username_taken": "That username is already taken.",
     "registration_disabled": "Self-registration is currently disabled. Ask an administrator to create your account.",
+    "bootstrap_token_invalid": "The first-admin setup code is invalid. Check the server's bootstrap secret.",
     "bad_credentials": "Invalid username or password.",
     "malformed_json": "The request could not be read. Please try again.",
     "internal_error": "Something went wrong on the server. Please try again.",

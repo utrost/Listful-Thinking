@@ -200,11 +200,10 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
         long windowMillis = Math.max(1, properties.getRateLimitWindowSeconds()) * 1000;
         long windowStartedAt = (System.currentTimeMillis() / windowMillis) * windowMillis;
         cleanupOldCounters(windowStartedAt, windowMillis);
-        if (counters.size() >= properties.getRateLimitMaxBuckets()) {
+        String key = clientIp(request) + " " + request.getMethod() + " " + rateLimitPath(request) + " " + windowStartedAt;
+        if (!counters.containsKey(key) && counters.size() >= properties.getRateLimitMaxBuckets()) {
             return true;
         }
-
-        String key = clientIp(request) + " " + request.getMethod() + " " + rateLimitPath(request) + " " + windowStartedAt;
         WindowCounter counter = counters.compute(key, (ignored, existing) -> {
             if (existing == null || existing.windowStartedAt != windowStartedAt) {
                 return new WindowCounter(windowStartedAt);
@@ -224,10 +223,13 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
     }
 
     private boolean isSensitiveEndpoint(HttpServletRequest request) {
-        if (!"POST".equalsIgnoreCase(request.getMethod())) {
-            return false;
-        }
         String path = request.getRequestURI();
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
+            return path.startsWith("/api/v1/share/")
+                || path.equals("/api/v1/auth/settings")
+                || path.equals("/api/v1/auth/csrf");
+        }
+        if (!"POST".equalsIgnoreCase(request.getMethod())) return false;
         return path.equals("/api/v1/auth/login")
             || path.equals("/api/v1/auth/register")
             || path.equals("/api/v1/auth/magic-link")
@@ -245,7 +247,8 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
         if (properties.isTrustForwardedFor()) {
             String forwardedFor = request.getHeader("X-Forwarded-For");
             if (forwardedFor != null && !forwardedFor.isBlank()) {
-                return forwardedFor.split(",", 2)[0].trim();
+                String candidate = forwardedFor.split(",", 2)[0].trim();
+                if (candidate.length() <= 64 && candidate.matches("[0-9a-fA-F:.]+")) return candidate;
             }
         }
         return request.getRemoteAddr();

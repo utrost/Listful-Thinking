@@ -1,6 +1,7 @@
 {
   "name": "listful-thinking-frontend",
-  "version": "0.2.0-rc.2",
+  "version": "0.2.0-rc.3",
+  "license": "AGPL-3.0-only",
   "private": true,
   "type": "module",
   "scripts": {
@@ -11,6 +12,7 @@
     "test:gui:smoke": "playwright test --grep @smoke",
     "test:gui:sharing": "playwright test --grep @sharing",
     "test:gui:mobile": "playwright test --grep @mobile --project=chromium-mobile",
+    "docs:screenshots": "playwright test tests/gui/docs-screenshots.spec.ts",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

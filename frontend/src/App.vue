@@ -6,6 +6,7 @@
         <div>
           <h1>{{ t('app.title') }}</h1>
           <p v-if="!currentUser && !publicToken" class="intro">{{ t('app.intro') }}</p>
+          <p class="source-offer"><a :href="sourceCodeUrl" target="_blank" rel="noopener noreferrer">{{ t('app.sourceCode') }}</a> · AGPL-3.0</p>
         </div>
         <div class="account-actions">
           <label class="language-select"><span class="sr-only">{{ t('ux.language') }}</span><select v-model="locale" :aria-label="t('ux.language')"><option value="en">English</option><option value="de">Deutsch</option></select></label>
@@ -89,14 +90,16 @@
         </details>
         <form v-if="!resetToken && (authSettings?.registrationAvailable ?? false)" class="panel" @submit.prevent="handleRegister">
           <h2>{{ t('auth.register') }}</h2>
+          <p v-if="authSettings?.bootstrapRequired" class="muted">{{ t('auth.bootstrapHelp') }}</p>
           <label>{{ t('auth.username') }}<input v-model="registerForm.username" :aria-label="t('auth.username')" required minlength="3" /></label>
           <label>{{ t('auth.email') }}<input v-model="registerForm.email" :aria-label="t('auth.email')" type="email" /></label>
           <label>{{ t('auth.password') }}<input v-model="registerForm.password" :aria-label="t('auth.password')" type="password" required minlength="8" /></label>
+          <label v-if="authSettings?.bootstrapRequired">{{ t('auth.bootstrapToken') }}<input v-model="registerForm.bootstrapToken" :aria-label="t('auth.bootstrapToken')" type="password" required autocomplete="off" /></label>
           <button type="submit">{{ t('auth.register') }}</button>
         </form>
         <section v-else-if="!resetToken && authSettings && !authSettings.registrationAvailable" class="panel">
           <h2>{{ t('auth.register') }}</h2>
-          <p class="muted">{{ t('auth.registrationDisabled') }}</p>
+          <p class="muted">{{ t(authSettings.bootstrapRequired && !authSettings.bootstrapConfigured ? 'auth.bootstrapUnavailable' : 'auth.registrationDisabled') }}</p>
         </section>
 
         <form v-if="resetToken" class="panel" @submit.prevent="handleConsumePasswordReset">
@@ -606,6 +609,7 @@ const adminLists = ref<AdminListEntry[]>([]);
 const adminSetupLink = ref<AdminSetupLink | null>(null);
 const transferUsername = ref('');
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
+const sourceCodeUrl = safeProductUrl(import.meta.env.VITE_SOURCE_CODE_URL ?? '') ?? 'https://github.com/utrost/Listful-Thinking';
 const magicToken = window.location.pathname === '/magic-login' ? new URLSearchParams(window.location.search).get('token') : '';
 const resetToken = ref(window.location.pathname === '/reset-password' ? new URLSearchParams(window.location.search).get('token') : null);
 if (magicToken || resetToken.value) window.history.replaceState({}, '', window.location.pathname);
@@ -621,7 +625,7 @@ let importPoll: number | undefined;
 let importPollDeadline = 0;
 const messageKind = ref<'status' | 'error'>('status');
 
-const registerForm = reactive({ username: '', email: '', password: '' });
+const registerForm = reactive({ username: '', email: '', password: '', bootstrapToken: '' });
 const loginForm = reactive({ username: '', password: '' });
 const emailAuthForm = reactive({ email: '', username: '' });
 const recoveryEmailInput = ref<HTMLInputElement | null>(null);
@@ -731,6 +735,7 @@ async function handleRegister() {
   await run(async () => {
     currentUser.value = await register(registerForm);
     registerForm.password = '';
+    registerForm.bootstrapToken = '';
     await loadLists();
     await loadNotifications();
     await maybeLoadAdminPanel();
@@ -802,7 +807,7 @@ async function handleLogout() {
   Object.assign(listForm, { title: '', description: '', type: 'WISH', targetDate: '', sourceUrl: '', eventLocation: '' });
   Object.assign(editListForm, listForm);
   Object.assign(adminUserForm, { username: '', email: '', password: '', role: 'USER' });
-  Object.assign(registerForm, { username: '', email: '', password: '' });
+  Object.assign(registerForm, { username: '', email: '', password: '', bootstrapToken: '' });
   Object.assign(loginForm, { username: '', password: '' });
   Object.assign(emailAuthForm, { username: '', email: '' });
   Object.assign(passwordChangeForm, { currentPassword: '', newPassword: '', confirmPassword: '' });

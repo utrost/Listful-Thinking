@@ -152,10 +152,10 @@ class AuthControllerTests {
     }
 
     @Test
-    void publicAuthSettingsExposeOnlyRegistrationAndEmailAvailability() throws Exception {
+    void publicAuthSettingsExposeRegistrationAndBootstrapState() throws Exception {
         mockMvc.perform(get("/api/v1/auth/settings"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.*", hasSize(2)))
+            .andExpect(jsonPath("$.*", hasSize(4)))
             .andExpect(jsonPath("$.registrationAvailable").value(true));
 
         MockHttpSession admin = registerAndReturnSession("admin", "admin@example.test", "password one");

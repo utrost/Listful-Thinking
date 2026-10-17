@@ -3,6 +3,7 @@
     "title": "Listful Thinking",
     "tagline": "Wunschlisten, Aufgaben und Eventlisten für Self-Hoster.",
     "intro": "Deine Wünsche, Pläne und Alltagslisten an einem Ort.",
+    "sourceCode": "Quellcode herunterladen",
     "working": "Wird verarbeitet…"
   },
   "auth": {
@@ -25,6 +26,9 @@
     "passwordsDoNotMatch": "Die neuen Passwörter stimmen nicht überein.",
     "passwordChanged": "Passwort geändert. Melde dich mit dem neuen Passwort an.",
     "registrationDisabled": "Selbstregistrierung ist gerade deaktiviert. Bitte einen Administrator, dein Konto anzulegen.",
+    "bootstrapToken": "Einrichtungscode für das erste Administratorkonto",
+    "bootstrapHelp": "Gib den Einrichtungscode aus dem Bootstrap-Secret auf deinem Server ein. Er wird nur für das erste Konto benötigt.",
+    "bootstrapUnavailable": "Die Ersteinrichtung ist nicht konfiguriert. Erstelle ein Bootstrap-Secret auf dem Server und lade diese Seite neu.",
     "recovery": "Kontozugang wiederherstellen",
     "recoveryHelp": "Gib die E-Mail-Adresse deines Kontos ein. Ein Passwort ist nicht nötig. Bei gemeinsam genutzten Adressen auch den Benutzernamen angeben.",
     "optionalUsername": "Benutzername (optional)",
@@ -88,6 +92,7 @@
     "conflict": "Diese Änderung kollidiert mit dem aktuellen Listenstand. Bitte aktualisieren und erneut versuchen.",
     "username_taken": "Dieser Benutzername ist bereits vergeben.",
     "registration_disabled": "Selbstregistrierung ist gerade deaktiviert. Bitte einen Administrator, dein Konto anzulegen.",
+    "bootstrap_token_invalid": "Der Einrichtungscode ist ungültig. Prüfe das Bootstrap-Secret auf dem Server.",
     "bad_credentials": "Benutzername oder Passwort ist ungültig.",
     "malformed_json": "Die Anfrage konnte nicht gelesen werden. Bitte versuche es erneut.",
     "internal_error": "Auf dem Server ist etwas schiefgelaufen. Bitte versuche es erneut.",

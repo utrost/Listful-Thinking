@@ -1,0 +1,16 @@
+{$LISTFUL_DOMAIN} {
+	encode zstd gzip
+	request_body {
+		max_size 6MB
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+	}
+	reverse_proxy listful-thinking:8080 {
+		# Replace client-supplied forwarding values before the app trusts them.
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+}

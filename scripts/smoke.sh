@@ -85,6 +85,7 @@ services:
     environment:
       SYSTEM_LANG: en
       REGISTRATION_ENABLED: "true"
+      BOOTSTRAP_TOKEN: "listful-smoke-first-admin-setup-code-for-tests"
       RATE_LIMIT_WINDOW_SECONDS: "3600"
       MAX_REQUEST_BODY_BYTES: "65536"
       TRUST_FORWARDED_FOR: "true"
@@ -121,7 +122,7 @@ database_mode="$(docker compose -p "$project" -f "$compose_file" exec -T listful
 [ "$database_mode" = "600" ] || { echo "SQLite file must be private (0600), got $database_mode" >&2; exit 1; }
 
 curl_json -c "$admin_cookie" -H 'Content-Type: application/json' \
-  -d '{"username":"admin","email":"admin@example.test","password":"correct horse battery staple"}' \
+  -d '{"username":"admin","email":"admin@example.test","password":"correct horse battery staple","bootstrapToken":"listful-smoke-first-admin-setup-code-for-tests"}' \
   "$base_url/api/v1/auth/register" | assert_json 'data["role"] == "ADMIN"'
 
 curl_json -c "$user_cookie" -H 'Content-Type: application/json' \

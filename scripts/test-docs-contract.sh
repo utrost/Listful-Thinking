@@ -17,6 +17,11 @@ require_in_file() {
 }
 
 require_in_file README.md "docs/deployment/self-hosting-handbook.md"
+require_in_file README.md "GNU AGPL v3.0 only"
+require_in_file README.md "docs/images/wishlist-desktop.png"
+require_in_file README.md "docs/images/website-review.png"
+require_in_file README.md "docs/images/grocery-mobile.png"
+require_in_file LICENSE "GNU AFFERO GENERAL PUBLIC LICENSE"
 require_in_file README.md "compose.prod.yml"
 require_in_file README.md ".env.example"
 require_in_file docs/release.md "deployment/self-hosting-handbook.md"
@@ -34,12 +39,21 @@ python3 - <<'PY'
 from pathlib import Path
 import re
 root = Path('.')
+handbook = Path('docs/deployment/self-hosting-handbook.md').read_text()
+start = '<!-- compose-public-example-start -->'
+end = '<!-- compose-public-example-end -->'
+assert handbook.count(start) == handbook.count(end) == 1, 'handbook Compose example markers missing'
+sample = handbook.split(start, 1)[1].split(end, 1)[0].strip()
+expected = '```yaml\n' + Path('compose.public.yml').read_text().strip() + '\n```'
+assert sample == expected, 'handbook Compose example differs from compose.public.yml'
 files = [Path('README.md'), *Path('docs').rglob('*.md')]
 problems = []
 for path in files:
     text = path.read_text(encoding='utf-8')
-    for match in re.finditer(r'\[[^\]]+\]\(([^)]+)\)', text):
-        target = match.group(1).strip()
+    targets = [match.group(1) for match in re.finditer(r'\[[^\]]+\]\(([^)]+)\)', text)]
+    targets += [match.group(1) for match in re.finditer(r'<img\s+[^>]*src="([^"]+)"', text)]
+    for target in targets:
+        target = target.strip()
         if not target or '://' in target or target.startswith('#') or target.startswith('mailto:'):
             continue
         clean = target.split('#', 1)[0]

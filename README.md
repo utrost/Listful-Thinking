@@ -2,13 +2,35 @@
 
 Listful Thinking is a small self-hosted web app for everyday lists that need just enough structure and sharing: wishlists, to-dos, groceries, chores, and event preparation.
 
-It is meant for a household, family, club, care team, or small private group that wants shared lists without adopting a full productivity suite or sending list data to a hosted service. You run one container, store one SQLite database, create local users, and decide explicitly which lists stay private, which are shared with other registered users, and which get a public guest link.
+Listful Thinking is licensed under [GNU AGPL v3.0 only](LICENSE). The app shows a source-code link to its users, including guests. Release images point that link at the matching source tag; custom image builders can set `SOURCE_CODE_URL` to their corresponding source repository when building.
+
+It is meant for a household, family, club, care team, or small private group that wants shared lists without adopting a full productivity suite or sending list data to a hosted service. You run the app with one SQLite database and, for public HTTPS, a Caddy container. You create local users and decide explicitly which lists stay private, which are shared with other registered users, and which get a public guest link.
 
 The [user experience concept](docs/design/user-experience.md) describes the list workspace, navigation, user guidance, and browser validation.
+
+## Screenshots
+
+These show the current app with fictional lists and website metadata. They are captured from a disposable instance by [Playwright](frontend/tests/gui/docs-screenshots.spec.ts).
+
+**Wishlist workspace** — collect exact wishes, prices, seller details, and source links.
+
+![Desktop view of a Weekend ideas wishlist with several items](docs/images/wishlist-desktop.png)
+
+**Website review** — inspect suggested details and choose a destination before saving.
+
+![Review dialog for a fictional notebook product page](docs/images/website-review.png)
+
+**Mobile grocery list** — add and review items on a phone-sized screen.
+
+<img src="docs/images/grocery-mobile.png" alt="Mobile view of a Saturday groceries list" width="360">
+
+Regenerate these images from the repository root with `cd frontend && npm run docs:screenshots`. The command starts a disposable Playwright container and does not use production data.
 
 ## Release and branch status
 
 The private Alice Tailnet instance runs merged `main` commit `ea97030` at schema **V18**. It includes 14-day recoverable Trash, 56-day public links, account and ownership handoffs, reviewed website capture, richer wishlist details, and guest reservation controls. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified image, migration, and database backup. Rolling back to a V17 image requires its matching pre-V18 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
+
+The [RC3 release notes](docs/releases/0.2.0-rc.3.md) describe the public self-hosting candidate. Check its tag workflow and image visibility before installing the example image.
 
 ## What it does
 
@@ -22,7 +44,7 @@ The private Alice Tailnet instance runs merged `main` commit `ea97030` at schema
 - **Grocery/shop mode:** use quantity/category fields, group by category, hide completed items, and clear completed grocery items after shopping.
 - **Chores and events:** use due dates, simple recurrence for chores, skip/postpone actions, target dates for events, and owner/helper labels for coordination.
 - **Notifications:** due-item reminders and sharing/ownership changes appear in-app; reminders can also be sent by email when SMTP is configured.
-- **Admin bootstrap:** the first registered account becomes admin; admins can manage registration, create users with a password or setup link, activate/deactivate users, and inspect per-user list counts.
+- **Admin bootstrap:** the first account needs a server setup code and becomes admin; admins can manage registration, create users with a password or setup link, activate/deactivate users, and inspect per-user list counts.
 
 ## Architecture and deployment posture
 
@@ -33,7 +55,7 @@ The current implementation is an MVP/post-MVP private self-hosting foundation:
 - Single-container Docker build path with persistent `/app/data` volume.
 - Automated smoke, unit, and Playwright coverage for auth, admin settings/users, typed lists, account setup, password change, handoffs, sharing, capture, item workflows, guest reservations, and container runtime checks.
 
-Deployment posture: **private Tailnet/self-hosted ready** with a general [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md). Public internet deployments must use HTTPS, secure cookies, and reverse-proxy hardening as described in that handbook and tracked in [Current state and risk register](docs/current-state-and-risk-register.md).
+Deployment posture: **private Tailnet/self-hosted ready**, with a [public HTTPS Compose profile](docs/deployment/public-self-hosting.md) prepared for independent small instances. See the [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md) and [Current state and risk register](docs/current-state-and-risk-register.md) for operational limits.
 
 ### Save from a website
 
@@ -59,7 +81,10 @@ For local development without Docker:
 Use this for a local evaluation or development-style first look:
 
 ```bash
-docker compose up --build
+cp .env.example .env
+python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
+# Paste that random value into BOOTSTRAP_TOKEN in .env.
+docker compose --env-file .env up --build
 ```
 
 Then open:
@@ -68,7 +93,7 @@ Then open:
 http://localhost:8080
 ```
 
-On a fresh database, register the first account in the browser. That first account becomes `ADMIN`. Later self-registration is disabled by default unless you enable it through admin settings or start with `REGISTRATION_ENABLED=true`.
+On a fresh database, register the first account in the browser using the setup code from `.env`. That account becomes `ADMIN`. Later self-registration is disabled by default unless you enable it through admin settings or start with `REGISTRATION_ENABLED=true`.
 
 Stop the app with:
 
@@ -88,7 +113,7 @@ For a longer-lived self-hosted instance, use the production Compose profile and 
 
 ```bash
 cp .env.example .env
-# edit .env: PUBLIC_BASE_URL, LISTFUL_BIND/LISTFUL_PORT, mail if needed
+# edit .env: BOOTSTRAP_TOKEN, PUBLIC_BASE_URL, LISTFUL_BIND/LISTFUL_PORT, mail if needed
 mkdir -p data
 sudo chown 1000:1000 data
 docker compose --env-file .env -f compose.prod.yml up --build -d
@@ -103,6 +128,20 @@ The production profile differs from the quickstart in a few important ways:
 - It keeps public-internet behavior opt-in: set `PUBLIC_BASE_URL=https://...` and `SESSION_COOKIE_SECURE=true` only when HTTPS is actually terminating in front of the app.
 
 For the full operator guide, including private LAN/Tailnet versus public HTTPS deployment choices, see [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md).
+
+## Public HTTPS self-hosting
+
+Use the shipped [public Docker runbook](docs/deployment/public-self-hosting.md): set your domain and a published versioned image in `.env.public`, generate the first-admin setup secret, then start `compose.public.yml`. Caddy handles HTTPS while the app has no public host port. The profile enables secure cookies, proxy-aware rate limiting, a read-only app filesystem, and resource limits. Run `scripts/backup-public.sh` on a schedule and `scripts/upgrade-public.sh` when changing image versions. Release tags must pass the strict dependency and container scans before CI publishes signed amd64/arm64 images with SBOM and provenance. The example image tag is `v0.2.0-rc.3`; use it only after its publish workflow succeeds.
+
+```bash
+cp .env.public.example .env.public
+# Set LISTFUL_DOMAIN, PUBLIC_BASE_URL and a published LISTFUL_IMAGE in .env.public.
+scripts/create-bootstrap-secret.sh
+docker compose --env-file .env.public -f compose.public.yml config --quiet
+docker compose --env-file .env.public -f compose.public.yml up -d
+```
+
+The complete [public Compose example](compose.public.yml) and [Caddyfile](Caddyfile.public) are also shown with operating notes in the [handbook](docs/deployment/self-hosting-handbook.md#public-https-example-with-caddy). The app is reachable at `https://YOUR_DOMAIN` after DNS and TLS are ready. Use the secret from `secrets/bootstrap-token` to create the first admin.
 
 ## Data and backups
 
@@ -139,6 +178,8 @@ The app is designed to start with no required external services. Useful environm
 ```env
 SYSTEM_LANG=en
 REGISTRATION_ENABLED=false
+BOOTSTRAP_TOKEN=
+PUBLIC_HOSTING=false
 PUBLIC_BASE_URL=http://localhost:8080
 SESSION_COOKIE_SECURE=false
 MAIL_HOST=
@@ -162,7 +203,7 @@ Common choices:
 
 - The default Compose file forwards all variables listed above, so `docker compose up` and `docker compose config` should show the same runtime settings you intend to run.
 - Set `PUBLIC_BASE_URL` to the URL users will open, especially when public share or email links should point at a Tailnet/reverse-proxy hostname.
-- Keep `REGISTRATION_ENABLED=false` for a private instance after the first admin account exists; use the admin panel to create more users.
+- Set `BOOTSTRAP_TOKEN` to a random secret of at least 32 characters before creating the first admin. Keep `REGISTRATION_ENABLED=false` after that; use the admin panel to create more users. The public profile mounts a secret file instead of putting the code in Compose environment output.
 - Set `SESSION_COOKIE_SECURE=true` only when the app is served over HTTPS. For HTTPS deployments, verify a login response sets the session cookie with the `Secure` attribute before exposing the instance beyond a private network.
 - Leave mail variables empty if you do not need email login/reset/reminders; in-app login and notifications still work.
 - `MAX_REQUEST_BODY_BYTES` is explicitly bounded but defaults high enough for wishlist image data URLs (up to 5,000,000 characters); browser uploads are limited to 3.5 MB before encoding.

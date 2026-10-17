@@ -2,6 +2,18 @@
 
 Use this checklist before tagging or publishing a Listful Thinking image.
 
+## Public image release gate
+
+The CI workflow now runs a strict high/critical OS and library scan of the built container as well as the existing resolved backend and frontend dependency scans. A `v*` tag publishes an amd64/arm64 GHCR image only after all CI jobs pass and the AGPL-3.0 license file exists. The tag must match the backend project version. The published digest gets an SBOM, provenance, and a keyless Cosign signature. The image embeds the license and points its visible source link at the matching tag. Check the tag workflow and published digest before treating an image tag as released. See the [RC3 release notes](releases/0.2.0-rc.3.md).
+
+Before tagging, run `scripts/test-public-compose-contract.sh`, test the [public deployment profile](deployment/public-self-hosting.md) with a disposable volume, and restore a backup. After the first publish creates the GHCR package, make it public and verify an anonymous pull before recommending it to self-hosters. Review and upgrade vulnerable dependencies instead of adding scan exceptions.
+
+Review every pinned image digest in the three-stage `Dockerfile`, `compose.public.yml`, and the backup scripts before each release. GitHub Dependabot can propose updates for dependencies and images, but its Docker support may only update the first `FROM` in a multi-stage Dockerfile, so the Maven and runtime stages need explicit review.
+
+## RC3 local verification — 2026-10-17
+
+The `0.2.0-rc.3` candidate passed 143 backend tests, 73 frontend tests, the production frontend build, and desktop/mobile Playwright smoke (30 passed; 6 intentional project skips). The resolved backend inventory contained 106 components with 0 advisories; `npm audit --omit=dev` found 0 vulnerabilities. Compose/documentation/smoke contracts, the SQLite online backup/restore test, full container smoke with restored login/list, and the disposable public runtime with Caddy configuration and live named-volume backup passed. The tag CI must still pass its strict image scan and multi-architecture publish/signing jobs.
+
 ## V18 website capture — deployed 2026-10-17
 
 PR [#53](https://github.com/utrost/Listful-Thinking/pull/53) merged reviewed website capture, wishlist product fields, event source/location, and guest claim controls as `ea97030`. Migration V18 adds columns to `items` and `lists`. Before cutover, a stopped-container V17 backup passed integrity and foreign-key checks; the new image migrated an isolated restore to V18 with all 1 account, 1 list, and 3 items preserved. A fresh cutover backup is retained for rollback to the V17 image.
@@ -18,6 +30,7 @@ Run from the repository root:
 cd backend && mvn test
 cd ../frontend && npm test && npm run build && npm run test:gui
 cd .. && scripts/test-smoke-contract.sh && scripts/test-compose-env-contract.sh && scripts/test-docs-contract.sh && python3 scripts/test-backup.py
+scripts/test-public-compose-contract.sh
 ```
 
 ## Container smoke
@@ -55,7 +68,10 @@ The smoke covers:
 For the exact README quickstart path:
 
 ```bash
-docker compose up --build
+cp .env.example .env
+python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
+# Paste the generated value into BOOTSTRAP_TOKEN in .env.
+docker compose --env-file .env up --build
 ```
 
 Then open <http://localhost:8080>, register the first admin, and verify the workspace loads.
@@ -102,7 +118,7 @@ Implemented automated coverage:
 - Password hashes are not returned from auth or admin user APIs.
 - Passwords are persisted only as salted BCrypt hashes; same plaintext passwords produce different stored hashes.
 - Password reset stores a fresh salted BCrypt hash and invalidates the old plaintext match.
-- First registered user is `ADMIN`; later users are `USER` when registration is enabled.
+- First registered user needs the server setup code and is `ADMIN`; later users are `USER` when registration is enabled.
 - Non-admin users cannot access `/api/v1/admin/**`.
 - Registration-disabled errors are localized.
 - Owner list and item APIs reject guessed IDs from other users.
