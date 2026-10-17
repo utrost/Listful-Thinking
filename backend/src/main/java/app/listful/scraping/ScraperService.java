@@ -119,7 +119,9 @@ public class ScraperService {
             return false;
         }
         String value = textValue(node);
-        return value != null && (value.equalsIgnoreCase(type) || value.toLowerCase(Locale.ROOT).endsWith("/" + type.toLowerCase(Locale.ROOT)));
+        if (value == null) return false;
+        String localType = value.substring(Math.max(value.lastIndexOf('/'), value.lastIndexOf('#')) + 1);
+        return localType.equalsIgnoreCase(type) || ("Event".equals(type) && localType.endsWith("Event"));
     }
 
     private JsonNode firstPricedOffer(JsonNode node) {

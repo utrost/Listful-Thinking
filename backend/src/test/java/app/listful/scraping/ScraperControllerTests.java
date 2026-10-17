@@ -109,6 +109,13 @@ class ScraperControllerTests {
             .andExpect(jsonPath("$.eventLocation").value("Community hall"));
 
         mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/music-event\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.kind").value("EVENT"))
+            .andExpect(jsonPath("$.title").value("Lunch concert"))
+            .andExpect(jsonPath("$.eventLocation").value("Foyer Main Auditorium"));
+
+        mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"url\":\"" + baseUrl() + "/howto\"}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.kind").value("HOWTO"))
@@ -246,6 +253,9 @@ class ScraperControllerTests {
             """));
         server.createContext("/event", exchange -> respond(exchange, """
             <html><head><script type="application/ld+json">{"@type":"Event","name":"Neighborhood dinner","startDate":"2027-05-12T18:00:00+02:00","location":{"@type":"Place","name":"Community hall"}}</script></head></html>
+            """));
+        server.createContext("/music-event", exchange -> respond(exchange, """
+            <html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"MusicEvent","name":"Lunch concert","startDate":"2026-10-21T13:00:00+02:00","location":{"@type":"Place","name":"Foyer Main Auditorium"}}</script></head></html>
             """));
         server.createContext("/howto", exchange -> respond(exchange, """
             <html><head><script type="application/ld+json">{"@type":"HowTo","name":"Replace washer","step":[{"@type":"HowToStep","text":"Turn off the water"}]}</script></head></html>

@@ -122,6 +122,15 @@ Price text is normalized after extraction by removing non-number/currency punctu
 
 These results were manually checked from the current scraper environment while validating the URL grabbing behavior. Live shop behavior changes over time; keep deterministic regression tests as local fixtures and treat this matrix as dated field evidence.
 
+### 2026-10-17 live Playwright capture
+
+`LIVE_WEB_CAPTURE=1 npx playwright test tests/gui/live-capture.spec.ts --project=chromium-desktop` runs against a disposable local app stack and public pages, without mocking `/api/v1/utils/extract`. It is opt-in because external page markup and access can change. The browser test verifies the review form and persisted list/item data.
+
+- [MUJI notebooks](https://www.muji.eu/products/set-of-5-planted-tree-paper-notebooks-b5-4594): product, €5.95, EUR; saved variant and duplicate warning verified. The site redirected the English URL to a German/Swiss page under the scraper's German-first request language, so the suggested title was German and the stored source was the final localized URL.
+- [Good Food pancakes](https://www.bbcgoodfood.com/recipes/easy-pancakes): recipe with six suggested ingredients; two reviewed lines saved with the source URL.
+- [Berliner Philharmoniker lunch concert](https://www.berliner-philharmoniker.de/en/concert/calendar/57042/): `MusicEvent` with date and venue; saved as an event list with a preparation task. This revealed that `MusicEvent` was initially classified as a generic page. The parser now recognizes Event subtypes, with a fixture regression test.
+- [King Arthur pancakes](https://www.kingarthurbaking.com/recipes/simply-perfect-pancakes-recipe): recipe title extracted; replacing the suggested title and changing destination to a wishlist retained the source link. A host-side `curl` request received 406, while the app's browser-like fetch succeeded, demonstrating that host-side status checks do not predict the scraper response.
+
 ### 2026-09-03 smoke matrix
 
 Works:
