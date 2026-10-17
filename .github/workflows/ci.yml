@@ -16,6 +16,7 @@ jobs:
           scripts/test-smoke-contract.sh
           scripts/test-compose-env-contract.sh
           scripts/test-public-compose-contract.sh
+          scripts/test-try-compose-contract.sh
           scripts/test-docs-contract.sh
           python3 scripts/test-backup.py
 

@@ -127,6 +127,11 @@
         <dialog ref="captureDialog" class="capture-dialog" @close="captureVisible = false">
           <div class="capture-dialog-actions"><button type="button" class="secondary subtle" @click="closeCapture">{{ t('capture.close') }}</button></div>
           <WebCapture ref="webCapture" :lists="lists" @saved="handleCaptureSaved" @progress="handleCaptureProgress" />
+          <details class="capture-shortcut">
+            <summary>{{ t('capture.bookmarkletTitle') }}</summary>
+            <p>{{ t('capture.bookmarkletHelp') }}</p>
+            <a :href="bookmarkletUrl" @click.prevent>{{ t('capture.bookmarkletLabel') }}</a>
+          </details>
         </dialog>
         <div v-if="undoAction" class="undo-notice" role="status"><span>{{ undoAction.label }}</span><button type="button" class="secondary" @click="handleUndo">{{ t('planning.undo') }}</button><button type="button" class="secondary subtle" @click="undoAction = null">{{ t('planning.dismiss') }}</button></div>
         <PlanningHub v-if="hubView !== 'lists'" :key="hubView" :view="hubView" :overview="overview" :library="libraryLists" :trash-items="trashItems" :pending="actionPending" :ready="hubReady"
@@ -609,6 +614,10 @@ const adminLists = ref<AdminListEntry[]>([]);
 const adminSetupLink = ref<AdminSetupLink | null>(null);
 const transferUsername = ref('');
 const publicToken = window.location.pathname.startsWith('/s/') ? decodeURIComponent(window.location.pathname.slice(3)) : '';
+const sharedPageHash = window.location.hash.startsWith('#save=') ? new URLSearchParams(window.location.hash.slice(1)).get('save') : null;
+let pendingSharedPage = !publicToken && sharedPageHash && sharedPageHash.length <= 2000 ? safeProductUrl(sharedPageHash) : null;
+if (sharedPageHash !== null) window.history.replaceState({}, '', window.location.pathname + window.location.search);
+const bookmarkletUrl = `javascript:(()=>{window.open(${JSON.stringify(`${window.location.origin}/#save=`)}+encodeURIComponent(location.href),'_blank','noopener')})()`;
 const sourceCodeUrl = safeProductUrl(import.meta.env.VITE_SOURCE_CODE_URL ?? '') ?? 'https://github.com/utrost/Listful-Thinking';
 const magicToken = window.location.pathname === '/magic-login' ? new URLSearchParams(window.location.search).get('token') : '';
 const resetToken = ref(window.location.pathname === '/reset-password' ? new URLSearchParams(window.location.search).get('token') : null);
@@ -708,6 +717,7 @@ onMounted(async () => {
       await loadNotifications();
       await maybeLoadAdminPanel();
       window.history.replaceState({}, '', '/');
+      await openPendingSharedPage();
     }, false);
     return;
   }
@@ -721,6 +731,7 @@ onMounted(async () => {
     await loadLists();
     await loadNotifications();
     await maybeLoadAdminPanel();
+    await openPendingSharedPage();
   }, false);
 });
 
@@ -739,6 +750,7 @@ async function handleRegister() {
     await loadLists();
     await loadNotifications();
     await maybeLoadAdminPanel();
+    await openPendingSharedPage();
   });
 }
 
@@ -749,6 +761,7 @@ async function handleLogin() {
     await loadLists();
     await loadNotifications();
     await maybeLoadAdminPanel();
+    await openPendingSharedPage();
   });
 }
 
@@ -915,6 +928,14 @@ async function handleCreateList() {
 }
 
 type CaptureStart = Parameters<InstanceType<typeof WebCapture>['begin']>[0];
+
+async function openPendingSharedPage() {
+  if (!currentUser.value || !pendingSharedPage) return;
+  const url = pendingSharedPage;
+  pendingSharedPage = null;
+  await nextTick();
+  await openCapture({ url });
+}
 
 async function openCapture(start: CaptureStart = {}) {
   captureTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;

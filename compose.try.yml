@@ -1,0 +1,40 @@
+# Loopback-only trial using the published RC3 image. Use compose.public.yml for HTTPS.
+services:
+  listful-thinking:
+    image: ${LISTFUL_IMAGE:-ghcr.io/utrost/listful-thinking:v0.2.0-rc.3}
+    ports:
+      - "127.0.0.1:${LISTFUL_TRY_PORT:-8080}:8080"
+    environment:
+      PUBLIC_BASE_URL: http://localhost:${LISTFUL_TRY_PORT:-8080}
+      REGISTRATION_ENABLED: "false"
+      BOOTSTRAP_TOKEN_FILE: /run/secrets/bootstrap_token
+      TRUST_FORWARDED_FOR: "false"
+      SCRAPER_ALLOW_PRIVATE_ADDRESSES: "false"
+      CSRF_ENABLED: "true"
+    secrets:
+      - bootstrap_token
+    volumes:
+      - listful-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,exec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    mem_limit: 1g
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/api/v1/health/ready | grep -q '\"status\":\"ok\"'"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+secrets:
+  bootstrap_token:
+    file: ./secrets/bootstrap-token
+
+volumes:
+  listful-data:

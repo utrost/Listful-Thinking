@@ -6,7 +6,7 @@ The [Self-Hosting Handbook](self-hosting-handbook.md#public-https-example-with-c
 
 ## Before starting
 
-Use a host with Docker Compose v2, a DNS name pointing to it, and inbound TCP ports 80 and 443. Install a versioned image that passed CI. Public images are published from `v*` tags after backend, frontend, GUI, dependency, container smoke, and strict container vulnerability checks. CI builds amd64 and arm64, attaches SBOM and provenance, and signs the image digest. The app is [AGPL-3.0-only](../../LICENSE) and offers a visible link to the matching release source. A repository owner must make the GHCR package public before anonymous pulls work.
+Use a host with Docker Compose v2, a DNS name pointing to it, and inbound TCP ports 80 and 443. Install a versioned image that passed CI. Public images are published from `v*` tags after backend, frontend, GUI, dependency, container smoke, and strict container vulnerability checks. CI builds amd64 and arm64, attaches SBOM and provenance, and signs the image digest. The app is [AGPL-3.0-only](../../LICENSE) and offers a visible link to the matching release source. The RC3 GHCR image is public and was checked with an anonymous manifest request.
 
 ```bash
 cp .env.public.example .env.public
@@ -16,7 +16,21 @@ docker compose --env-file .env.public -f compose.public.yml config --quiet
 docker compose --env-file .env.public -f compose.public.yml up -d
 ```
 
-`LISTFUL_IMAGE` must be a published release tag such as `ghcr.io/utrost/listful-thinking:v0.2.0-rc.3`, or preferably an immutable `@sha256:...` digest. Confirm the tag's publish workflow succeeded before using it. If the package is private, log in to GHCR first. The app service has no host port. Caddy gets the HTTPS certificate and overwrites inbound `X-Forwarded-For` before the app uses client IPs for rate limiting. Keep this topology intact; a different proxy needs the same header boundary. The app checks that public hosting has an HTTPS origin, secure cookies, CSRF and rate limiting on, and private-address scraping off.
+For RC3, pin `LISTFUL_IMAGE=ghcr.io/utrost/listful-thinking@sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743`. The [tag workflow](https://github.com/utrost/Listful-Thinking/actions/runs/39059482487) passed all gates and the [GitHub prerelease](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) has a checksummed source archive. The app service has no host port. Caddy gets the HTTPS certificate and overwrites inbound `X-Forwarded-For` before the app uses client IPs for rate limiting. Keep this topology intact; a different proxy needs the same header boundary. The app checks that public hosting has an HTTPS origin, secure cookies, CSRF and rate limiting on, and private-address scraping off.
+
+### Verify RC3 before installing
+
+With [Cosign](https://docs.sigstore.dev/cosign/verifying/verify/) and Docker Buildx installed, these commands verify the image signature's GitHub Actions identity and inspect the image's per-platform SBOM:
+
+```bash
+image=ghcr.io/utrost/listful-thinking@sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743
+cosign verify \
+  --certificate-identity 'https://github.com/utrost/Listful-Thinking/.github/workflows/ci.yml@refs/tags/v0.2.0-rc.3' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' "$image"
+docker buildx imagetools inspect "$image" --format '{{json .SBOM}}' > rc3-sbom.json
+```
+
+Both commands succeeded on 2026-10-17; the SBOM output contained `linux/amd64` and `linux/arm64`. The downloaded [release archive and checksum](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) passed `sha256sum -c SHA256SUMS.txt`. A matching signature proves which workflow signed the digest; it does not prove the application or every dependency is free of defects. Keep the digest pinned and recheck each new release.
 
 Open `https://YOUR_DOMAIN`, choose Register, and enter the setup code from `secrets/bootstrap-token` to create the first admin. Treat that file as a password and keep it in place for future Compose restarts, even though the code is no longer used after an admin exists. The `secrets/` directory is mode 0700 and excluded from Git. Its files are mode 0444 so the app's UID 1000 can read the Compose mounts even when the host operator has another UID; the private parent directory prevents other host users from opening the files. An instance without a valid setup code cannot create its first admin. After bootstrap, keep registration disabled and create people from Admin.
 

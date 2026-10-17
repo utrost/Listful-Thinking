@@ -48,6 +48,9 @@ small { display: block; color: var(--muted); line-height: 1.55; overflow-wrap: a
 .capture-dialog { width: min(760px, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow: auto; border: 1px solid var(--border); border-radius: 16px; padding: 0; box-shadow: 0 24px 65px #14261d45; }
 .capture-dialog::backdrop { background: #17241acc; }
 .capture-dialog-actions { display: flex; justify-content: flex-end; padding: .65rem 1rem 0; background: white; }
+.capture-shortcut { margin: 0 1rem 1rem; padding: .8rem 1rem; border: 1px solid var(--border); border-radius: 10px; }
+.capture-shortcut p { margin: .5rem 0; }
+.capture-shortcut a { display: inline-block; padding: .45rem .7rem; border: 1px solid var(--border); border-radius: 8px; }
 .web-capture { border: 0; padding: .25rem 1.5rem 1.5rem; }
 .web-capture h2 { font-size: 1.5rem; }
 .capture-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .75rem; align-items: end; }

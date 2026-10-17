@@ -6,6 +6,8 @@ Extraction is a best-effort convenience feature. The signed-in **Save from a web
 
 Event captures create an `EVENT` list with source URL and location as structured fields. The user may add preparation tasks. Recipe/how-to line imports keep unsaved lines in the editor if a later item fails. This is a one-off import, not synchronization with the website.
 
+The source tree after RC3 adds a desktop bookmarklet in the capture dialog. It opens the current page URL in a new Listful Thinking tab, keeps that URL in a fragment until the app reads it, and resumes review after login. It accepts only HTTP(S) URLs up to the capture field's 2,000-character limit and removes the fragment from browser history after reading it. Browsers or source sites with restrictive content policies may block bookmarklets; the paste flow remains available. This shortcut is not in the published RC3 image and is not a mobile Web Share Target.
+
 This document describes what exists in code today, not a promise that every shop will work forever.
 
 ## User outcome

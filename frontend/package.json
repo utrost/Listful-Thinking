@@ -13,6 +13,7 @@
     "test:gui:sharing": "playwright test --grep @sharing",
     "test:gui:mobile": "playwright test --grep @mobile --project=chromium-mobile",
     "docs:screenshots": "playwright test tests/gui/docs-screenshots.spec.ts",
+    "docs:demo": "playwright test tests/gui/docs-demo.spec.ts --project=chromium-desktop",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
