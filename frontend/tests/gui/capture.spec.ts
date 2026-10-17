@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { bootstrapOrLoginAdmin } from './helpers';
 
-test.describe('Reviewed website capture @capture', () => {
+test.describe('Reviewed website capture @capture @smoke', () => {
   test('saves a product with reviewed variant and source', async ({ page }, info) => {
     await bootstrapOrLoginAdmin(page);
     await page.route('**/api/v1/utils/extract', async route => route.fulfill({ json: {
