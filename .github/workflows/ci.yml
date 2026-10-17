@@ -93,7 +93,7 @@ jobs:
         run: |
           mvn -B -f backend/pom.xml org.cyclonedx:cyclonedx-maven-plugin:2.9.1:makeAggregateBom
           python3 scripts/audit-runtime.py backend/target/bom.json
-      - uses: google/osv-scanner-action/osv-scanner-action@v2.2.2
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
         with:
           scan-args: |-
             --lockfile=frontend/package-lock.json
