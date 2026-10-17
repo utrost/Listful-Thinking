@@ -1,4 +1,6 @@
 # Loopback-only trial using the published RC3 image. Use compose.public.yml for HTTPS.
+name: listful-thinking-trial
+
 services:
   listful-thinking:
     image: ${LISTFUL_IMAGE:-ghcr.io/utrost/listful-thinking:v0.2.0-rc.3}

@@ -96,7 +96,7 @@ docker compose -f compose.try.yml up -d
 docker compose -f compose.try.yml ps
 ```
 
-Open `http://localhost:8080`, register the first account, and enter the setup code from `secrets/bootstrap-token`. Your lists live in a persistent Docker volume. Stop with `docker compose -f compose.try.yml down`; this keeps the volume. The default image is the public RC3 release. To pin its exact bits, set `LISTFUL_IMAGE=ghcr.io/utrost/listful-thinking@sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743` in your shell before `up`.
+Open `http://localhost:8080`, register the first account, and enter the setup code from `secrets/bootstrap-token`. Your lists live in a separate persistent trial volume. Stop with `docker compose -f compose.try.yml down`; this keeps the volume. On later starts, keep the existing secret file and skip `scripts/create-bootstrap-secret.sh`. The default image is the public RC3 release. To pin its exact bits, set `LISTFUL_IMAGE=ghcr.io/utrost/listful-thinking@sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743` in your shell before `up`.
 
 ## Build from source with Docker Compose
 

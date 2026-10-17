@@ -6,6 +6,7 @@ cd "$repo_root"
 docker compose -f compose.try.yml config --format json | python3 -c '
 import json, sys
 config = json.load(sys.stdin)
+assert config["name"] == "listful-thinking-trial", "trial data must be isolated from other Compose profiles"
 app = config["services"]["listful-thinking"]
 assert "build" not in app, "trial must use a published image"
 assert app["image"] == "ghcr.io/utrost/listful-thinking:v0.2.0-rc.3"
