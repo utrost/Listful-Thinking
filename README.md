@@ -1,16 +1,24 @@
 # Listful Thinking
 
-Listful Thinking is a small self-hosted web app for everyday lists that need just enough structure and sharing: wishlists, to-dos, groceries, chores, and event preparation.
+**Turn useful web pages into private, shareable lists you host yourself.** Paste a product, recipe, event, or how-to link; review the suggested details; and save it as a wish, groceries, an event plan, or tasks. You can also create lists directly for to-dos and chores.
+
+**Try it locally:** [run the prebuilt RC3 image](#try-the-prebuilt-image-locally) · **Host it publicly:** [Docker + Caddy HTTPS guide](docs/deployment/public-self-hosting.md) · **See the release:** [v0.2.0-rc.3](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3)
 
 Listful Thinking is licensed under [GNU AGPL v3.0 only](LICENSE). The app shows a source-code link to its users, including guests. Release images point that link at the matching source tag; custom image builders can set `SOURCE_CODE_URL` to their corresponding source repository when building.
 
 It is meant for a household, family, club, care team, or small private group that wants shared lists without adopting a full productivity suite or sending list data to a hosted service. You run the app with one SQLite database and, for public HTTPS, a Caddy container. You create local users and decide explicitly which lists stay private, which are shared with other registered users, and which get a public guest link.
 
-The [user experience concept](docs/design/user-experience.md) describes the list workspace, navigation, user guidance, and browser validation.
+The [user experience concept](docs/design/user-experience.md) describes the list workspace, navigation, user guidance, and browser validation. [Get support or report a problem](SUPPORT.md).
+
+Want to help? Read [CONTRIBUTING.md](CONTRIBUTING.md), or follow the [independent self-hoster feedback script](docs/beta-feedback.md).
 
 ## Screenshots
 
 These show the current app with fictional lists and website metadata. They are captured from a disposable instance by [Playwright](frontend/tests/gui/docs-screenshots.spec.ts).
+
+**Website capture in four steps** — open the review, read a public page, correct the draft, and save it to a wishlist. The short animation uses fictional page details, captured with Playwright.
+
+![Short animation of the website capture review and saved wishlist item](docs/images/website-capture-demo.gif)
 
 **Wishlist workspace** — collect exact wishes, prices, seller details, and source links.
 
@@ -24,13 +32,13 @@ These show the current app with fictional lists and website metadata. They are c
 
 <img src="docs/images/grocery-mobile.png" alt="Mobile view of a Saturday groceries list" width="360">
 
-Regenerate these images from the repository root with `cd frontend && npm run docs:screenshots`. The command starts a disposable Playwright container and does not use production data.
+Regenerate the static images with `cd frontend && npm run docs:screenshots`, and the animation with `scripts/build-demo-gif.sh` (also needs `ffmpeg`). Both start a disposable Playwright container and use fictional data.
 
 ## Release and branch status
 
-The private Alice Tailnet instance runs merged `main` commit `ea97030` at schema **V18**. It includes 14-day recoverable Trash, 56-day public links, account and ownership handoffs, reviewed website capture, richer wishlist details, and guest reservation controls. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified image, migration, and database backup. Rolling back to a V17 image requires its matching pre-V18 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
+The private Alice Tailnet instance runs merged commit `ea97030` at schema **V18**. It includes 14-day recoverable Trash, 56-day public links, account and ownership handoffs, reviewed website capture, richer wishlist details, and guest reservation controls. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified image, migration, and database backup. Rolling back to a V17 image requires its matching pre-V18 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
 
-The [RC3 release notes](docs/releases/0.2.0-rc.3.md) describe the public self-hosting candidate. Check its tag workflow and image visibility before installing the example image.
+The [RC3 GitHub prerelease](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) is public. Its [tag workflow](https://github.com/utrost/Listful-Thinking/actions/runs/39059482487) passed all gates and published a signed amd64/arm64 image at `sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743`. The [RC3 notes](docs/releases/0.2.0-rc.3.md) cover changes and limits. Features merged after this tag, including the desktop bookmarklet, are available from source until the next image release.
 
 ## What it does
 
@@ -55,11 +63,11 @@ The current implementation is an MVP/post-MVP private self-hosting foundation:
 - Single-container Docker build path with persistent `/app/data` volume.
 - Automated smoke, unit, and Playwright coverage for auth, admin settings/users, typed lists, account setup, password change, handoffs, sharing, capture, item workflows, guest reservations, and container runtime checks.
 
-Deployment posture: **private Tailnet/self-hosted ready**, with a [public HTTPS Compose profile](docs/deployment/public-self-hosting.md) prepared for independent small instances. See the [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md) and [Current state and risk register](docs/current-state-and-risk-register.md) for operational limits.
+Deployment posture: **small independent self-hosted instances**, with a [public HTTPS Compose profile](docs/deployment/public-self-hosting.md). See the [Self-Hosting Handbook](docs/deployment/self-hosting-handbook.md) and [Current state and risk register](docs/current-state-and-risk-register.md) for operational limits.
 
 ### Save from a website
 
-Open **Save from a website** after signing in, or paste a **Product link** while adding to a wishlist. Both routes open the same review with the current wishlist already selected when applicable. Check the suggested title, destination, variant, price, and any optional details before saving. Products can become wishlist items; recipe ingredients become editable grocery lines; how-to steps become tasks; and events become dated lists with a location and optional preparation tasks. If a public page cannot be read, the page link remains in a manual draft. Line imports keep unsaved lines available for retry if a later save fails. This captures a snapshot, with no ongoing synchronization or automatic price tracking. Mobile Web Share Target integration is not yet available; paste the URL into the app.
+Open **Save from a website** after signing in, or paste a **Product link** while adding to a wishlist. Both routes open the same review with the current wishlist already selected when applicable. Check the suggested title, destination, variant, price, and any optional details before saving. Products can become wishlist items; recipe ingredients become editable grocery lines; how-to steps become tasks; and events become dated lists with a location and optional preparation tasks. If a public page cannot be read, the page link remains in a manual draft. Line imports keep unsaved lines available for retry if a later save fails. This captures a snapshot, with no ongoing synchronization or automatic price tracking. On the current source build, a desktop bookmarklet under **Save from a website** can open the current page in review; browser content policies may block it, so pasting the link remains the fallback. Mobile Web Share Target integration is not yet available.
 
 Live Playwright checks used real [MUJI](https://www.muji.eu/products/set-of-5-planted-tree-paper-notebooks-b5-4594), [Good Food](https://www.bbcgoodfood.com/recipes/easy-pancakes), [Berliner Philharmoniker](https://www.berliner-philharmoniker.de/en/concert/calendar/57042/), and [King Arthur Baking](https://www.kingarthurbaking.com/recipes/simply-perfect-pancakes-recipe) pages. The MUJI URL redirected to a German localized page, so its suggested title and final source URL were localized; both were visible for review. See the [dated extraction evidence](docs/domain/scraping.md).
 
@@ -76,9 +84,23 @@ For local development without Docker:
 - Maven 3.9+
 - Node.js/npm compatible with the frontend toolchain (`package-lock.json` is committed; the Docker build currently uses Node 24)
 
-## Quick start with Docker Compose
+## Try the prebuilt image locally
 
-Use this for a local evaluation or development-style first look:
+This runs RC3 on your own computer without building Java or frontend dependencies. It binds to loopback, so it is for a local trial only; use the [HTTPS profile](docs/deployment/public-self-hosting.md) for access from the internet.
+
+```bash
+git clone https://github.com/utrost/Listful-Thinking.git
+cd Listful-Thinking
+scripts/create-bootstrap-secret.sh
+docker compose -f compose.try.yml up -d
+docker compose -f compose.try.yml ps
+```
+
+Open `http://localhost:8080`, register the first account, and enter the setup code from `secrets/bootstrap-token`. Your lists live in a separate persistent trial volume. Stop with `docker compose -f compose.try.yml down`; this keeps the volume. On later starts, keep the existing secret file and skip `scripts/create-bootstrap-secret.sh`. The default image is the public RC3 release. To pin its exact bits, set `LISTFUL_IMAGE=ghcr.io/utrost/listful-thinking@sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743` in your shell before `up`.
+
+## Build from source with Docker Compose
+
+Use this for local development or to try changes merged after RC3:
 
 ```bash
 cp .env.example .env
@@ -131,7 +153,7 @@ For the full operator guide, including private LAN/Tailnet versus public HTTPS d
 
 ## Public HTTPS self-hosting
 
-Use the shipped [public Docker runbook](docs/deployment/public-self-hosting.md): set your domain and a published versioned image in `.env.public`, generate the first-admin setup secret, then start `compose.public.yml`. Caddy handles HTTPS while the app has no public host port. The profile enables secure cookies, proxy-aware rate limiting, a read-only app filesystem, and resource limits. Run `scripts/backup-public.sh` on a schedule and `scripts/upgrade-public.sh` when changing image versions. Release tags must pass the strict dependency and container scans before CI publishes signed amd64/arm64 images with SBOM and provenance. The example image tag is `v0.2.0-rc.3`; use it only after its publish workflow succeeds.
+Use the shipped [public Docker runbook](docs/deployment/public-self-hosting.md): set your domain and the pinned RC3 image in `.env.public`, generate the first-admin setup secret, then start `compose.public.yml`. Caddy handles HTTPS while the app has no public host port. The profile enables secure cookies, proxy-aware rate limiting, a read-only app filesystem, and resource limits. Run `scripts/backup-public.sh` on a schedule and `scripts/upgrade-public.sh` when changing image versions. RC3 passed strict dependency and container scans before publishing its signed amd64/arm64 image with SBOM and provenance. The [release page](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) includes a checksummed source archive.
 
 ```bash
 cp .env.public.example .env.public

@@ -65,7 +65,17 @@ The shipped public Compose profile meets these conditions. For a different proxy
 
 ## Local quickstart versus production profile
 
-Use the default `docker-compose.yml` for a quick local first look:
+Use the published RC3 image for a quick local first look. This binds only to `127.0.0.1` and keeps data in a named volume:
+
+```bash
+scripts/create-bootstrap-secret.sh
+docker compose -f compose.try.yml up -d
+docker compose -f compose.try.yml ps
+```
+
+Open `http://localhost:8080` and enter the setup code in `secrets/bootstrap-token` when registering the first admin. `docker compose -f compose.try.yml down` stops the trial without deleting its data. For access from other devices or the public internet, use the HTTPS profile below.
+
+Use the default `docker-compose.yml` when building from source:
 
 ```bash
 cp .env.example .env

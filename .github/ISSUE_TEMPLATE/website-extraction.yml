@@ -1,0 +1,41 @@
+name: Website extraction report
+description: Report missing or incorrect product, recipe, event, or how-to details
+body:
+  - type: markdown
+    attributes:
+      value: "Only submit a public page URL. Remove tracking parameters, account IDs, and personal data. Extraction is best effort and must be reviewed before saving."
+  - type: input
+    id: url
+    attributes:
+      label: Public page URL
+      placeholder: https://example.org/product
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Page type
+      options: [Product, Recipe, Event, How-to, Other]
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Date and app version
+      placeholder: 2026-10-17, v0.2.0-rc.3
+    validations:
+      required: true
+  - type: textarea
+    id: fields
+    attributes:
+      label: Suggested details versus expected details
+      description: Mention title, image, price, currency, seller, ingredients, date, or steps as relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Save outcome
+      description: Did the manual fallback let you save a useful item or list?
+    validations:
+      required: true

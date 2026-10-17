@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a list, sharing, or website capture improvement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What were you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: What happens today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would make the task easier?
+    validations:
+      required: true

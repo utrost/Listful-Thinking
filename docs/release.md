@@ -12,7 +12,7 @@ Review every pinned image digest in the three-stage `Dockerfile`, `compose.publi
 
 ## RC3 local verification — 2026-10-17
 
-The `0.2.0-rc.3` candidate passed 143 backend tests, 73 frontend tests, the production frontend build, and desktop/mobile Playwright smoke (30 passed; 6 intentional project skips). The resolved backend inventory contained 106 components with 0 advisories; `npm audit --omit=dev` found 0 vulnerabilities. Compose/documentation/smoke contracts, the SQLite online backup/restore test, full container smoke with restored login/list, and the disposable public runtime with Caddy configuration and live named-volume backup passed. The tag CI must still pass its strict image scan and multi-architecture publish/signing jobs.
+The `0.2.0-rc.3` candidate passed 143 backend tests, 73 frontend tests, the production frontend build, and desktop/mobile Playwright smoke (30 passed; 6 intentional project skips). The resolved backend inventory contained 106 components with 0 advisories; `npm audit --omit=dev` found 0 vulnerabilities. Compose/documentation/smoke contracts, the SQLite online backup/restore test, full container smoke with restored login/list, and the disposable public runtime with Caddy configuration and live named-volume backup passed. The [tag CI](https://github.com/utrost/Listful-Thinking/actions/runs/39059482487) then passed its strict image scan and multi-architecture publish/signing jobs. The public digest is `sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743`; the [GitHub prerelease](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) has a checksummed archive of the immutable tag.
 
 ## V18 website capture — deployed 2026-10-17
 

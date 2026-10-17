@@ -1,0 +1,40 @@
+name: Bug report
+description: Report a reproducible app or deployment problem
+body:
+  - type: markdown
+    attributes:
+      value: "Do not include passwords, tokens, public guest links, or private list data. Report vulnerabilities through SECURITY.md."
+  - type: input
+    id: version
+    attributes:
+      label: Version or image digest
+      placeholder: v0.2.0-rc.3 or sha256:...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and deployment
+      placeholder: Firefox desktop, public Caddy Compose
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Create a wishlist…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result and safe logs
+      description: Remove private data before attaching logs or screenshots.
+    validations:
+      required: true
