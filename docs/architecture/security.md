@@ -24,7 +24,7 @@ A servlet hardening filter rejects oversized API request bodies before JSON pars
 - `RATE_LIMIT_MAX_BUCKETS=10000`
 - `TRUST_FORWARDED_FOR=false`
 
-Covered sensitive endpoints include login, registration, magic-link/password-reset request and consume routes, authenticated scrape requests, and public guest claims. By default the filter uses the socket remote address. Set `TRUST_FORWARDED_FOR=true` only when a trusted reverse proxy strips inbound spoofed headers and sets the real client IP; then the filter uses the first `X-Forwarded-For` value. The rate-limiter bucket map is bounded by `RATE_LIMIT_MAX_BUCKETS` and fails closed when exhausted.
+Covered sensitive endpoints include login, registration, magic-link/password-reset request and consume routes, authenticated scrape and typed extraction requests, and public guest claim/control requests. By default the filter uses the socket remote address. Set `TRUST_FORWARDED_FOR=true` only when a trusted reverse proxy strips inbound spoofed headers and sets the real client IP; then the filter uses the first `X-Forwarded-For` value. The rate-limiter bucket map is bounded by `RATE_LIMIT_MAX_BUCKETS` and fails closed when exhausted.
 
 ## Authentication
 
@@ -84,6 +84,7 @@ Controllers should remain thin and should not copy authorization rules.
 - Re-enable creates a new token.
 - Every public link expires 56 days after issue; a link active during the V17 upgrade received 56 days from that migration.
 - Existing public links keep working after migration, but the owner UI can only show the raw bearer token immediately after generating a link; if an owner loses the URL, they should revoke/recreate it.
+- Individual guest claims use a separate random control token stored only as a hash. The raw value is returned only to the claimant and permits rename/release only with the matching active public link and item. An owner can release a mistaken claim without receiving that token.
 
 ## Public data exposure
 
@@ -95,6 +96,7 @@ Public DTOs must exclude:
 - Internal share records.
 - Admin role/settings.
 - Notification data.
+- Wishlist claimant names in ordinary public reads and owner item reads; a claimant's immediate claim/rename response may include their own name.
 
 ## Scraping security
 
@@ -105,6 +107,7 @@ Public DTOs must exclude:
 - Disable automatic redirects; each redirect target is resolved, checked, and connected through the same validated-address path before the scraper follows it.
 - Apply timeout and bound downloaded HTML to 1 MiB.
 - Do not persist full scraped HTML.
+- The typed extraction endpoint reuses the guarded fetch path, limits, and rate limiting. It returns a draft; saving the reviewed fields is a separate authenticated list/item operation. A page redirect can change the suggested source URL to the final destination.
 
 ## Admin boundaries
 

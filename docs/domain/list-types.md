@@ -25,6 +25,7 @@ Relevant item fields:
 - `url`
 - `image_url`
 - `price`
+- `price_currency`, `price_checked_at`, `variant_note`, `seller`, `availability`, and `source_url`
 - `status`
 - `reserved_by_guest`
 
@@ -38,7 +39,9 @@ UI behavior:
 
 - Show description, URL, image, price, and status.
 - Allow URL-only item creation and metadata-prefilled item forms; users can edit fetched values before saving.
+- The separate website capture flow shows a reviewed product draft and warns about a matching product URL in the destination list. The warning is advisory.
 - Public guest page supports claiming when the link mode is `WISH_CLAIM`; `VIEW` remains read-only.
+- Guests can correct or release their own reservation with the token returned when they claim; the list owner can release a mistaken reservation. Guest names are hidden from owner and other public wishlist reads.
 
 MVP rules:
 
@@ -60,10 +63,11 @@ Relevant item fields:
 - `status`
 - optional `owner_label`
 - optional `assistant_labels`
+- optional `source_url` for a how-to page that supplied a reviewed step
 
 UI behavior:
 
-- Hide price, image, URL, and recurrence fields.
+- Hide price, image, product URL, and recurrence fields. A separate source URL may link a captured how-to page.
 - Show due date/time so the reminder scanner can notify the list owner.
 - Show owner and assistant/helper labels for coordination without assuming a concrete family structure.
 
@@ -89,11 +93,13 @@ Relevant item fields:
 - `quantity`
 - `category`
 - `status`
+- optional `source_url` for a recipe page that supplied a reviewed ingredient
 
 UI behavior:
 
-- Hide URL, image, price, due-date, and recurrence fields.
+- Hide product URL, image, price, due-date, and recurrence fields. A separate source URL can identify the recipe.
 - Show quantity and category inputs for shop/aisle grouping.
+- A recipe page can suggest ingredients as editable lines. Each saved grocery item retains the source URL.
 
 MVP rules:
 
@@ -117,10 +123,11 @@ Relevant item fields:
 - `status`
 - optional `owner_label`
 - optional `assistant_labels`
+- optional `source_url` for a captured how-to page
 
 UI behavior:
 
-- Hide price, image, and URL fields by default.
+- Hide price, image, and product URL fields by default. A separate source URL may identify a captured how-to page.
 - Show due date, recurrence, owner, and assistant/helper labels.
 
 MVP rules:
@@ -148,6 +155,7 @@ Purpose:
 Relevant list fields:
 
 - `target_date`
+- optional `source_url` and `event_location`
 
 Relevant item fields:
 
@@ -156,16 +164,19 @@ Relevant item fields:
 - optional `status`
 - optional `owner_label`
 - optional `assistant_labels`
+- optional `source_url` for a page that supplied a preparation task
 
 UI behavior:
 
 - Require or strongly prompt for target date.
 - Emphasize due dates, completion state, owner, and assistant/helper labels.
+- Website event capture can prefill the target date and location and add reviewed preparation tasks.
 - Hide shopping fields unless the event item is explicitly a wishlist-like item in a future extension.
 
 MVP rules:
 
 - Event lists require `target_date`.
+- `event_location` is valid only for `EVENT` lists; any list `source_url` must be HTTP(S).
 - The `target_date` appears in Today & upcoming; reminder delivery uses event item `due_date`, not the list target date alone.
 - Event items reject shopping fields and recurrence rules in the MVP.
 - Public guest claiming is not the primary EVENT behavior, but a `SIGNUP` public link can turn event preparation items into guest-visible signup slots.

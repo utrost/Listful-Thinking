@@ -41,12 +41,30 @@ public class Item {
     private String priceCurrency;
     @Column(name = "import_status", nullable = false)
     private String importStatus = "NONE";
+    @Column(name = "variant_note") private String variantNote;
+    private String seller;
+    private String availability;
+    @Column(name = "price_checked_at") private Instant priceCheckedAt;
+    @Column(name = "source_url") private String sourceUrl;
+    @Column(name = "claim_token_hash") private String claimTokenHash;
 
     public long getVersion() { return version; }
     public String getPriceCurrency() { return priceCurrency; }
     public void setPriceCurrency(String value) { priceCurrency = value; }
     public String getImportStatus() { return importStatus; }
     public void setImportStatus(String value) { importStatus = value; }
+    public String getVariantNote() { return variantNote; }
+    public void setVariantNote(String value) { variantNote = value; }
+    public String getSeller() { return seller; }
+    public void setSeller(String value) { seller = value; }
+    public String getAvailability() { return availability; }
+    public void setAvailability(String value) { availability = value; }
+    public Instant getPriceCheckedAt() { return priceCheckedAt; }
+    public void setPriceCheckedAt(Instant value) { priceCheckedAt = value; }
+    public String getSourceUrl() { return sourceUrl; }
+    public void setSourceUrl(String value) { sourceUrl = value; }
+    public String getClaimTokenHash() { return claimTokenHash; }
+    public void setClaimTokenHash(String value) { claimTokenHash = value; }
 
 
     @Enumerated(EnumType.STRING)
@@ -95,6 +113,20 @@ public class Item {
         this.reservedByGuest = guestName;
     }
 
+    public void releaseClaim() {
+        this.status = ItemStatus.OPEN;
+        this.reservedByGuest = null;
+        this.claimTokenHash = null;
+    }
+
+    public void copyCaptureFieldsFrom(Item source) {
+        this.variantNote = source.variantNote;
+        this.seller = source.seller;
+        this.availability = source.availability;
+        this.priceCheckedAt = source.priceCheckedAt;
+        this.sourceUrl = source.sourceUrl;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -118,6 +150,10 @@ public class Item {
         this.imageUrl = imageUrl;
         this.price = price;
         this.status = status == null ? ItemStatus.OPEN : status;
+        if (this.status != ItemStatus.CLAIMED) {
+            this.reservedByGuest = null;
+            this.claimTokenHash = null;
+        }
         this.dueDate = dueDate;
         this.recurrenceRule = recurrenceRule;
         this.quantity = quantity;

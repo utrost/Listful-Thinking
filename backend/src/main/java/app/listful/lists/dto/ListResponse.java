@@ -14,6 +14,8 @@ public record ListResponse(
     boolean archived,
     boolean template,
     String deletedAt,
-    String createdAt
+    String createdAt,
+    String sourceUrl,
+    String eventLocation
 ) {
 }

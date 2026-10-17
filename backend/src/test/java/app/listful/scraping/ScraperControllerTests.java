@@ -92,6 +92,47 @@ class ScraperControllerTests {
     }
 
     @Test
+    void proposesTypedDraftsWithoutCreatingListData() throws Exception {
+        mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/recipe\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.kind").value("RECIPE"))
+            .andExpect(jsonPath("$.title").value("Pancakes"))
+            .andExpect(jsonPath("$.ingredients[0]").value("2 eggs"))
+            .andExpect(jsonPath("$.ingredients[1]").value("200 g flour"));
+
+        mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/event\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.kind").value("EVENT"))
+            .andExpect(jsonPath("$.eventStart").value("2027-05-12T18:00:00+02:00"))
+            .andExpect(jsonPath("$.eventLocation").value("Community hall"));
+
+        mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/music-event\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.kind").value("EVENT"))
+            .andExpect(jsonPath("$.title").value("Lunch concert"))
+            .andExpect(jsonPath("$.eventLocation").value("Foyer Main Auditorium"));
+
+        mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/howto\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.kind").value("HOWTO"))
+            .andExpect(jsonPath("$.steps[0]").value("Turn off the water"));
+
+        mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/product-draft\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.kind").value("PRODUCT"))
+            .andExpect(jsonPath("$.seller").value("Example Shop"))
+            .andExpect(jsonPath("$.availability").value("InStock"));
+
+        org.assertj.core.api.Assertions.assertThat(listRepository.count()).isZero();
+        org.assertj.core.api.Assertions.assertThat(itemRepository.count()).isZero();
+    }
+
+    @Test
     void prefersJsonLdProductMetadataAcrossScriptsAndGraphNodes() throws Exception {
         mvc.perform(post("/api/v1/utils/scrape")
                 .session(session)
@@ -207,6 +248,21 @@ class ScraperControllerTests {
 
     private void startFixtureServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/recipe", exchange -> respond(exchange, """
+            <html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"Recipe","name":"Pancakes","recipeIngredient":["2 eggs","200 g flour"]}</script></head></html>
+            """));
+        server.createContext("/event", exchange -> respond(exchange, """
+            <html><head><script type="application/ld+json">{"@type":"Event","name":"Neighborhood dinner","startDate":"2027-05-12T18:00:00+02:00","location":{"@type":"Place","name":"Community hall"}}</script></head></html>
+            """));
+        server.createContext("/music-event", exchange -> respond(exchange, """
+            <html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"MusicEvent","name":"Lunch concert","startDate":"2026-10-21T13:00:00+02:00","location":{"@type":"Place","name":"Foyer Main Auditorium"}}</script></head></html>
+            """));
+        server.createContext("/howto", exchange -> respond(exchange, """
+            <html><head><script type="application/ld+json">{"@type":"HowTo","name":"Replace washer","step":[{"@type":"HowToStep","text":"Turn off the water"}]}</script></head></html>
+            """));
+        server.createContext("/product-draft", exchange -> respond(exchange, """
+            <html><head><script type="application/ld+json">{"@type":"Product","name":"Blue mug","offers":{"@type":"Offer","price":"12.00","priceCurrency":"EUR","seller":{"name":"Example Shop"},"availability":"https://schema.org/InStock"}}</script></head></html>
+            """));
         server.createContext("/embedded-resources", exchange -> respond(exchange, """
             <html><head><meta property="og:title" content="Safe product"><link rel="stylesheet" href="/trap"></head>
             <body><iframe src="/trap"></iframe><img src="/trap"><script src="/trap"></script></body></html>

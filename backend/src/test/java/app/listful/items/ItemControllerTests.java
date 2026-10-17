@@ -114,6 +114,32 @@ class ItemControllerTests {
     }
 
     @Test
+    void reviewedProductFieldsSurviveCreationAndRejectUnsafeSource() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createList(owner, "Wishlist");
+        MvcResult created = mockMvc.perform(post("/api/v1/lists/{id}/items", listId).session(owner)
+            .contentType("application/json").content("""
+                {"name":"Blue mug","url":"https://shop.test/mug","sourceUrl":"https://shop.test/mug","price":12.50,"priceCurrency":"EUR","variantNote":"350 ml","seller":"Example Shop","availability":"InStock"}
+                """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.variantNote").value("350 ml"))
+            .andExpect(jsonPath("$.seller").value("Example Shop"))
+            .andExpect(jsonPath("$.availability").value("InStock"))
+            .andExpect(jsonPath("$.priceCheckedAt").isNotEmpty())
+            .andReturn();
+        String id = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        mockMvc.perform(get("/api/v1/items/{id}", id).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.sourceUrl").value("https://shop.test/mug"))
+            .andExpect(jsonPath("$.variantNote").value("350 ml"));
+        mockMvc.perform(post("/api/v1/lists/{id}/items", listId).session(owner)
+            .contentType("application/json").content("""
+                {"name":"Bad link","sourceUrl":"file:///etc/passwd"}
+                """))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void usersCannotReadOrMutateItemsFromListsTheyDoNotOwn() throws Exception {
         MockHttpSession owner = register("owner");
         MockHttpSession other = register("other");

@@ -104,6 +104,8 @@ export interface ListEntry {
   targetDate: string | null;
   access: 'OWNER' | 'READ' | 'CONTRIBUTE';
   createdAt: string;
+  sourceUrl?: string | null;
+  eventLocation?: string | null;
 }
 
 export interface ListRequest {
@@ -111,6 +113,8 @@ export interface ListRequest {
   description?: string;
   type: ListType;
   targetDate?: string;
+  sourceUrl?: string;
+  eventLocation?: string;
 }
 
 export interface CloneListRequest {
@@ -139,6 +143,11 @@ export interface ItemEntry {
   lastCompletedAt: string | null;
   ownerLabel: string | null;
   assistantLabels: string | null;
+  variantNote?: string | null;
+  seller?: string | null;
+  availability?: string | null;
+  priceCheckedAt?: string | null;
+  sourceUrl?: string | null;
 }
 
 export interface ItemRequest {
@@ -156,6 +165,10 @@ export interface ItemRequest {
   category?: string;
   ownerLabel?: string;
   assistantLabels?: string;
+  variantNote?: string;
+  seller?: string;
+  availability?: string;
+  sourceUrl?: string;
 }
 
 export interface PostponeRequest {
@@ -197,6 +210,12 @@ export interface PublicItemEntry {
   quantity: string | null;
   category: string | null;
   reservedByGuest: string | null;
+  variantNote?: string | null;
+  seller?: string | null;
+  availability?: string | null;
+  priceCheckedAt?: string | null;
+  sourceUrl?: string | null;
+  claimToken?: string | null;
 }
 
 export interface PublicListEntry {
@@ -206,6 +225,8 @@ export interface PublicListEntry {
   targetDate: string | null;
   mode: PublicShareMode;
   items: PublicItemEntry[];
+  sourceUrl?: string | null;
+  eventLocation?: string | null;
 }
 
 export interface GuestClaimRequest {
@@ -222,6 +243,23 @@ export interface ScrapeResponse {
   imageUrl: string | null;
   price: number | null;
   priceCurrency: string | null;
+}
+
+export interface PageDraft {
+  kind: 'PRODUCT' | 'RECIPE' | 'EVENT' | 'HOWTO' | 'PAGE';
+  sourceUrl: string;
+  extractedAt: string;
+  title: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  price: number | null;
+  priceCurrency: string | null;
+  seller: string | null;
+  availability: string | null;
+  ingredients: string[];
+  steps: string[];
+  eventStart: string | null;
+  eventLocation: string | null;
 }
 
 export interface NotificationEntry {
@@ -620,6 +658,24 @@ export async function claimPublicItem(token: string, itemId: string, request: Gu
     method: 'POST',
     body: JSON.stringify(request)
   });
+}
+
+export async function releaseGuestClaim(token: string, itemId: string, claimToken: string): Promise<void> {
+  await requestNoContent(`/api/v1/share/${encodeURIComponent(token)}/items/${itemId}/release`, { claimToken });
+}
+
+export async function renameGuestClaim(token: string, itemId: string, claimToken: string, guestName: string): Promise<PublicItemEntry> {
+  return requestJson<PublicItemEntry>(`/api/v1/share/${encodeURIComponent(token)}/items/${itemId}/rename`, {
+    method: 'POST', body: JSON.stringify({ claimToken, guestName })
+  });
+}
+
+export async function releaseOwnedClaim(itemId: string): Promise<ItemEntry> {
+  return requestJson<ItemEntry>(`/api/v1/items/${itemId}/release-claim`, { method: 'POST' });
+}
+
+export async function extractPage(request: ScrapeRequest): Promise<PageDraft> {
+  return requestJson<PageDraft>('/api/v1/utils/extract', { method: 'POST', body: JSON.stringify(request) });
 }
 
 export async function scrapeUrl(request: ScrapeRequest): Promise<ScrapeResponse> {

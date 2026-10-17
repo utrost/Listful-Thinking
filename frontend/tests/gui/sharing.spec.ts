@@ -44,6 +44,17 @@ test.describe('Public wishlist sharing @gui @sharing', () => {
     await expect(guestPage.getByText('Reserved', { exact: true })).toBeVisible();
     await expect(guestPage.getByRole('button', { name: 'Claim' })).toHaveCount(0);
 
+    await guestPage.reload();
+    await expect(guestPage.getByRole('button', { name: 'Update my name' })).toBeVisible();
+    await guestPage.locator('.claim-controls').getByLabel('Your name').fill('Corrected guest');
+    await guestPage.getByRole('button', { name: 'Update my name' }).click();
+    await expect(guestPage.getByRole('status')).toContainText('Reservation name updated.');
+    await page.reload();
+    await expect(page.getByText('Corrected guest')).toHaveCount(0);
+    guestPage.once('dialog', dialog => dialog.accept());
+    await guestPage.getByRole('button', { name: 'Release reservation' }).click();
+    await expect(guestPage.getByRole('button', { name: 'Claim' })).toBeVisible();
+
     await diagnostics.expectClean();
     await guestDiagnostics.expectClean();
     await guestContext.close();

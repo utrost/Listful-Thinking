@@ -94,6 +94,32 @@ class ListControllerTests {
     }
 
     @Test
+    void eventSourceAndLocationPersistAndInvalidSourceIsRejected() throws Exception {
+        MockHttpSession owner = register("owner");
+        MvcResult created = mockMvc.perform(post("/api/v1/lists").session(owner).contentType("application/json")
+            .content("""
+                {"title":"Concert","type":"EVENT","targetDate":"2027-05-12T16:00:00Z","sourceUrl":"https://events.test/concert","eventLocation":"Town hall"}
+                """))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.sourceUrl").value("https://events.test/concert"))
+            .andExpect(jsonPath("$.eventLocation").value("Town hall"))
+            .andReturn();
+        String id = JsonPath.read(created.getResponse().getContentAsString(), "$.id");
+        mockMvc.perform(get("/api/v1/lists/{id}", id).session(owner))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.eventLocation").value("Town hall"));
+        mockMvc.perform(post("/api/v1/lists").session(owner).contentType("application/json")
+            .content("""
+                {"title":"Unsafe","type":"EVENT","targetDate":"2027-05-12T16:00:00Z","sourceUrl":"file:///etc/passwd"}
+                """))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/lists").session(owner).contentType("application/json")
+            .content("""
+                {"title":"Groceries","type":"GROCERY","eventLocation":"Town hall"}
+                """))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void usersCannotSeeUpdateOrDeleteEachOthersLists() throws Exception {
         MockHttpSession owner = register("owner");
         MockHttpSession other = register("other");

@@ -103,6 +103,7 @@ public class ItemEnrichmentService {
         if (metadata.price() != null && item.getPrice() == null) {
             item.setPrice(metadata.price());
             item.setPriceCurrency(metadata.priceCurrency());
+            item.setPriceCheckedAt(java.time.Instant.now());
         }
     }
 

@@ -3,6 +3,7 @@ package app.listful.scraping;
 import app.listful.api.ValidationFailedException;
 import app.listful.config.SecurityHardeningProperties;
 import app.listful.scraping.dto.ScrapeResponse;
+import app.listful.scraping.dto.PageDraftResponse;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +58,105 @@ public class ScraperService {
         } catch (IOException ex) {
             throw new ValidationFailedException("Could not fetch URL metadata.");
         }
+    }
+
+    public PageDraftResponse extractPage(String rawUrl) {
+        URI uri = validateHttpUrl(rawUrl);
+        try {
+            HtmlPage document = fetchHtmlPage(uri);
+            ScrapeResponse base = extract(document);
+            JsonNode recipe = jsonLdOfType(document, "Recipe");
+            JsonNode event = jsonLdOfType(document, "Event");
+            JsonNode howTo = jsonLdOfType(document, "HowTo");
+            JsonNode product = jsonLdOfType(document, "Product");
+            String kind = recipe != null ? "RECIPE" : event != null ? "EVENT" : howTo != null ? "HOWTO" : product != null ? "PRODUCT" : "PAGE";
+            JsonNode offer = product == null ? null : firstPricedOffer(product.get("offers"));
+            return new PageDraftResponse(
+                kind,
+                document.getUrl().toString(),
+                Instant.now().toString(),
+                firstNonBlank(recipe == null ? null : textValue(recipe.get("name")), event == null ? null : textValue(event.get("name")), howTo == null ? null : textValue(howTo.get("name")), base.title()),
+                firstNonBlank(recipe == null ? null : textValue(recipe.get("description")), event == null ? null : textValue(event.get("description")), howTo == null ? null : textValue(howTo.get("description")), base.description()),
+                base.imageUrl(), base.price(), base.priceCurrency(),
+                offer == null ? null : nodeName(offer.get("seller")),
+                offer == null ? null : shortSchemaName(textValue(offer.get("availability"))),
+                recipe == null ? List.of() : textEntries(recipe.get("recipeIngredient"), 40),
+                howTo == null ? List.of() : textEntries(howTo.get("step"), 30),
+                event == null ? null : textValue(event.get("startDate")),
+                event == null ? null : nodeName(event.get("location"))
+            );
+        } catch (IOException ex) {
+            throw new ValidationFailedException("Could not fetch URL metadata.");
+        }
+    }
+
+    private JsonNode jsonLdOfType(HtmlPage document, String type) {
+        for (DomNode script : document.querySelectorAll("script[type=\"application/ld+json\"]")) {
+            try {
+                JsonNode match = findType(objectMapper.readTree(script.getTextContent()), type);
+                if (match != null) return match;
+            } catch (JacksonException ignored) {
+                // A malformed block does not hide useful metadata in other blocks.
+            }
+        }
+        return null;
+    }
+
+    private JsonNode findType(JsonNode node, String type) {
+        if (node == null || node.isNull()) return null;
+        if (isSchemaType(node.get("@type"), type)) return node;
+        for (JsonNode child : node) {
+            JsonNode match = findType(child, type);
+            if (match != null) return match;
+        }
+        return null;
+    }
+
+    private boolean isSchemaType(JsonNode node, String type) {
+        if (node == null || node.isNull()) return false;
+        if (node.isArray()) {
+            for (JsonNode candidate : node) if (isSchemaType(candidate, type)) return true;
+            return false;
+        }
+        String value = textValue(node);
+        if (value == null) return false;
+        String localType = value.substring(Math.max(value.lastIndexOf('/'), value.lastIndexOf('#')) + 1);
+        return localType.equalsIgnoreCase(type) || ("Event".equals(type) && localType.endsWith("Event"));
+    }
+
+    private JsonNode firstPricedOffer(JsonNode node) {
+        if (node == null || node.isNull()) return null;
+        if (node.isArray()) {
+            for (JsonNode candidate : node) {
+                JsonNode object = firstPricedOffer(candidate);
+                if (object != null) return object;
+            }
+            return null;
+        }
+        return node.isObject() && parsePrice(textValue(node.get("price"))) != null ? node : null;
+    }
+
+    private String nodeName(JsonNode node) {
+        if (node == null || node.isNull()) return null;
+        return node.isObject() ? textValue(node.get("name")) : textValue(node);
+    }
+
+    private String shortSchemaName(String value) {
+        if (value == null) return null;
+        String name = value.substring(value.lastIndexOf('/') + 1);
+        return name.length() <= 40 ? name : null;
+    }
+
+    private List<String> textEntries(JsonNode entries, int limit) {
+        if (entries == null || entries.isNull()) return List.of();
+        List<String> result = new ArrayList<>();
+        Iterable<JsonNode> values = entries.isArray() ? entries : List.of(entries);
+        for (JsonNode entry : values) {
+            if (result.size() >= limit) break;
+            String value = entry.isObject() ? firstNonBlank(textValue(entry.get("text")), textValue(entry.get("name")), textValue(entry.get("value"))) : textValue(entry);
+            if (value != null) result.add(value.length() <= 255 ? value : value.substring(0, 255));
+        }
+        return result;
     }
 
     ScrapeResponse extract(HtmlPage document) {

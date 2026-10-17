@@ -32,6 +32,8 @@
         <p class="eyebrow">{{ t('ux.sharedWithYou') }}</p>
         <h2>{{ publicList?.title ?? t('sharing.publicList') }}</h2>
         <p v-if="publicList?.description">{{ publicList.description }}</p>
+        <p v-if="publicList?.eventLocation">{{ t('capture.location') }}: {{ publicList.eventLocation }}</p>
+        <a v-if="publicList?.sourceUrl && safeProductUrl(publicList.sourceUrl)" :href="safeProductUrl(publicList.sourceUrl)!" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
         <p v-if="publicList" class="muted">{{ t(`sharing.modes.${publicList.mode}`) }}</p>
         <p class="muted">{{ t(publicList?.mode === 'VIEW' ? 'ux.publicViewHelp' : 'ux.publicClaimHelp') }}</p>
         <ul class="item-list">
@@ -40,14 +42,22 @@
             <span>
               <strong>{{ item.name }}</strong>
               <small v-if="item.description">{{ item.description }}</small>
+              <small v-if="item.variantNote">{{ t('capture.variant') }}: {{ item.variantNote }}</small>
+              <small v-if="item.seller">{{ t('capture.seller') }}: {{ item.seller }}</small>
               <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ t('items.viewProduct') }}</a>
               <small v-if="item.dueDate">{{ formatDate(item.dueDate) }}</small>
+              <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
                   <small>{{ t(`items.statuses.${item.status}`) }}<template v-if="item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template></small>
             </span>
             <form v-if="publicList?.mode !== 'VIEW' && item.status === 'OPEN'" class="claim-form" @submit.prevent="handleClaimPublicItem(item.id)">
               <input v-model="guestName" :aria-label="t('sharing.guestName')" :placeholder="t('sharing.guestName')" required />
               <button type="submit">{{ publicList?.mode === 'SIGNUP' ? t('sharing.signup') : t('sharing.claim') }}</button>
             </form>
+            <div v-if="item.status === 'CLAIMED' && savedClaimToken(item.id)" class="claim-controls">
+              <label>{{ t('sharing.guestName') }}<input v-model="claimEditNames[item.id]" :placeholder="t('sharing.guestName')" /></label>
+              <button type="button" class="secondary subtle" @click="handleRenamePublicClaim(item.id)">{{ t('capture.correctClaim') }}</button>
+              <button type="button" class="secondary subtle" @click="handleReleasePublicClaim(item.id)">{{ t('capture.releaseClaim') }}</button>
+            </div>
           </li>
         </ul>
       </section>
@@ -106,6 +116,7 @@
         <nav class="workspace-navigation" :aria-label="t('planning.navigation')">
           <button v-for="view in (['lists', 'today', 'archive', 'templates', 'trash'] as const)" :key="view" type="button" :aria-current="hubView === view ? 'page' : undefined" @click="showHub(view)">{{ t(`planning.views.${view}`) }}</button>
         </nav>
+        <WebCapture :lists="lists" @saved="handleCaptureSaved" />
         <div v-if="undoAction" class="undo-notice" role="status"><span>{{ undoAction.label }}</span><button type="button" class="secondary" @click="handleUndo">{{ t('planning.undo') }}</button><button type="button" class="secondary subtle" @click="undoAction = null">{{ t('planning.dismiss') }}</button></div>
         <PlanningHub v-if="hubView !== 'lists'" :key="hubView" :view="hubView" :overview="overview" :library="libraryLists" :trash-items="trashItems" :pending="actionPending" :ready="hubReady"
           @refresh="showHub(hubView)" @open="openHubList" @complete="completeAgenda" @restore="handleRestoreList" @restore-item="handleRestoreItem" @instantiate="handleInstantiateTemplate" @delete="handleDeleteTemplate" />
@@ -150,6 +161,8 @@
             :aria-label="t('lists.targetDate')"
             :placeholder="t('lists.targetDate')"
           /></label>
+          <label v-if="newListRules.showTargetDate">{{ t('capture.location') }}<input v-model="listForm.eventLocation" maxlength="255" /></label>
+          <label>{{ t('capture.sourceUrl') }}<input v-model="listForm.sourceUrl" type="url" maxlength="2000" /></label>
           <p class="form-help">{{ t(`ux.purpose.${listForm.type}`) }}</p>
           <button type="submit">{{ t('lists.create') }}</button>
         </form>
@@ -176,6 +189,8 @@
               <span class="list-progress">{{ t('ux.itemCount', { open: items.filter(item => item.status === 'OPEN').length, total: items.length }) }}</span>
             </div>
             <p v-if="selectedList.description" class="list-description">{{ selectedList.description }}</p>
+            <p v-if="selectedList.eventLocation" class="muted">{{ t('capture.location') }}: {{ selectedList.eventLocation }}</p>
+            <a v-if="selectedList.sourceUrl && safeProductUrl(selectedList.sourceUrl)" :href="safeProductUrl(selectedList.sourceUrl)!" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
             <p v-if="selectedList.access !== 'OWNER'" class="access-note">{{ t(selectedList.access === 'READ' ? 'ux.readOnlyHelp' : 'ux.contributorHelp') }}</p>
             <p v-if="selectedList.archived" class="access-note">{{ t('planning.archivedPreview') }}</p>
             <p v-if="selectedList.template" class="access-note">{{ t('planning.templatePreview') }}</p>
@@ -220,6 +235,8 @@
                 :aria-label="t('lists.targetDate')"
                 :placeholder="t('lists.targetDate')"
               /></label>
+              <label v-if="editListRules.showTargetDate">{{ t('capture.location') }}<input v-model="editListForm.eventLocation" maxlength="255" /></label>
+              <label>{{ t('capture.sourceUrl') }}<input v-model="editListForm.sourceUrl" type="url" maxlength="2000" /></label>
               <button type="submit">{{ t('lists.save') }}</button>
               <button type="button" class="secondary subtle" @click="handleCancelEditList">{{ t('lists.cancel') }}</button>
             </form>
@@ -294,6 +311,10 @@
               <button v-if="currentItemFields.showImageUrl && itemForm.imageUrl" type="button" class="secondary subtle" @click="itemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
               <label v-if="currentItemFields.showPrice">{{ t('items.price') }}<input v-model.number="itemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" /></label>
               <label v-if="currentItemFields.showPrice">{{ t('items.currency') }}<input v-model="itemForm.priceCurrency" :aria-label="t('items.currency')" :placeholder="t('items.currency')" maxlength="3" pattern="[A-Z]{3}" /></label>
+              <label v-if="currentItemFields.showUrl">{{ t('capture.variant') }}<input v-model="itemForm.variantNote" maxlength="255" /></label>
+              <label v-if="currentItemFields.showUrl">{{ t('capture.seller') }}<input v-model="itemForm.seller" maxlength="255" /></label>
+              <label v-if="currentItemFields.showUrl">{{ t('capture.availability') }}<input v-model="itemForm.availability" maxlength="40" /></label>
+              <label>{{ t('capture.sourceUrl') }}<input v-model="itemForm.sourceUrl" type="url" maxlength="2000" /></label>
               <label v-if="currentItemFields.showCategory">{{ t('items.category') }}<input v-model="itemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" /></label>
               <label v-if="currentItemFields.showDueDate">{{ t('items.dueDate') }}<input v-model="itemForm.dueDate" type="datetime-local" :aria-label="t('items.dueDate')" :placeholder="t('items.dueDate')" /></label>
               <label v-if="currentItemFields.showResponsibility">{{ t('items.ownerLabel') }}<input v-model="itemForm.ownerLabel" :aria-label="t('items.ownerLabel')" :placeholder="t('items.ownerLabel')" /></label>
@@ -384,6 +405,10 @@
                   <label>{{ t('items.description') }}<textarea v-model="editItemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea></label>
                   <input v-if="currentItemFields.showUrl" v-model="editItemForm.url" aria-label="URL" placeholder="URL" />
                   <label v-if="currentItemFields.showImageUrl">{{ t('items.imageUrl') }}<input v-model="editItemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" /></label>
+                  <label v-if="currentItemFields.showUrl">{{ t('capture.variant') }}<input v-model="editItemForm.variantNote" maxlength="255" /></label>
+                  <label v-if="currentItemFields.showUrl">{{ t('capture.seller') }}<input v-model="editItemForm.seller" maxlength="255" /></label>
+                  <label v-if="currentItemFields.showUrl">{{ t('capture.availability') }}<input v-model="editItemForm.availability" maxlength="40" /></label>
+                  <label>{{ t('capture.sourceUrl') }}<input v-model="editItemForm.sourceUrl" type="url" maxlength="2000" /></label>
                   <label v-if="currentItemFields.showImageUrl">{{ t('items.uploadImage') }}<input type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, editItemForm)" /></label>
                   <PrivateImage class="preview" v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" :src="editItemForm.imageUrl" :alt="editItemForm.name || t('items.newName')" />
                   <button v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" type="button" class="secondary subtle" @click="editItemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
@@ -407,11 +432,17 @@
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                   <small v-if="item.dueDate">{{ formatDate(item.dueDate) }}</small>
+                  <small v-if="item.variantNote">{{ t('capture.variant') }}: {{ item.variantNote }}</small>
+                  <small v-if="item.seller">{{ t('capture.seller') }}: {{ item.seller }}</small>
+                  <small v-if="item.availability">{{ t('capture.availability') }}: {{ item.availability }}</small>
+                  <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
+                  <a v-if="item.sourceUrl && !item.url && safeProductUrl(item.sourceUrl)" :href="safeProductUrl(item.sourceUrl)!" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
                   <small>{{ t(`items.statuses.${item.status}`) }}<template v-if="item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ formatDate(item.lastCompletedAt) }}</template></small>
                 </span>
                 <button v-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" :aria-label="`${t('items.done')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
                 <button v-else-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" :aria-label="`${t('items.reopen')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
                 <button v-if="!selectedList.archived && !selectedList.template && selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status !== 'PURCHASED'" type="button" class="secondary subtle" :aria-label="`${t('items.markPurchased')}: ${item.name}`" @click="handleSetWishStatus(item, 'PURCHASED')">{{ t('items.markPurchased') }}</button>
+                <button v-if="!selectedList.archived && !selectedList.template && selectedList.access === 'OWNER' && item.status === 'CLAIMED'" type="button" class="secondary subtle" @click="handleReleaseOwnedClaim(item)">{{ t('capture.releaseClaim') }}</button>
                 <button v-else-if="!selectedList.archived && !selectedList.template && selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status === 'PURCHASED'" type="button" class="secondary subtle" :aria-label="`${t('items.reopenWish')}: ${item.name}`" @click="handleSetWishStatus(item, 'OPEN')">{{ t('items.reopenWish') }}</button>
                 <button v-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.recurrenceRule" type="button" class="secondary subtle" :aria-label="`${t('items.skipOccurrence')}: ${item.name}`" @click="handleSkipChore(item)">{{ t('items.skipOccurrence') }}</button>
                 <button v-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && selectedList.type === 'CHORE' && item.dueDate" type="button" class="secondary subtle" :aria-label="`${t('items.postpone')}: ${item.name}`" @click="handlePostponeChore(item)">{{ t('items.postpone') }}</button>
@@ -447,6 +478,7 @@ import { useI18n } from 'vue-i18n';
 import AdminPanel from './components/AdminPanel.vue';
 import PlanningHub from './components/PlanningHub.vue';
 import PrivateImage from './components/PrivateImage.vue';
+import WebCapture from './components/WebCapture.vue';
 import { getOverview, getLibrary, getTrashedItems, archiveList, restoreList, restoreItem, saveTemplate, instantiateTemplate, getItem, getList, type Overview, type TrashedItem, type HubView, type AgendaEntry } from './api/client';
 import {
   createItem,
@@ -461,6 +493,9 @@ import {
   createList,
   createPublicShare,
   claimPublicItem,
+  releaseGuestClaim,
+  renameGuestClaim,
+  releaseOwnedClaim,
   clearCompletedItems,
   deleteItem,
   deleteList,
@@ -554,6 +589,8 @@ const resetToken = ref(window.location.pathname === '/reset-password' ? new URLS
 if (magicToken || resetToken.value) window.history.replaceState({}, '', window.location.pathname);
 const publicList = ref<PublicListEntry | null>(null);
 const guestName = ref('');
+const claimEditNames = reactive<Record<string, string>>({});
+const claimTokens = reactive<Record<string, string>>({});
 const message = ref('');
 const actionPending = ref(false);
 const statusElement = ref<HTMLElement | null>(null);
@@ -577,13 +614,13 @@ function validateRecoveryEmail() {
 const resetPasswordForm = reactive({ password: '' });
 const passwordChangeForm = reactive({ currentPassword: '', newPassword: '', confirmPassword: '' });
 const adminUserForm = reactive<{ username: string; email: string; password: string; role: 'ADMIN' | 'USER' }>({ username: '', email: '', password: '', role: 'USER' });
-const listForm = reactive<{ title: string; description: string; type: ListType; targetDate: string }>({ title: '', description: '', type: 'WISH', targetDate: '' });
+const listForm = reactive<{ title: string; description: string; type: ListType; targetDate: string; sourceUrl: string; eventLocation: string }>({ title: '', description: '', type: 'WISH', targetDate: '', sourceUrl: '', eventLocation: '' });
 const editingList = ref(false);
 const pendingDeleteListId = ref<string | null>(null);
-const editListForm = reactive<{ title: string; description: string; type: ListType; targetDate: string }>({ title: '', description: '', type: 'WISH', targetDate: '' });
-const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
+const editListForm = reactive<{ title: string; description: string; type: ListType; targetDate: string; sourceUrl: string; eventLocation: string }>({ title: '', description: '', type: 'WISH', targetDate: '', sourceUrl: '', eventLocation: '' });
+const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', variantNote: '', seller: '', availability: '', sourceUrl: '', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
 const editingItemId = ref<string | null>(null);
-const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
+const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', variantNote: '', seller: '', availability: '', sourceUrl: '', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
 const acceptedImageTypes = 'image/png,image/jpeg,image/webp,image/gif';
 const acceptedImageTypeSet = new Set(acceptedImageTypes.split(','));
 const maxImageFileBytes = 3_500_000;
@@ -740,7 +777,7 @@ async function handleLogout() {
   resetItemForm();
   resetItemReviewForm();
   Object.assign(editItemForm, itemForm);
-  Object.assign(listForm, { title: '', description: '', type: 'WISH', targetDate: '' });
+  Object.assign(listForm, { title: '', description: '', type: 'WISH', targetDate: '', sourceUrl: '', eventLocation: '' });
   Object.assign(editListForm, listForm);
   Object.assign(adminUserForm, { username: '', email: '', password: '', role: 'USER' });
   Object.assign(registerForm, { username: '', email: '', password: '' });
@@ -833,15 +870,28 @@ async function handleCreateList() {
       title: listForm.title,
       description: listForm.description || undefined,
       type: listForm.type,
-      targetDate: listForm.type === 'EVENT' ? toIsoInstant(listForm.targetDate) : undefined
+      targetDate: listForm.type === 'EVENT' ? toIsoInstant(listForm.targetDate) : undefined,
+      sourceUrl: listForm.sourceUrl || undefined,
+      eventLocation: listForm.type === 'EVENT' ? listForm.eventLocation || undefined : undefined
     });
     listForm.title = '';
     listForm.description = '';
     listForm.targetDate = '';
+    listForm.sourceUrl = '';
+    listForm.eventLocation = '';
     lists.value = [created, ...lists.value];
     await selectList(created);
     if (newListDisclosure.value) newListDisclosure.value.open = false;
     message.value = t('ux.listCreated');
+  });
+}
+
+async function handleCaptureSaved(listId: string) {
+  await run(async () => {
+    hubView.value = 'lists';
+    await loadLists();
+    const list = lists.value.find(candidate => candidate.id === listId);
+    if (list) await selectList(list);
   });
 }
 
@@ -853,6 +903,8 @@ function handleStartEditList() {
   editListForm.description = selectedList.value.description ?? '';
   editListForm.type = selectedList.value.type;
   editListForm.targetDate = toLocalDateTime(selectedList.value.targetDate);
+  editListForm.sourceUrl = selectedList.value.sourceUrl ?? '';
+  editListForm.eventLocation = selectedList.value.eventLocation ?? '';
 }
 
 function handleCancelEditList() {
@@ -866,7 +918,9 @@ async function handleSaveEditedList() {
       title: editListForm.title,
       description: editListForm.description || undefined,
       type: editListForm.type,
-      targetDate: editListForm.type === 'EVENT' ? toIsoInstant(editListForm.targetDate) : undefined
+      targetDate: editListForm.type === 'EVENT' ? toIsoInstant(editListForm.targetDate) : undefined,
+      sourceUrl: editListForm.sourceUrl || undefined,
+      eventLocation: editListForm.type === 'EVENT' ? editListForm.eventLocation || undefined : undefined
     });
     selectedList.value = updated;
     publicShareMode.value = updated.publicShareMode ?? (updated.type === 'WISH' ? 'WISH_CLAIM' : 'VIEW');
@@ -1056,9 +1110,50 @@ async function handleRevokePublicShare() {
 async function handleClaimPublicItem(itemId: string) {
   if (!publicToken) return;
   await run(async () => {
-    await claimPublicItem(publicToken, itemId, { guestName: guestName.value });
+    const claimed = await claimPublicItem(publicToken, itemId, { guestName: guestName.value });
+    if (claimed.claimToken) {
+      claimTokens[itemId] = claimed.claimToken;
+      claimEditNames[itemId] = guestName.value;
+      try { localStorage.setItem(`listful:claim:${itemId}`, claimed.claimToken); } catch { /* In-memory control remains available. */ }
+    }
     guestName.value = '';
     publicList.value = await getPublicShare(publicToken);
+  });
+}
+
+function savedClaimToken(itemId: string) {
+  if (claimTokens[itemId]) return claimTokens[itemId];
+  try { return localStorage.getItem(`listful:claim:${itemId}`) ?? ''; } catch { return ''; }
+}
+
+async function handleReleasePublicClaim(itemId: string) {
+  const token = savedClaimToken(itemId);
+  if (!token || !window.confirm(t('capture.releaseConfirm'))) return;
+  await run(async () => {
+    await releaseGuestClaim(publicToken, itemId, token);
+    delete claimTokens[itemId];
+    delete claimEditNames[itemId];
+    try { localStorage.removeItem(`listful:claim:${itemId}`); } catch { /* Ignore unavailable storage. */ }
+    publicList.value = await getPublicShare(publicToken);
+  });
+}
+
+async function handleRenamePublicClaim(itemId: string) {
+  const token = savedClaimToken(itemId);
+  const name = claimEditNames[itemId]?.trim();
+  if (!token || !name) return;
+  await run(async () => {
+    await renameGuestClaim(publicToken, itemId, token, name);
+    publicList.value = await getPublicShare(publicToken);
+    message.value = t('capture.claimUpdated');
+  });
+}
+
+async function handleReleaseOwnedClaim(item: ItemEntry) {
+  if (!window.confirm(t('capture.releaseConfirm'))) return;
+  await run(async () => {
+    const updated = await releaseOwnedClaim(item.id);
+    items.value = items.value.map(candidate => candidate.id === item.id ? updated : candidate);
   });
 }
 
@@ -1068,18 +1163,20 @@ function publicShareUrl(token: string) {
 
 async function handleScrapeItemUrl() {
   if (!itemForm.url) return;
+  const requestedUrl = itemForm.url;
   await run(async () => {
-    const scraped = await scrapeUrl({ url: itemForm.url });
+    const scraped = await scrapeUrl({ url: requestedUrl });
+    if (itemForm.url !== requestedUrl) return;
     if (!itemForm.name && scraped.title) {
       itemForm.name = scraped.title;
     }
     if (!itemForm.description && scraped.description) {
       itemForm.description = scraped.description;
     }
-    if (scraped.imageUrl) {
+    if (!itemForm.imageUrl && scraped.imageUrl) {
       itemForm.imageUrl = scraped.imageUrl;
     }
-    if (scraped.price !== null) {
+    if (itemForm.price == null && scraped.price !== null) {
       itemForm.price = scraped.price;
       itemForm.priceCurrency = scraped.priceCurrency ?? '';
     }
@@ -1126,6 +1223,10 @@ async function handleCreateItem() {
       imageUrl: fields.showImageUrl ? itemForm.imageUrl || undefined : undefined,
       price: fields.showPrice ? itemForm.price : undefined,
       priceCurrency: fields.showPrice ? itemForm.priceCurrency || undefined : undefined,
+      variantNote: fields.showUrl ? itemForm.variantNote || undefined : undefined,
+      seller: fields.showUrl ? itemForm.seller || undefined : undefined,
+      availability: fields.showUrl ? itemForm.availability || undefined : undefined,
+      sourceUrl: itemForm.sourceUrl || (fields.showUrl ? itemForm.url || undefined : undefined),
       dueDate: fields.showDueDate ? toIsoInstant(itemForm.dueDate) : undefined,
       recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined,
       quantity: fields.showQuantity ? itemForm.quantity || undefined : undefined,
@@ -1156,6 +1257,10 @@ function handleStartEditItem(item: ItemEntry) {
   editItemForm.imageUrl = item.imageUrl ?? '';
   editItemForm.price = item.price ?? undefined;
   editItemForm.priceCurrency = item.priceCurrency ?? '';
+  editItemForm.variantNote = item.variantNote ?? '';
+  editItemForm.seller = item.seller ?? '';
+  editItemForm.availability = item.availability ?? '';
+  editItemForm.sourceUrl = item.sourceUrl ?? '';
   editItemForm.dueDate = toLocalDateTime(item.dueDate);
   editItemForm.recurrenceRule = item.recurrenceRule ?? '';
   editItemForm.quantity = item.quantity ?? '';
@@ -1235,6 +1340,10 @@ function itemPayloadFromEditForm(status: ItemEntry['status']) {
     imageUrl: fields.showImageUrl ? editItemForm.imageUrl || undefined : undefined,
     price: fields.showPrice ? editItemForm.price : undefined,
     priceCurrency: fields.showPrice ? editItemForm.priceCurrency || undefined : undefined,
+    variantNote: fields.showUrl ? editItemForm.variantNote || undefined : undefined,
+    seller: fields.showUrl ? editItemForm.seller || undefined : undefined,
+    availability: fields.showUrl ? editItemForm.availability || undefined : undefined,
+    sourceUrl: editItemForm.sourceUrl || undefined,
     status,
     dueDate: fields.showDueDate ? toIsoInstant(editItemForm.dueDate) : undefined,
     recurrenceRule: fields.showRecurrenceRule ? editItemForm.recurrenceRule || undefined : undefined,
@@ -1260,7 +1369,11 @@ function itemPayloadFromItem(item: ItemEntry, status: ItemEntry['status']) {
     quantity: item.quantity ?? undefined,
     category: item.category ?? undefined,
     ownerLabel: item.ownerLabel ?? undefined,
-    assistantLabels: item.assistantLabels ?? undefined
+    assistantLabels: item.assistantLabels ?? undefined,
+    variantNote: item.variantNote ?? undefined,
+    seller: item.seller ?? undefined,
+    availability: item.availability ?? undefined,
+    sourceUrl: item.sourceUrl ?? undefined
   };
 }
 
@@ -1357,6 +1470,10 @@ function resetItemForm() {
   itemForm.imageUrl = '';
   itemForm.price = undefined;
   itemForm.priceCurrency = 'EUR';
+  itemForm.variantNote = '';
+  itemForm.seller = '';
+  itemForm.availability = '';
+  itemForm.sourceUrl = '';
   itemForm.dueDate = '';
   itemForm.recurrenceRule = '';
   itemForm.quantity = '';

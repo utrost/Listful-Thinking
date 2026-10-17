@@ -1,6 +1,10 @@
-# URL Metadata Grabbing / Scraping
+# Website extraction and URL metadata
 
-Scraping is a best-effort convenience feature, not a correctness dependency. It is used to prefill editable wishlist item fields from product URLs.
+Extraction is a best-effort convenience feature. The signed-in **Save from a website** flow previews an HTTP(S) page and lets the user review all fields before saving. It can suggest a wishlist product, recipe ingredients for groceries, an event list, or how-to steps for tasks. Unreadable pages offer a manual draft with the source link retained.
+
+`POST /api/v1/utils/extract` returns a typed draft (`PRODUCT`, `RECIPE`, `EVENT`, `HOWTO`, or `PAGE`) with source URL, extraction time, title, description, image, price/currency, seller, availability, ingredients, steps, and event start/location when found. It shares the validated-address fetcher and limits with `/utils/scrape`; only the reviewed draft is persisted. The UI warns when a wishlist URL already occurs in the chosen list after common tracking parameters are removed. Duplicate detection is advisory.
+
+Event captures create an `EVENT` list with source URL and location as structured fields. The user may add preparation tasks. Recipe/how-to line imports keep unsaved lines in the editor if a later item fails. This is a one-off import, not synchronization with the website.
 
 This document describes what exists in code today, not a promise that every shop will work forever.
 
@@ -118,6 +122,15 @@ Price text is normalized after extraction by removing non-number/currency punctu
 
 These results were manually checked from the current scraper environment while validating the URL grabbing behavior. Live shop behavior changes over time; keep deterministic regression tests as local fixtures and treat this matrix as dated field evidence.
 
+### 2026-10-17 live Playwright capture
+
+`LIVE_WEB_CAPTURE=1 npx playwright test tests/gui/live-capture.spec.ts --project=chromium-desktop` runs against a disposable local app stack and public pages, without mocking `/api/v1/utils/extract`. It is opt-in because external page markup and access can change. The browser test verifies the review form and persisted list/item data.
+
+- [MUJI notebooks](https://www.muji.eu/products/set-of-5-planted-tree-paper-notebooks-b5-4594): product, €5.95, EUR; saved variant and duplicate warning verified. The site redirected the English URL to a German/Swiss page under the scraper's German-first request language, so the suggested title was German and the stored source was the final localized URL.
+- [Good Food pancakes](https://www.bbcgoodfood.com/recipes/easy-pancakes): recipe with six suggested ingredients; two reviewed lines saved with the source URL.
+- [Berliner Philharmoniker lunch concert](https://www.berliner-philharmoniker.de/en/concert/calendar/57042/): `MusicEvent` with date and venue; saved as an event list with a preparation task. This revealed that `MusicEvent` was initially classified as a generic page. The parser now recognizes Event subtypes, with a fixture regression test.
+- [King Arthur pancakes](https://www.kingarthurbaking.com/recipes/simply-perfect-pancakes-recipe): recipe title extracted; replacing the suggested title and changing destination to a wishlist retained the source link. A host-side `curl` request received 406, while the app's browser-like fetch succeeded, demonstrating that host-side status checks do not predict the scraper response.
+
 ### 2026-09-03 smoke matrix
 
 Works:
@@ -150,7 +163,7 @@ Earlier smoke runs had working examples for Fotoimpex, IKEA, eBay, MUJI, and Tch
 
 ## Known limitations and possible next slices
 
-- Some shops block data-center/server-side requests before product HTML is returned. Current examples include Cloudflare/security-check pages from Thalia, Bauhaus, Decathlon, and Conrad plus earlier Zalando/Etsy bot-protection responses.
+- Some shops block data-center/server-side requests before product HTML is returned. The September 2026 checks found Cloudflare/security-check pages from Thalia, Bauhaus, Decathlon, and Conrad plus earlier Zalando/Etsy bot-protection responses; re-check a live URL before assuming that status still holds.
 - Shop URLs age out or redirect to generic/category/404 pages; this is distinct from a parser gap and needs a fresh product URL before selector work.
 - The app does not run a browser automation stack for scraping. It fetches only the validated URL and parses the returned HTML server-side with HtmlUnit.
 - No per-shop plugin architecture exists yet; selectors are centralized in `ScraperService`.
@@ -163,4 +176,4 @@ Good next slices if more failures appear:
 1. Add regression fixtures for each new shop markup pattern before changing selectors.
 2. Split extraction into small strategy classes: social metadata, JSON-LD, microdata, gallery images, shop-specific fallbacks.
 3. Add structured scrape diagnostics so the UI/admin can distinguish `blocked`, `network_error`, `no_metadata`, and `parsed`.
-4. Optionally add a manual “paste metadata” workflow for shops that intentionally block server-side scraping.
+4. Improve the existing manual draft for blocked sites, for example by allowing a user to paste selected text from a page and split it into reviewed fields.

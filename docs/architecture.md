@@ -10,8 +10,10 @@ Listful Thinking is a single-container web app:
 ## Core boundaries
 
 - Backend owns auth, authorization, persistence, share tokens, scraping, reminders, and localized errors.
+- `ScraperService` fetches a validated public HTTP(S) address and returns product metadata or a typed, transient page draft. List/item services persist user-reviewed fields; V18 stores source and product details. Guest claim-control tokens are hashed before persistence.
 - `ListAccessService` authorizes list operations; `ListOwnershipService` applies owner/admin handoffs, public-link revocation, notifications, and audit recording in one transaction.
 - Frontend owns interaction, type-specific forms, browser-language detection, and guest claiming UX.
+- `WebCapture.vue` owns URL preview and editable import lines. `App.vue` owns destination navigation and guest controls; the API remains responsible for type validation and authorization.
 - Account setup uses a one-time password-reset token; the server stores only its hash and keeps admin-issued links out of audit details.
 - Public share DTOs must stay separate from internal DTOs.
 - Authorization decisions must be centralized in a backend access service rather than duplicated in controllers.

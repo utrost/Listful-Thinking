@@ -100,6 +100,14 @@ As a list owner, I want to update item status so I can track open, claimed, and 
 
 As a wishlist owner, I want to paste only a URL so the app can create a placeholder and enrich it from metadata.
 
+### Story: Review a website before saving (V18 branch candidate)
+
+As a list owner, I want to check and edit product, recipe, event, or how-to suggestions before they create list data, so a wrong price, date, variant, or ingredient is not silently accepted.
+
+### Story: Keep a source and identify repeat wishes (V18 branch candidate)
+
+As a list owner, I want captured entries linked to their source and a warning for a matching wishlist product URL, so I can revisit the page and avoid accidental duplicates.
+
 ### Story: To-do due date
 
 As a to-do list owner, I want each task to have an optional due date/time so one-off follow-ups can trigger reminders.
@@ -139,6 +147,10 @@ As a guest, I want to open a share link and see list items so I can decide what 
 ### Story: Guest claims item
 
 As a guest, I want to claim an open item with my name so duplicate purchases are avoided.
+
+### Story: Correct or release a reservation (V18 branch candidate)
+
+As a claimant, I want to fix my name or release my reservation from the same browser; as the list owner, I want to release a mistaken reservation without learning the wishlist claimant's name.
 
 ## Epic: List templates
 

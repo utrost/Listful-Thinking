@@ -41,6 +41,14 @@ small { display: block; color: var(--muted); line-height: 1.55; overflow-wrap: a
 .app-content { padding: 0; border: 0; margin: 0; min-width: 0; }
 .app-content:disabled { opacity: .75; }
 .workspace-intro { margin: 0; font-size: .85rem; }
+.web-capture { margin: 1rem 0; padding: .5rem 1rem; }
+.web-capture > summary { color: var(--green); }
+.web-capture[open] { padding: 1rem; }
+.capture-form { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: .75rem; align-items: end; }
+.capture-review { display: grid; gap: .85rem; padding: .8rem 0; max-width: 680px; }
+.capture-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .75rem; }
+.capture-warning { background: #fff5df; padding: .75rem; border-radius: 8px; }
+@media (max-width: 600px) { .capture-form, .capture-pair { grid-template-columns: 1fr; } }
 .content-grid { display: grid; grid-template-columns: 230px minmax(0,1fr); gap: 1.75rem; margin-top: 1.5rem; align-items: start; }
 .content-grid > *, .panel > *, .item-list li > *, .admin-user-list li > * { min-width: 0; }
 .list-navigation { display: grid; gap: 1rem; }
@@ -95,6 +103,8 @@ summary { font-weight: 600; min-height: 44px; display: list-item; padding: .7rem
 .item-actions-menu { display: grid; gap: .5rem; background: #fff; padding: .6rem; border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px #26372f14; position: absolute; right: 0; top: 100%; z-index: 5; min-width: 135px; }
 .edit-item-form { flex: 1 1 100%; background: #f7f9f4; padding: 1rem; border-radius: 10px; }
 .button-row, .claim-form { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; }
+.claim-controls { display: flex; gap: .55rem; align-items: end; flex-wrap: wrap; }
+.claim-controls label { min-width: 150px; }
 .button-row select { width: auto; max-width: 100%; }
 .chip-list li, .notification-list li, .admin-user-list li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; border-bottom: 1px solid var(--border); padding: .75rem 0; overflow-wrap: anywhere; }
 .copyable-link { overflow-wrap: anywhere; padding: .75rem; background: #f1f6ed; border-radius: 8px; font-size: .9rem; }

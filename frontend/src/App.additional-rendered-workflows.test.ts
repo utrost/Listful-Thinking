@@ -163,6 +163,19 @@ describe('additional rendered application workflows', () => {
     expect(wrapper.get('img.preview').attributes('src')).toBe('https://shop.test/notebook.jpg');
   });
 
+  it('keeps manually entered wishlist image and price when the page preview returns', async () => {
+    vi.mocked(scrapeUrl).mockResolvedValue({ title: 'Shop title', description: null, imageUrl: 'https://shop.test/wrong.jpg', price: 49, priceCurrency: 'USD' });
+    const wrapper = await mountSignedIn({ ...baseList, type: 'WISH', title: 'Wishlist' }, []);
+    const form = formWithButton(wrapper, 'Add item');
+    await form.get('input[aria-label="Image URL"]').setValue('https://owner.test/my-photo.jpg');
+    await form.get('input[aria-label="Price"]').setValue('19');
+    await form.get('input[aria-label="URL"]').setValue('https://shop.test/product');
+    await form.get('input[aria-label="URL"]').trigger('change');
+    await flushPromises();
+    expect((form.get('input[aria-label="Image URL"]').element as HTMLInputElement).value).toBe('https://owner.test/my-photo.jpg');
+    expect((form.get('input[aria-label="Price"]').element as HTMLInputElement).value).toBe('19');
+  });
+
   it('filters review controls against rendered items and resets them when switching lists', async () => {
     const otherList = { ...baseList, id: 'list-2', title: 'Second list' };
     vi.mocked(getLists).mockResolvedValue([baseList, otherList]);

@@ -21,6 +21,11 @@ public record ItemResponse(
     String assistantLabels,
     long version,
     String priceCurrency,
-    String importStatus
+    String importStatus,
+    String variantNote,
+    String seller,
+    String availability,
+    String priceCheckedAt,
+    String sourceUrl
 ) {
 }

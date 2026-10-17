@@ -117,3 +117,22 @@ Consequences:
 
 - The handoff release needs no migration beyond V17; rollback to the prior V17 image does not require a schema downgrade.
 - Existing sessions and account links are invalidated when a password is set or changed. Owners must issue a fresh public link after transfer.
+
+## ADR-008: Review website drafts before creating list data
+
+Decision:
+
+- The authenticated extraction API returns a typed, transient draft using the existing validated-address fetcher. The browser lets the user edit that draft, then calls normal list/item APIs to persist selected fields.
+- Persist source URLs and selected product/event metadata in V18. Store each guest claim-control token as a hash and return the raw token only to the claimant.
+
+Reason:
+
+- Website metadata can be incomplete, localized by redirects, or simply wrong; product prices and event dates need human review.
+- Reusing list/item services keeps type validation, authorization, and sharing behavior in one place.
+- Claim correction should not expose wishlist claimant names or require a guest account.
+
+Consequences:
+
+- Page capture is a snapshot. There is no background synchronization or price monitoring.
+- Multi-item imports can partially succeed; the UI preserves remaining lines for retry. A duplicate warning is advisory.
+- V18 is a forward SQLite migration; a pre-V18 database snapshot is needed for a tested rollback to V17.

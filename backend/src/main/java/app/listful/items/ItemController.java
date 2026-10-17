@@ -80,6 +80,11 @@ public class ItemController {
         return itemService.postponeChore(currentUser(authentication), itemId, request.days());
     }
 
+    @PostMapping("/items/{itemId}/release-claim")
+    public ItemResponse releaseClaim(@PathVariable String itemId, Authentication authentication) {
+        return itemService.releaseClaim(currentUser(authentication), itemId);
+    }
+
     private User currentUser(Authentication authentication) {
         return CurrentUser.from(authentication);
     }

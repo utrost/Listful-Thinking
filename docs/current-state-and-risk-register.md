@@ -1,6 +1,14 @@
 # Current State and Risk Register
 
-Last updated: 2026-10-16. Alice runs merged `main` code commit `f5b6b64` (PRs #51 and #52); deployment-record commit `39b4d2a` documents the live cutover. See the [verified deployment record](deployment/alice-tailnet.md).
+Last updated: 2026-10-17. Alice runs merged `main` code commit `f5b6b64` (PRs #51 and #52); deployment-record commit `39b4d2a` documents the live cutover. See the [verified deployment record](deployment/alice-tailnet.md).
+
+The `feature/web-capture-imports` branch adds reviewed website capture, structured event source/location, wishlist product details and guest claim controls with migration V18. Backend, frontend, and isolated Playwright checks passed locally; the branch has not been merged or deployed on Alice. The mobile Web Share Target remains a later HTTPS/installability task.
+
+## V18 candidate evidence and limits
+
+The new capture flow was exercised through the browser with real MUJI, Good Food, Berliner Philharmoniker, and King Arthur Baking pages. The live run uncovered missing `MusicEvent` recognition; it was fixed and all four live journeys then passed. Deterministic desktop/mobile capture and guest-claim journeys also passed. These are local branch checks, not Alice deployment or CI evidence. [Dated extraction notes](domain/scraping.md) record the exact pages and observed fields.
+
+Website capture remains best-effort. MUJI redirected the tested English URL to a German localized page and the saved source URL followed that redirect. Prices and availability are snapshots, not monitored data. A mobile Web Share Target would require an installable HTTPS origin. V18 is a forward schema change: verify a backup and migration on a restored database before deployment, and retain a pre-V18 copy for rollback.
 
 ## Current release since RC2
 
@@ -36,7 +44,7 @@ This is considered acceptable for a family/private Tailnet MVP. It is not yet a 
 
 ## Implemented product surface
 
-Implemented and verified MVP/post-MVP features include:
+The Alice V17 deployment includes:
 
 - Session authentication with first-user admin bootstrap.
 - Admin registration toggle, user listing, user creation, and user activation/deactivation.

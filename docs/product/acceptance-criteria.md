@@ -127,3 +127,14 @@ A smoke script must prove this path through real HTTP calls:
 
 - Desktop and mobile Playwright journeys cover first admin setup, user login/recovery/password change, sharing permissions and notifications, owner transfer, and inactive-owner admin handoff against an isolated Docker database.
 - CI must pass backend, frontend, contracts, container smoke, GUI smoke, and strict dependency scanning before merge. Live deployment verification checks readiness, current assets, Tailnet-only binding, preserved settings, and SQLite integrity/foreign keys and counts.
+
+## V18 website capture candidate checks
+
+These checks apply to `feature/web-capture-imports`; Alice remains on V17 until a separate release:
+
+- The authenticated extraction endpoint accepts public HTTP(S) pages through the guarded fetcher and returns a typed draft without creating list data. Event subtypes such as `MusicEvent` are recognized.
+- Users can edit product fields, recipe/how-to lines, and event date/location before saving. An unreadable public page offers a manual draft that preserves the source link; authentication and rate-limit failures remain visible errors.
+- Imported items/lists persist reviewed source and type-specific fields. An advisory warning identifies a matching wishlist product URL after common tracking parameters are removed; a deliberate duplicate remains possible.
+- A failed line import leaves unsaved lines available to retry. A partially saved event import does not create a second event list on retry.
+- Guest claim-control tokens are stored hashed; only the matching claimant can rename/release while the public link is active. The owner can release a mistaken claim, and ordinary wishlist reads hide guest names.
+- Desktop/mobile deterministic Playwright journeys and opt-in live-page tests use an isolated Docker database. V18 must be tested against a restored backup before any persistent upgrade.

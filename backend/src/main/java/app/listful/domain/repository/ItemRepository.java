@@ -31,7 +31,8 @@ public interface ItemRepository extends JpaRepository<Item, String> {
         update Item i
         set i.status = :claimedStatus,
             i.version = i.version + 1,
-            i.reservedByGuest = :guestName
+            i.reservedByGuest = :guestName,
+            i.claimTokenHash = :claimTokenHash
         where i.id = :itemId
           and i.list.id = :listId
           and i.status = :openStatus and i.deletedAt is null
@@ -41,9 +42,29 @@ public interface ItemRepository extends JpaRepository<Item, String> {
         @Param("itemId") String itemId,
         @Param("listId") String listId,
         @Param("guestName") String guestName,
+        @Param("claimTokenHash") String claimTokenHash,
         @Param("openStatus") ItemStatus openStatus,
         @Param("claimedStatus") ItemStatus claimedStatus
     );
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update Item i set i.status = app.listful.domain.enums.ItemStatus.OPEN,
+            i.reservedByGuest = null, i.claimTokenHash = null, i.version = i.version + 1
+        where i.id = :itemId and i.list.id = :listId and i.deletedAt is null
+          and i.status = app.listful.domain.enums.ItemStatus.CLAIMED and i.claimTokenHash = :claimTokenHash
+        """)
+    int releaseGuestClaim(@Param("itemId") String itemId, @Param("listId") String listId,
+        @Param("claimTokenHash") String claimTokenHash);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update Item i set i.reservedByGuest = :guestName, i.version = i.version + 1
+        where i.id = :itemId and i.list.id = :listId and i.deletedAt is null
+          and i.status = app.listful.domain.enums.ItemStatus.CLAIMED and i.claimTokenHash = :claimTokenHash
+        """)
+    int renameGuestClaim(@Param("itemId") String itemId, @Param("listId") String listId,
+        @Param("claimTokenHash") String claimTokenHash, @Param("guestName") String guestName);
 
     @Query("""
         select i from Item i

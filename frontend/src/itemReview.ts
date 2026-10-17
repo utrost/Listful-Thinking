@@ -41,7 +41,7 @@ export function reviewItems(items: ItemEntry[], state: ItemReviewState): ItemEnt
 
 function matchesQuery(item: ItemEntry, query: string): boolean {
   if (!query) return true;
-  return [item.name, item.description, item.category, item.url]
+  return [item.name, item.description, item.category, item.url, item.sourceUrl, item.variantNote, item.seller]
     .some((value) => value?.toLowerCase().includes(query));
 }
 
