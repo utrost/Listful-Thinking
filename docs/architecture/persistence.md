@@ -47,7 +47,7 @@ Use one consistent timestamp representation across migrations/entities/API. Reco
 
 Flyway has reached V18 in the repository. V14 adds item revisions, notification delivery keys, and audit-path redaction; V15 adds archive/template/Trash state; V16 adds session/token versions; V17 adds public-link expiry. V18 adds item source/product metadata and hashed guest-claim control tokens, plus list source URL/event location. New account setup and ownership handoff features reuse these tables.
 
-V18 adds nullable `variant_note`, `seller`, `availability`, `price_checked_at`, `source_url`, and `claim_token_hash` to `items`, plus `source_url` and `event_location` to `lists`. The migration does not backfill these values for existing records. The raw guest claim-control token is never stored in SQLite. Alice remains on V17 until a separate verified deployment.
+V18 adds nullable `variant_note`, `seller`, `availability`, `price_checked_at`, `source_url`, and `claim_token_hash` to `items`, plus `source_url` and `event_location` to `lists`. The migration does not backfill these values for existing records. The raw guest claim-control token is never stored in SQLite. Alice runs V18 after a verified backup and isolated migration preflight.
 
 ## Indexing principles
 

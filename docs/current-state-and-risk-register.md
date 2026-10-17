@@ -1,18 +1,18 @@
 # Current State and Risk Register
 
-Last updated: 2026-10-17. Alice runs merged `main` code commit `f5b6b64` (PRs #51 and #52); deployment-record commit `39b4d2a` documents the live cutover. See the [verified deployment record](deployment/alice-tailnet.md).
+Last updated: 2026-10-17. Alice runs merged `main` code commit `ea97030` (PR #53) at schema V18. See the [verified deployment record](deployment/alice-tailnet.md).
 
-The `feature/web-capture-imports` branch adds reviewed website capture, structured event source/location, wishlist product details and guest claim controls with migration V18. Backend, frontend, and isolated Playwright checks passed locally; the branch has not been merged or deployed on Alice. The mobile Web Share Target remains a later HTTPS/installability task.
+V18 adds reviewed website capture, structured event source/location, wishlist product details and guest claim controls. All six PR CI jobs passed, an isolated copy of Alice's database migrated cleanly, and the live V18 deployment passed data and browser checks. The mobile Web Share Target remains a later HTTPS/installability task.
 
-## V18 candidate evidence and limits
+## V18 release evidence and limits
 
-The new capture flow was exercised through the browser with real MUJI, Good Food, Berliner Philharmoniker, and King Arthur Baking pages. The live run uncovered missing `MusicEvent` recognition; it was fixed and all four live journeys then passed. Deterministic desktop/mobile capture and guest-claim journeys also passed. These are local branch checks, not Alice deployment or CI evidence. [Dated extraction notes](domain/scraping.md) record the exact pages and observed fields.
+The new capture flow was exercised through the browser with real MUJI, Good Food, Berliner Philharmoniker, and King Arthur Baking pages. The live run uncovered missing `MusicEvent` recognition; it was fixed and all four live journeys then passed. Deterministic desktop/mobile capture and guest-claim journeys also passed in isolated tests. CI ran the capture journeys as part of GUI smoke. The read-only Alice browser check confirmed deployed login-page loads on desktop and mobile; it did not add live list data. [Dated extraction notes](domain/scraping.md) record the exact pages and observed fields.
 
-Website capture remains best-effort. MUJI redirected the tested English URL to a German localized page and the saved source URL followed that redirect. Prices and availability are snapshots, not monitored data. A mobile Web Share Target would require an installable HTTPS origin. V18 is a forward schema change: verify a backup and migration on a restored database before deployment, and retain a pre-V18 copy for rollback.
+Website capture remains best-effort. MUJI redirected the tested English URL to a German localized page and the saved source URL followed that redirect. Prices and availability are snapshots, not monitored data. A mobile Web Share Target would require an installable HTTPS origin. V18 is a forward schema change; Alice's verified pre-V18 copy is retained for rollback to the previous image.
 
 ## Current release since RC2
 
-Migration V17 gives links active at upgrade 56 days from that upgrade because their original creation dates were not recorded. New links expire 56 days after creation; every guest read and claim checks expiry. Deleted lists, templates and items remain recoverable for 14 days, then a daily cleanup permanently removes them. Backups can retain older copies and require a separate operator retention policy. V17 is deployed on Alice.
+Migration V17 gives links active at upgrade 56 days from that upgrade because their original creation dates were not recorded. New links expire 56 days after creation; every guest read and claim checks expiry. Deleted lists, templates and items remain recoverable for 14 days, then a daily cleanup permanently removes them. Backups can retain older copies and require a separate operator retention policy. V17's retention behavior remains in the V18 deployment.
 
 Account and sharing work adds 24-hour one-time admin setup/recovery links, signed-in password change, in-app notifications for share changes, owner transfer to an active account, and audited admin transfer from an inactive owner to a different active account. Admin transfer includes archives, templates and Trash but does not expose private titles or content to the admin. The current user/admin and handoff journeys have desktop/mobile Playwright coverage.
 
@@ -44,7 +44,7 @@ This is considered acceptable for a family/private Tailnet MVP. It is not yet a 
 
 ## Implemented product surface
 
-The Alice V17 deployment includes:
+The Alice V18 deployment includes:
 
 - Session authentication with first-user admin bootstrap.
 - Admin registration toggle, user listing, user creation, and user activation/deactivation.
@@ -61,6 +61,8 @@ The Alice V17 deployment includes:
 - List cloning without copying public tokens or internal shares.
 - Item search/filter/sort/review helpers in the frontend.
 - URL metadata preview and async wishlist URL enrichment.
+- Reviewed product, recipe, event, and how-to website capture with source-linked snapshots and editable drafts.
+- Wishlist variant, seller, availability, and price-check details; guest claim correction/release controls.
 - Due-date reminders with SMTP-or-in-app fallback and owner-scoped notifications.
 - Grocery quantity/category fields and clear-completed workflow.
 - Operational chore recurrence including daily, weekly, biweekly, monthly, quarterly, and annual intervals.
@@ -103,8 +105,8 @@ These are known and intentionally documented:
 
 Latest verified gates:
 
-- [All six CI jobs passed on PR #52](https://github.com/utrost/Listful-Thinking/actions/runs/38966842242), including backend, frontend, contracts, container smoke, strict dependency scan, and desktop/mobile Playwright smoke. PR #51 also passed its six checks before merge.
-- Alice runs image `sha256:c387463d10361416fa3a75b334cfc4a902f2827fc6112b05bd07e4ddfd04d0ab`. Live readiness, Tailnet-only binding, UID 1000, preserved application settings, current frontend asset, and desktop/mobile Chromium login pages passed. Pre/post deployment V17 SQLite copies passed integrity and foreign-key checks with unchanged counts (1 user, 1 list, 3 items).
+- [All six PR CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014653891) and [all six merged-main CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014873586) passed, including backend, frontend, contracts, container smoke, strict dependency scan, and desktop/mobile Playwright smoke with capture journeys.
+- Alice runs image `sha256:224ce4e3ec395f78ba8947e67810300f0fa469090fce30d43f09de3fca7d0106`. Live readiness, Tailnet-only binding, UID 1000, preserved application settings, V18 frontend asset, and desktop/mobile Chromium login pages passed. Pre/post deployment SQLite copies passed integrity and foreign-key checks; isolated and live migrations preserved 1 user, 1 list, and 3 items and verified V18 columns.
 
 Earlier implementation evidence (historical):
 

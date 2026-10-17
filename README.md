@@ -8,9 +8,7 @@ The [user experience concept](docs/design/user-experience.md) describes the list
 
 ## Release and branch status
 
-The private Alice Tailnet instance runs the merged `main` build at schema **V17**. It includes 14-day recoverable Trash, 56-day public links, account setup/recovery, password changes, sharing notifications, and ownership handoffs. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified live image and database.
-
-This `feature/web-capture-imports` branch adds reviewed website capture, richer wishlist details, guest reservation controls, and schema **V18**. These changes are committed and tested locally; they are **not deployed on Alice**. Back up and test V18 on a restored database before upgrading any persistent instance. Rolling an older image back requires its matching pre-V18 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
+The private Alice Tailnet instance runs merged `main` commit `ea97030` at schema **V18**. It includes 14-day recoverable Trash, 56-day public links, account and ownership handoffs, reviewed website capture, richer wishlist details, and guest reservation controls. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified image, migration, and database backup. Rolling back to a V17 image requires its matching pre-V18 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
 
 ## What it does
 
@@ -19,8 +17,8 @@ This `feature/web-capture-imports` branch adds reviewed website capture, richer 
 - **Registered-user collaboration:** list owners can share read-only or contributor access with another local account. Contributors can add and update items; owners keep destructive/list-management control.
 - **Account and ownership handoffs:** admins can issue one-time setup/recovery links, users can change passwords, owners can transfer lists to active users, and admins can transfer lists from inactive accounts without browsing private content.
 - **Public guest sharing:** owners can create public links with modes for read-only viewing, wishlist claiming, or signup-style participation.
-- **Website capture (this branch):** paste an HTTP(S) page, review product/recipe/event/how-to suggestions, then save wishes, grocery lines, dated event plans, or tasks. Wishlist entries keep exact variants, seller, availability, source, and price-check time. A possible duplicate is flagged before saving.
-- **Guest reservation control (this branch):** claimants can correct their name or release a reservation from the same browser; an owner can release a mistaken claim. Wishlist owners and other guests do not see the claimant's name.
+- **Website capture:** paste an HTTP(S) page, review product/recipe/event/how-to suggestions, then save wishes, grocery lines, dated event plans, or tasks. Wishlist entries keep exact variants, seller, availability, source, and price-check time. A possible duplicate is flagged before saving.
+- **Guest reservation control:** claimants can correct their name or release a reservation from the same browser; an owner can release a mistaken claim. Wishlist owners and other guests do not see the claimant's name.
 - **Grocery/shop mode:** use quantity/category fields, group by category, hide completed items, and clear completed grocery items after shopping.
 - **Chores and events:** use due dates, simple recurrence for chores, skip/postpone actions, target dates for events, and owner/helper labels for coordination.
 - **Notifications:** due-item reminders and sharing/ownership changes appear in-app; reminders can also be sent by email when SMTP is configured.

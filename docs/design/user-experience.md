@@ -34,9 +34,9 @@ Use disposable Docker data, never change live lists to test the design. Run exis
 ## Scope
 The September workspace revision changed interface and guidance while retaining the then-current API. Drag-and-drop ordering remains future work. Today & upcoming, collaboration notifications, account password controls, and handoff flows were added in later releases.
 
-## October website capture candidate — 2026-10-17
+## October website capture release — 2026-10-17
 
-The `feature/web-capture-imports` branch adds a reviewed URL import flow and guest reservation correction/release. The UI saves a source-linked snapshot; it does not monitor a site for later changes. A live Playwright run on a disposable database passed four product/recipe/event journeys. MUJI redirected an English product URL to a German localized page under the scraper's German-first language header, so the suggested title and stored final source URL were localized. The user can edit the title before saving. Mobile Web Share Target integration remains a later task for an installable HTTPS deployment.
+The V18 release adds a reviewed URL import flow and guest reservation correction/release. The UI saves a source-linked snapshot; it does not monitor a site for later changes. A live Playwright run on a disposable database passed four product/recipe/event journeys. MUJI redirected an English product URL to a German localized page under the scraper's German-first language header, so the suggested title and stored final source URL were localized. The user can edit the title before saving. Alice now runs this flow; the live browser check loaded the login page without modifying user data. Mobile Web Share Target integration remains a later task for an installable HTTPS deployment.
 
 ## October account and sharing iteration — 2026-10-16
 

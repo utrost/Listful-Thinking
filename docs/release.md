@@ -2,11 +2,13 @@
 
 Use this checklist before tagging or publishing a Listful Thinking image.
 
-## V18 website capture candidate — repository branch only
+## V18 website capture — deployed 2026-10-17
 
-`feature/web-capture-imports` contains reviewed website capture, wishlist product fields, event source/location, and guest claim controls. Migration V18 adds columns to `items` and `lists`. This branch has not been merged or deployed on Alice; the live deployment below remains V17. Before a V18 deployment, make a verified pre-V18 SQLite backup, test migration on a restored copy, and prepare to restore that backup if rolling back to a V17 image.
+PR [#53](https://github.com/utrost/Listful-Thinking/pull/53) merged reviewed website capture, wishlist product fields, event source/location, and guest claim controls as `ea97030`. Migration V18 adds columns to `items` and `lists`. Before cutover, a stopped-container V17 backup passed integrity and foreign-key checks; the new image migrated an isolated restore to V18 with all 1 account, 1 list, and 3 items preserved. A fresh cutover backup is retained for rollback to the V17 image.
 
-Local verification completed on 2026-10-17: full backend suite, 73 frontend unit tests, frontend production build, documentation contract, desktop/mobile deterministic capture Playwright journeys, and a guest claim/correction/release browser journey. Four additional Playwright journeys fetched public pages without mocking extraction: MUJI product, Good Food recipe, Berliner Philharmoniker `MusicEvent`, and King Arthur recipe. Event subtype detection was corrected after the first live run, then the focused backend scraper suite and all four live journeys passed. Run the opt-in live suite from `frontend/` with `LIVE_WEB_CAPTURE=1 npx playwright test tests/gui/live-capture.spec.ts --project=chromium-desktop`; external sites may change.
+All [six PR CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014653891) and [six merged-main CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014873586) passed, including the strict dependency scan, container smoke, and desktop/mobile Playwright smoke with the capture journeys. Local verification completed on 2026-10-17: full backend suite, 73 frontend unit tests, frontend production build, documentation contract, desktop/mobile deterministic capture Playwright journeys, and a guest claim/correction/release browser journey. Four additional Playwright journeys fetched public pages without mocking extraction: MUJI product, Good Food recipe, Berliner Philharmoniker `MusicEvent`, and King Arthur recipe. Event subtype detection was corrected after the first live run, then the focused backend scraper suite and all four live journeys passed. Run the opt-in live suite from `frontend/` with `LIVE_WEB_CAPTURE=1 npx playwright test tests/gui/live-capture.spec.ts --project=chromium-desktop`; external sites may change.
+
+Alice's live V18 database passed `integrity_check`, `foreign_key_check`, column checks, and preserved counts after cutover. The new image and frontend markers, Tailnet-only bind, UID 1000, original application settings, private database permissions, readiness, and read-only desktop/mobile Chromium login-page checks passed. See the [deployment record](deployment/alice-tailnet.md) for image IDs and private backup locations.
 
 ## Local quality gates
 
@@ -85,9 +87,9 @@ Use [Self-Hosting Handbook](deployment/self-hosting-handbook.md) for general pri
 - For schema releases, the live SQLite database has the expected Flyway version and columns after deployment.
 - The LAN IP does not answer on port `8080` while the service is meant to be Tailnet-only.
 
-## Current deployed main — 2026-10-16
+## Previous deployed main — 2026-10-16
 
-Merged code commit `f5b6b64` is running on Alice; deployment-record commit `39b4d2a` records the cutover. PR #51 added desktop/mobile Playwright user and admin processes; PR #52 added account setup/recovery, password change, sharing notifications, owner transfer, and inactive-owner admin handoff. [All six CI jobs passed](https://github.com/utrost/Listful-Thinking/actions/runs/38966842242) on the final feature commit, including strict dependency scanning and GUI smoke.
+Merged code commit `f5b6b64` previously ran on Alice; deployment-record commit `39b4d2a` records that cutover. PR #51 added desktop/mobile Playwright user and admin processes; PR #52 added account setup/recovery, password change, sharing notifications, owner transfer, and inactive-owner admin handoff. [All six CI jobs passed](https://github.com/utrost/Listful-Thinking/actions/runs/38966842242) on the final feature commit, including strict dependency scanning and GUI smoke.
 
 The release image is `listful-thinking:handoff-20261016-f5b6b64` with ID `sha256:c387463d10361416fa3a75b334cfc4a902f2827fc6112b05bd07e4ddfd04d0ab`. V17 stayed unchanged. Consistent pre/post deployment SQLite copies passed integrity and foreign-key checks; 1 user, 1 list, and 3 items remained. Live readiness, Tailnet-only exposure, settings preservation, frontend assets, and desktop/mobile login-page loads passed. The [Alice runbook](deployment/alice-tailnet.md) holds the private backup location and records a recovered first cutover attempt.
 

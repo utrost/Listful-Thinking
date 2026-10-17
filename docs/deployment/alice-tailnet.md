@@ -2,13 +2,19 @@
 
 This document records the current private deployment contract for the Listful Thinking instance on Alice and the safe redeploy procedure.
 
-The `feature/web-capture-imports` V18 candidate is not included in this V17 deployment. Its migration and rollback preflight are described in the [release checklist](../release.md).
-
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
-## Latest deployment — account and list handoffs, 2026-10-16
+## Latest deployment — reviewed website capture, 2026-10-17
 
-Merged `main` commit `f5b6b64` is deployed as `listful-thinking:handoff-20261016-f5b6b64` (also tagged `listful-thinking:alice`), image ID `sha256:c387463d10361416fa3a75b334cfc4a902f2827fc6112b05bd07e4ddfd04d0ab`. It includes the Playwright user/admin journeys from PR #51 and account setup, recovery, password change, sharing notifications, owner transfer, and admin transfer of inactive owners' lists from PR #52. All six CI jobs passed on the merged feature PR, including the strict dependency scan and desktop/mobile Playwright smoke.
+Merged `main` commit `ea97030` (PR #53) is deployed as `listful-thinking:web-capture-20261017-ea97030` (also tagged `listful-thinking:alice`), image ID `sha256:224ce4e3ec395f78ba8947e67810300f0fa469090fce30d43f09de3fca7d0106`. It adds reviewed product/recipe/event/how-to capture, wishlist product details, and guest claim controls. All six PR and [merged-main CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014873586) passed, including strict dependency scanning and desktop/mobile Playwright smoke.
+
+A stopped-container pre-V18 backup passed SQLite `integrity_check` and `foreign_key_check`. The image migrated an isolated copy from V17 to V18, preserving 1 account, 1 list, and 3 items. A fresh stopped-container backup was taken at cutover. The live V18 database passed integrity, foreign-key, column, and count checks with the same records. Readiness, V18 frontend assets, desktop/mobile Chromium login pages, original application settings, UID 1000, database permissions 0700/0600, and Tailnet-only binding passed. Private backups, previous-container configuration, migration preflight, verification copies, and checksums are in `data/deployments/20261017T074317Z-web-capture-v18/` (`verification.json`).
+
+The previous V17 container is retained stopped as `listful-thinking-alice-pre-v18-20261017T074707Z`, with restart disabled. To roll back to V17, stop and remove the V18 container, restore `listful-thinking-cutover-pre-v18.sqlite` to the volume, then start the previous container. Preserve any data created after cutover before restoring the snapshot. Do not run the V17 image against the upgraded V18 database.
+
+## Previous deployment — account and list handoffs, 2026-10-16
+
+Merged `main` commit `f5b6b64` was deployed as `listful-thinking:handoff-20261016-f5b6b64` (previously tagged `listful-thinking:alice`), image ID `sha256:c387463d10361416fa3a75b334cfc4a902f2827fc6112b05bd07e4ddfd04d0ab`. It includes the Playwright user/admin journeys from PR #51 and account setup, recovery, password change, sharing notifications, owner transfer, and admin transfer of inactive owners' lists from PR #52. All six CI jobs passed on the merged feature PR, including the strict dependency scan and desktop/mobile Playwright smoke.
 
 A stopped-container pre-deploy SQLite backup and a post-deploy copy both passed `integrity_check` and `foreign_key_check`; the schema remains V17 with 1 account, 1 list, and 3 items. Live readiness, current frontend assets, desktop/mobile Chromium login pages, preserved application settings, UID 1000 and database permissions, and Tailnet-only binding passed. Private backups, configuration, and verification are in `data/deployments/20261016T211037Z/`. The previous image/container is retained stopped as `listful-thinking-alice-pre-handoff-20261016` with restart disabled. Because the schema did not change, that container can be used for rollback after preserving any newer data.
 
@@ -42,7 +48,7 @@ Private original configuration, source archive, migration preflight, consistent 
 
 ## Previous deployment — focused list workspace, 2026-09-26 11:57 UTC
 
-The tested image `listful-thinking:ux-20260926` is also tagged `listful-thinking:alice`. Image ID: `sha256:06e90f829ed0bb4745960a3f5a0c694d45c78ae2d42863c8b62d8526199923e6`.
+The tested image `listful-thinking:ux-20260926` was also tagged `listful-thinking:alice` at that time. Image ID: `sha256:06e90f829ed0bb4745960a3f5a0c694d45c78ae2d42863c8b62d8526199923e6`.
 
 The [user experience concept](../design/user-experience.md) records the design and iteration process. The deployed interface separates Items, Sharing, List settings and Administration; uses desktop list navigation and a mobile selector; adds guidance, empty states and progressive item forms; and remembers language and list selection.
 
@@ -161,11 +167,11 @@ with zipfile.ZipFile(jar) as z:
         for n in names
         if n.startswith('BOOT-INF/classes/static/assets/') and n.endswith('.js')
     )
-    assert 'BOOT-INF/classes/db/migration/V17__retention_policy.sql' in names
+    assert 'BOOT-INF/classes/db/migration/V18__web_capture_and_claims.sql' in names
     assert 'BOOT-INF/classes/app/listful/lists/ListOwnershipService.class' in names
-    for marker in ['Share access', 'Transfer ownership', 'Issue setup or recovery link']:
+    for marker in ['Read page', 'Save reviewed draft', 'Exact size, colour, model, or buyer note']:
         assert marker in body, marker
-    print('V17 and handoff backend/frontend markers OK')
+    print('V18 and website capture backend/frontend markers OK')
 PY
 rm -rf "$tmp"
 ```
@@ -201,7 +207,7 @@ docker run -d --name listful-thinking-alice --restart unless-stopped \
 rm -f "$env_file"
 ```
 
-Check readiness before considering the cutover complete. If the new container fails, remove only that new container, rename `$old_name` back to `listful-thinking-alice`, restore its `unless-stopped` restart policy, and start it. Keep the backup and the previous image until post-deploy verification is complete. Flyway versions are text: query the latest successful row by `installed_rank`, not `max(version)`.
+Check readiness before considering the cutover complete. If a schema-changing candidate fails after starting, stop and remove only that new container, restore the matching pre-migration database snapshot to the volume, then rename `$old_name` back to `listful-thinking-alice`, restore its `unless-stopped` restart policy, and start it. Keep the backup and previous image until post-deploy verification is complete. Flyway versions are text: query the latest successful row by `installed_rank`, not `max(version)`.
 
 ## Post-deploy verification
 
@@ -228,7 +234,7 @@ html = Path('/tmp/listful-live-index.html').read_text()
 assert 'Listful Thinking' in html
 asset = re.findall(r'src="(/assets/[^"]+\.js)"', html)[0]
 body = urllib.request.urlopen('http://alice.taileb20d9.ts.net:8080' + asset, timeout=20).read().decode('utf-8', 'ignore')
-for marker in ['Share access', 'Transfer ownership', 'Issue setup or recovery link']:
+for marker in ['Read page', 'Save reviewed draft', 'Exact size, colour, model, or buyer note']:
     assert marker in body, marker
     print(marker, 'ok')
 PY
@@ -247,7 +253,7 @@ con = sqlite3.connect(sys.argv[1])
 assert con.execute('pragma integrity_check').fetchone()[0] == 'ok'
 assert con.execute('pragma foreign_key_check').fetchall() == []
 version = con.execute('select version from flyway_schema_history where success=1 order by installed_rank desc limit 1').fetchone()[0]
-assert version == '17', version
+assert version == '18', version
 print('schema=', version)
 print('counts=', {table: con.execute(f'select count(*) from {table}').fetchone()[0] for table in ('users', 'lists', 'items')})
 PY

@@ -387,7 +387,7 @@ Before updating:
 
 V17 introduces 14-day Trash retention and 56-day public-link expiry. Links active during V17 migration received 56 days from the upgrade. Back up before adopting V17; rolling back to a pre-V17 image requires its matching database snapshot. The deployed account/list handoff release added no later schema migration. Keep backup retention and encryption independent of the app's Trash policy.
 
-The `feature/web-capture-imports` candidate introduces V18 for website source/product metadata, event location, and hashed guest claim-control tokens. Alice still runs V17. Before installing a V18 build on an existing instance, back up the running database consistently, verify integrity and foreign keys, and apply V18 first to a restored copy. Keep the matching pre-V18 snapshot for rollback to a V17 image; an older image should not be started against an upgraded database without a tested compatibility plan.
+V18 adds website source/product metadata, event location, and hashed guest claim-control tokens. Alice runs V18 after a verified backup and migration preflight. Before installing a V18 build on another existing instance, back up the database consistently, verify integrity and foreign keys, and apply V18 first to a restored copy. Keep the matching pre-V18 snapshot for rollback to a V17 image; an older image should not be started against an upgraded database without a tested compatibility plan.
 
 Production-profile source checkout update:
 

@@ -6,9 +6,9 @@ This document separates what the app supports today from plausible future direct
 
 Listful Thinking is for small trusted groups: households, families, clubs, workshops, and self-hosters who want private-by-default lists with deliberate sharing. It is not trying to become a generic enterprise project-management suite, marketplace, or calendar replacement.
 
-## V18 branch candidate: turn website content into lists
+## V18: turn website content into lists
 
-The `feature/web-capture-imports` branch lets a signed-in user paste a product, recipe, event, or how-to URL, review suggestions, and save them as a wish, grocery entries, an event plan, or tasks. Each saved entry keeps a source link; a wishlist can also keep exact variant, seller, availability, and the time a price was checked. A guest can correct or release their own reservation with the claim token returned to their browser, and an owner can release a mistaken claim. Live external-page checks passed locally; this candidate is not yet part of the Alice V17 deployment.
+The deployed app lets a signed-in user paste a product, recipe, event, or how-to URL, review suggestions, and save them as a wish, grocery entries, an event plan, or tasks. Each saved entry keeps a source link; a wishlist can also keep exact variant, seller, availability, and the time a price was checked. A guest can correct or release their own reservation with the claim token returned to their browser, and an owner can release a mistaken claim. Live external-page checks passed locally, and Alice runs this V18 release.
 
 ## Implemented use cases
 
