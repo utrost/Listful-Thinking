@@ -15,6 +15,7 @@ import app.listful.domain.repository.ListRepository;
 import app.listful.lists.ListAccessService;
 import app.listful.security.TokenHashing;
 import app.listful.sharing.dto.GuestClaimRequest;
+import app.listful.sharing.dto.GuestClaimControlRequest;
 import app.listful.sharing.dto.PublicItemResponse;
 import app.listful.sharing.dto.PublicListResponse;
 import app.listful.sharing.dto.PublicShareRequest;
@@ -67,7 +68,9 @@ public class PublicShareService {
             list.getPublicShareMode().name(),
             itemRepository.findByListId(list.getId()).stream()
                 .map(this::toPublicItemResponse)
-                .toList()
+                .toList(),
+            list.getSourceUrl(),
+            list.getEventLocation()
         );
     }
 
@@ -78,11 +81,13 @@ public class PublicShareService {
             throw new ValidationFailedException("Guest claiming is not enabled for this public link.");
         }
         int claimed;
+        String claimToken = uniqueClaimToken();
         try {
             claimed = itemRepository.claimOpenItem(
                 itemId,
                 list.getId(),
                 request.guestName(),
+                TokenHashing.sha256(claimToken),
                 ItemStatus.OPEN,
                 ItemStatus.CLAIMED
             );
@@ -98,7 +103,35 @@ public class PublicShareService {
         if (claimed == 0) {
             throw new ConflictException("item_already_claimed", "Item is already claimed.");
         }
-        return toPublicItemResponse(item);
+        return toPublicItemResponse(item, true).withClaimToken(claimToken);
+    }
+
+    @Transactional
+    public void releaseClaim(String token, String itemId, String claimToken) {
+        ListEntity list = publicListByToken(token);
+        if (claimToken == null || claimToken.length() < 32 ||
+                itemRepository.releaseGuestClaim(itemId, list.getId(), TokenHashing.sha256(claimToken)) == 0) {
+            throw new ResourceNotFoundException("Claim not found");
+        }
+    }
+
+    @Transactional
+    public PublicItemResponse renameClaim(String token, String itemId, GuestClaimControlRequest request) {
+        ListEntity list = publicListByToken(token);
+        String name = request.guestName() == null ? "" : request.guestName().trim();
+        if (name.isEmpty()) throw new ValidationFailedException("Guest name is required.");
+        if (request.claimToken().length() < 32 || itemRepository.renameGuestClaim(itemId, list.getId(),
+                TokenHashing.sha256(request.claimToken()), name) == 0) {
+            throw new ResourceNotFoundException("Claim not found");
+        }
+        Item item = itemRepository.findById(itemId).orElseThrow(() -> new ResourceNotFoundException("Claim not found"));
+        return toPublicItemResponse(item, true);
+    }
+
+    private String uniqueClaimToken() {
+        byte[] bytes = new byte[32];
+        secureRandom.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private ListEntity publicListByToken(String token) {
@@ -164,6 +197,10 @@ public class PublicShareService {
     }
 
     private PublicItemResponse toPublicItemResponse(Item item) {
+        return toPublicItemResponse(item, false);
+    }
+
+    private PublicItemResponse toPublicItemResponse(Item item, boolean claimer) {
         return new PublicItemResponse(
             item.getId(),
             item.getName(),
@@ -175,8 +212,14 @@ public class PublicShareService {
             item.getDueDate() == null ? null : item.getDueDate().toString(),
             item.getQuantity(),
             item.getCategory(),
-            item.getReservedByGuest(),
-            item.getPriceCurrency()
+            claimer || item.getList().getType() != ListType.WISH ? item.getReservedByGuest() : null,
+            item.getPriceCurrency(),
+            item.getVariantNote(),
+            item.getSeller(),
+            item.getAvailability(),
+            item.getPriceCheckedAt() == null ? null : item.getPriceCheckedAt().toString(),
+            item.getSourceUrl(),
+            null
         );
     }
 }

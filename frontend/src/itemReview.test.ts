@@ -18,7 +18,8 @@ const baseItem = (overrides: Partial<ItemEntry>): ItemEntry => ({
   reservedByGuest: null,
   lastCompletedAt: null,
   ownerLabel: overrides.ownerLabel ?? null,
-  assistantLabels: overrides.assistantLabels ?? null
+  assistantLabels: overrides.assistantLabels ?? null,
+  ...overrides
 });
 
 const state = (overrides: Partial<ItemReviewState> = {}): ItemReviewState => ({
@@ -53,6 +54,13 @@ describe('item review helpers', () => {
     expect(reviewItems(items, state({ query: 'dairy' })).map((item) => item.id)).toEqual(['1']);
     expect(reviewItems(items, state({ query: 'TRAVEL' })).map((item) => item.id)).toEqual(['2']);
     expect(reviewItems(items, state({ query: 'darkroom' })).map((item) => item.id)).toEqual(['3']);
+  });
+
+  it('finds imported items by source and wishlist variant', () => {
+    const items = [baseItem({ id: 'recipe', sourceUrl: 'https://recipes.test/pancakes' }),
+      baseItem({ id: 'mug', variantNote: 'Blue, 350 ml', seller: 'Example Shop' })];
+    expect(reviewItems(items, state({ query: 'pancakes' })).map(item => item.id)).toEqual(['recipe']);
+    expect(reviewItems(items, state({ query: '350 ml' })).map(item => item.id)).toEqual(['mug']);
   });
 
   it('filters open, completed, claimed, purchased, overdue, and upcoming views', () => {

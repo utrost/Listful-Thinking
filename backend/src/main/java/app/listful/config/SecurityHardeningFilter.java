@@ -235,9 +235,10 @@ public class SecurityHardeningFilter extends OncePerRequestFilter {
             || path.equals("/api/v1/auth/password-reset")
             || path.equals("/api/v1/auth/password-reset/consume")
             || path.equals("/api/v1/utils/scrape")
+            || path.equals("/api/v1/utils/extract")
             || path.matches("/api/v1/lists/[^/]+/items")
             || path.matches("/api/v1/items/[^/]+/import")
-            || (path.startsWith("/api/v1/share/") && path.contains("/items/") && path.endsWith("/claim"));
+            || (path.startsWith("/api/v1/share/") && path.contains("/items/") && (path.endsWith("/claim") || path.endsWith("/release") || path.endsWith("/rename")));
     }
 
     private String clientIp(HttpServletRequest request) {

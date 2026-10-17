@@ -58,6 +58,8 @@ public class ItemService {
         Item item = new Item(list, itemName, Instant.now());
         item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         item.setPriceCurrency(request.priceCurrency());
+        applyCaptureFields(item, request);
+        if (request.price() != null && (hasText(request.url()) || hasText(request.sourceUrl()))) item.setPriceCheckedAt(clock.instant());
         if (shouldEnrichWishUrlItem(list, request)) item.setImportStatus("PENDING");
         Item saved = itemRepository.saveAndFlush(item);
         if (shouldEnrichWishUrlItem(list, request)) {
@@ -78,8 +80,12 @@ public class ItemService {
         requireRevision(item, ifMatch);
         validateForListType(item.getList(), request);
         ItemStatus status = request.status() == null ? item.getStatus() : request.status();
+        boolean priceChanged = request.price() != null && (item.getPrice() == null || request.price().compareTo(item.getPrice()) != 0);
         item.update(request.name(), request.description(), request.url(), request.imageUrl(), request.price(), status, request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         item.setPriceCurrency(request.priceCurrency());
+        applyCaptureFields(item, request);
+        if (priceChanged && (hasText(request.url()) || hasText(request.sourceUrl()))) item.setPriceCheckedAt(clock.instant());
+        if (request.price() == null) item.setPriceCheckedAt(null);
         if ("PENDING".equals(item.getImportStatus())) item.setImportStatus("NONE");
         advanceCompletedRecurringChore(item);
         itemRepository.flush();
@@ -148,6 +154,17 @@ public class ItemService {
             itemRepository.flush();
             enrichUrlItemAfterCommit(itemId, item.getUrl());
         }
+        return toResponse(item);
+    }
+
+    @Transactional
+    public ItemResponse releaseClaim(User actor, String itemId) {
+        Item item = requireOwnedItem(actor, itemId);
+        if (item.getStatus() != ItemStatus.CLAIMED) {
+            throw new ValidationFailedException("Only claimed items can be released.");
+        }
+        item.releaseClaim();
+        itemRepository.flush();
         return toResponse(item);
     }
 
@@ -253,7 +270,15 @@ public class ItemService {
     }
 
     private boolean hasShoppingFields(ItemRequest request) {
-        return hasText(request.url()) || hasText(request.imageUrl()) || request.price() != null || hasText(request.priceCurrency());
+        return hasText(request.url()) || hasText(request.imageUrl()) || request.price() != null || hasText(request.priceCurrency())
+            || hasText(request.variantNote()) || hasText(request.seller()) || hasText(request.availability());
+    }
+
+    private void applyCaptureFields(Item item, ItemRequest request) {
+        item.setVariantNote(trimmedOrNull(request.variantNote()));
+        item.setSeller(trimmedOrNull(request.seller()));
+        item.setAvailability(trimmedOrNull(request.availability()));
+        item.setSourceUrl(trimmedOrNull(request.sourceUrl()));
     }
 
     private boolean hasGroceryFields(ItemRequest request) {
@@ -336,13 +361,18 @@ public class ItemService {
             item.getRecurrenceRule(),
             item.getQuantity(),
             item.getCategory(),
-            item.getReservedByGuest(),
+            item.getList().getType() == ListType.WISH ? null : item.getReservedByGuest(),
             item.getLastCompletedAt() == null ? null : item.getLastCompletedAt().toString(),
             item.getOwnerLabel(),
             item.getAssistantLabels(),
             item.getVersion(),
             item.getPriceCurrency(),
-            item.getImportStatus()
+            item.getImportStatus(),
+            item.getVariantNote(),
+            item.getSeller(),
+            item.getAvailability(),
+            item.getPriceCheckedAt() == null ? null : item.getPriceCheckedAt().toString(),
+            item.getSourceUrl()
         );
     }
 }

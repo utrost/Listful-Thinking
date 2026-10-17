@@ -119,6 +119,7 @@ Typical user actions:
 - Add a gift idea manually.
 - Paste a product URL.
 - Preview URL metadata before saving.
+- Use **Save from a website** to review a product draft, including exact variant, seller, availability, and price, and check for a possible duplicate in the destination list.
 - Create a URL-only item and let the app enrich title, description, image, and price when possible.
 - Generate a public guest link.
 - Let guests claim open wishlist items.
@@ -131,6 +132,7 @@ Fields:
 - URL
 - image URL
 - price
+- exact variant / buyer note, seller, availability, source URL, and last price check
 - status
 
 Status meaning:
@@ -285,6 +287,12 @@ For `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists, use **Done** to complete an i
 
 For `WISH` lists, product URLs appear as **View product** links in signed-in and public views. Guests can claim open items from a public link. Owners can mark `OPEN` or `CLAIMED` wishes as `PURCHASED`, then use **Reopen wish** to return a purchased item to `OPEN`. Contributors can edit wishlist item details but cannot change wishlist status.
 
+## Save from a website
+
+Open **Save from a website** on the signed-in lists page and paste an HTTP(S) page URL. Review the suggested title, details, and destination before saving. Product pages can become wishlist entries; recipe ingredients can become grocery items; how-to steps can become tasks; event pages can become dated event lists with location and optional preparation tasks. Remove irrelevant lines and edit prices, variants, dates, and names. When the page cannot be read, enter the details manually while keeping the original source URL.
+
+The app warns about a similar product URL already in the chosen wishlist, ignoring common tracking parameters. The warning does not block a deliberate second entry. Imported lines are saved one by one; if saving stops partway through, the remaining lines stay in the review form for retry. This flow captures a snapshot and does not keep entries synchronized with the source page.
+
 ## Working with list metadata
 
 List owners can correct list metadata from the selected list detail panel.
@@ -295,6 +303,8 @@ Editable list fields:
 - description
 - type
 - event target date, for `EVENT` lists only
+- event location, for `EVENT` lists only
+- source URL
 
 List type changes are allowed only when there are no stored items, including items recoverable from Trash. Create a new list for another purpose rather than converting existing data.
 
@@ -344,6 +354,7 @@ Guests can:
 - See a safe public version of the list.
 - In `VIEW` mode: read the public list only.
 - In `WISH_CLAIM` mode: claim an open wishlist item by entering their name.
+- After claiming, correct their own name or release the reservation from the same browser. The owner can release a mistaken claim. Wish owners do not see guest names; guests should keep using the browser where they claimed.
 - In `SIGNUP` mode: sign up for / reserve an open non-wishlist item by entering their name.
 
 Guests cannot:

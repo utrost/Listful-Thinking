@@ -1,6 +1,8 @@
 # Current State and Risk Register
 
-Last updated: 2026-10-16. Alice runs merged `main` code commit `f5b6b64` (PRs #51 and #52); deployment-record commit `39b4d2a` documents the live cutover. See the [verified deployment record](deployment/alice-tailnet.md).
+Last updated: 2026-10-17. Alice runs merged `main` code commit `f5b6b64` (PRs #51 and #52); deployment-record commit `39b4d2a` documents the live cutover. See the [verified deployment record](deployment/alice-tailnet.md).
+
+The `feature/web-capture-imports` branch adds reviewed website capture, structured event source/location, wishlist product details and guest claim controls with migration V18. These changes are under validation here and are not included in the Alice deployment described below. The mobile Web Share Target remains a later HTTPS/installability task.
 
 ## Current release since RC2
 

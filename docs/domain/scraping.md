@@ -1,6 +1,10 @@
-# URL Metadata Grabbing / Scraping
+# Website extraction and URL metadata
 
-Scraping is a best-effort convenience feature, not a correctness dependency. It is used to prefill editable wishlist item fields from product URLs.
+Extraction is a best-effort convenience feature. The signed-in **Save from a website** flow previews an HTTP(S) page and lets the user review all fields before saving. It can suggest a wishlist product, recipe ingredients for groceries, an event list, or how-to steps for tasks. Unreadable pages offer a manual draft with the source link retained.
+
+`POST /api/v1/utils/extract` returns a typed draft (`PRODUCT`, `RECIPE`, `EVENT`, `HOWTO`, or `PAGE`) with source URL, extraction time, title, description, image, price/currency, seller, availability, ingredients, steps, and event start/location when found. It shares the validated-address fetcher and limits with `/utils/scrape`; only the reviewed draft is persisted. The UI warns when a wishlist URL already occurs in the chosen list after common tracking parameters are removed. Duplicate detection is advisory.
+
+Event captures create an `EVENT` list with source URL and location as structured fields. The user may add preparation tasks. Recipe/how-to line imports keep unsaved lines in the editor if a later item fails. This is a one-off import, not synchronization with the website.
 
 This document describes what exists in code today, not a promise that every shop will work forever.
 

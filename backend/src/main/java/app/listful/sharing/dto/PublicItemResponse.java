@@ -14,6 +14,17 @@ public record PublicItemResponse(
     String quantity,
     String category,
     String reservedByGuest,
-    String priceCurrency
+    String priceCurrency,
+    String variantNote,
+    String seller,
+    String availability,
+    String priceCheckedAt,
+    String sourceUrl,
+    String claimToken
 ) {
+    public PublicItemResponse withClaimToken(String token) {
+        return new PublicItemResponse(id, name, description, url, imageUrl, price, status, dueDate,
+            quantity, category, reservedByGuest, priceCurrency, variantNote, seller, availability,
+            priceCheckedAt, sourceUrl, token);
+    }
 }

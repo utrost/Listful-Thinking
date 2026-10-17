@@ -51,6 +51,8 @@ public class ListEntity {
 
     @Column(name = "target_date")
     private Instant targetDate;
+    @Column(name = "source_url") private String sourceUrl;
+    @Column(name = "event_location") private String eventLocation;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -133,6 +135,10 @@ public class ListEntity {
     public Instant getPublicShareExpiresAt() { return publicShareExpiresAt; }
     public PublicShareMode getPublicShareMode() { return publicShareMode == null ? defaultModeForType(type) : publicShareMode; }
     public Instant getTargetDate() { return targetDate; }
+    public String getSourceUrl() { return sourceUrl; }
+    public void setSourceUrl(String value) { sourceUrl = value; }
+    public String getEventLocation() { return eventLocation; }
+    public void setEventLocation(String value) { eventLocation = value; }
     public Instant getCreatedAt() { return createdAt; }
 
     private void reconcilePublicShareMode() {

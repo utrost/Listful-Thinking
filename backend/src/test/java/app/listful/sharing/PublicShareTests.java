@@ -165,6 +165,61 @@ class PublicShareTests {
     }
 
     @Test
+    void guestCanCorrectAndReleaseOwnWishClaimWithoutExposingIdentityOrToken() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Birthday");
+        String itemId = createItem(owner, listId, "Book");
+        String token = createPublicShare(owner, listId);
+
+        MvcResult claim = mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/claim", token, itemId)
+                .contentType("application/json").content("{\"guestName\":\"Annette\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.claimToken", matchesPattern("[A-Za-z0-9_-]{32,}")))
+            .andReturn();
+        String claimToken = JsonPath.read(claim.getResponse().getContentAsString(), "$.claimToken");
+        assertThat(jdbcTemplate.queryForObject("select claim_token_hash from items where id = ?", String.class, itemId))
+            .startsWith("sha256:").doesNotContain(claimToken);
+        mockMvc.perform(get("/api/v1/share/{token}", token))
+            .andExpect(jsonPath("$.items[0].reservedByGuest").doesNotExist())
+            .andExpect(jsonPath("$.items[0].claimToken").doesNotExist());
+        mockMvc.perform(get("/api/v1/lists/{id}/items", listId).session(owner))
+            .andExpect(jsonPath("$[0].reservedByGuest").doesNotExist());
+
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/rename", token, itemId)
+                .contentType("application/json").content("{\"claimToken\":\"" + "x".repeat(43) + "\",\"guestName\":\"Alex\"}"))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/rename", token, itemId)
+                .contentType("application/json").content("{\"claimToken\":\"" + claimToken + "\",\"guestName\":\"Alex\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.reservedByGuest").value("Alex"));
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/release", token, itemId)
+                .contentType("application/json").content("{\"claimToken\":\"" + claimToken + "\"}"))
+            .andExpect(status().isNoContent());
+        mockMvc.perform(get("/api/v1/share/{token}", token))
+            .andExpect(jsonPath("$.items[0].status").value("OPEN"));
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/release", token, itemId)
+                .contentType("application/json").content("{\"claimToken\":\"" + claimToken + "\"}"))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void ownerCanReleaseAStuckClaimButAnotherUserCannot() throws Exception {
+        MockHttpSession owner = register("owner");
+        String listId = createWishList(owner, "Birthday");
+        String itemId = createItem(owner, listId, "Book");
+        String token = createPublicShare(owner, listId);
+        mockMvc.perform(post("/api/v1/share/{token}/items/{itemId}/claim", token, itemId)
+                .contentType("application/json").content("{\"guestName\":\"Annette\"}"))
+            .andExpect(status().isOk());
+        MockHttpSession other = register("other");
+        mockMvc.perform(post("/api/v1/items/{itemId}/release-claim", itemId).session(other))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/items/{itemId}/release-claim", itemId).session(owner))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("OPEN"));
+        assertThat(jdbcTemplate.queryForObject("select claim_token_hash from items where id = ?", String.class, itemId)).isNull();
+    }
+
+    @Test
     void deactivatedSessionIsInvalidatedButPublicShareIsServedAnonymously() throws Exception {
         MockHttpSession owner = register("owner");
         String listId = createWishList(owner, "Birthday");

@@ -43,6 +43,8 @@ public class ListService {
         validateListType(request);
         ListEntity list = new ListEntity(actor, request.title(), request.description(), request.type(), Instant.now());
         list.update(request.title(), request.description(), request.type(), request.targetDate());
+        list.setSourceUrl(request.sourceUrl());
+        list.setEventLocation(request.eventLocation());
         return toResponse(actor, listRepository.save(list));
     }
 
@@ -60,6 +62,8 @@ public class ListService {
             throw new app.listful.api.ConflictException("list_type_in_use", "Empty the list before changing its type.");
         }
         list.update(request.title(), request.description(), request.type(), request.targetDate());
+        list.setSourceUrl(request.sourceUrl());
+        list.setEventLocation(request.eventLocation());
         return toResponse(actor, list);
     }
 
@@ -69,6 +73,8 @@ public class ListService {
         String title = hasText(request.title()) ? request.title().trim() : source.getTitle() + " copy";
         ListEntity clone = new ListEntity(actor, title, source.getDescription(), source.getType(), Instant.now());
         clone.update(title, source.getDescription(), source.getType(), source.getTargetDate());
+        clone.setSourceUrl(source.getSourceUrl());
+        clone.setEventLocation(source.getEventLocation());
         ListEntity savedClone = listRepository.save(clone);
 
         for (Item sourceItem : itemRepository.findByListId(source.getId())) {
@@ -89,6 +95,7 @@ public class ListService {
             );
             copied.setLastCompletedAt(sourceItem.getLastCompletedAt());
             copied.setPriceCurrency(sourceItem.getPriceCurrency());
+            copied.copyCaptureFieldsFrom(sourceItem);
             itemRepository.save(copied);
         }
 
@@ -165,6 +172,7 @@ public class ListService {
             copied.update(copied.getName(), original.getDescription(), original.getUrl(), original.getImageUrl(), original.getPrice(),
                 app.listful.domain.enums.ItemStatus.OPEN, null, original.getRecurrenceRule(), original.getQuantity(), original.getCategory(), original.getOwnerLabel(), original.getAssistantLabels());
             copied.setPriceCurrency(original.getPriceCurrency());
+            copied.copyCaptureFieldsFrom(original);
             copied.setImportStatus(java.util.Set.of("FAILED", "PENDING").contains(original.getImportStatus()) ? "FAILED" : "NONE");
             itemRepository.save(copied);
         }
@@ -181,6 +189,9 @@ public class ListService {
         }
         if (request.type() != ListType.EVENT && request.targetDate() != null) {
             throw new ValidationFailedException("Only event lists can have a target date.");
+        }
+        if (request.type() != ListType.EVENT && request.eventLocation() != null && !request.eventLocation().isBlank()) {
+            throw new ValidationFailedException("Only event lists can have a location.");
         }
     }
 
@@ -206,7 +217,9 @@ public class ListService {
             list.getTargetDate() == null ? null : list.getTargetDate().toString(),
             listAccessService.accessMode(actor, list),
             list.isArchived(), list.isTemplate(), list.getDeletedAt() == null ? null : list.getDeletedAt().toString(),
-            list.getCreatedAt().toString()
+            list.getCreatedAt().toString(),
+            list.getSourceUrl(),
+            list.getEventLocation()
         );
     }
 }

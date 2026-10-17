@@ -19,7 +19,7 @@ The current `main` build is deployed on the private Alice Tailnet instance. Migr
 - **Registered-user collaboration:** list owners can share read-only or contributor access with another local account. Contributors can add and update items; owners keep destructive/list-management control.
 - **Account and ownership handoffs:** admins can issue one-time setup/recovery links, users can change passwords, owners can transfer lists to active users, and admins can transfer lists from inactive accounts without browsing private content.
 - **Public guest sharing:** owners can create public links with modes for read-only viewing, wishlist claiming, or signup-style participation.
-- **Wishlist helpers:** paste product URLs, scrape basic metadata where allowed, track claim/purchase state, and let guests reserve gifts.
+- **Website capture:** preview product, recipe, event, and how-to pages; edit the suggested details; then save wishes, grocery lines, event plans, or tasks. Wishlist entries track exact variants, seller, availability, source, and when the price was checked. Guests can correct or release their own reservations.
 - **Grocery/shop mode:** use quantity/category fields, group by category, hide completed items, and clear completed grocery items after shopping.
 - **Chores and events:** use due dates, simple recurrence for chores, skip/postpone actions, target dates for events, and owner/helper labels for coordination.
 - **Notifications:** due-item reminders and sharing/ownership changes appear in-app; reminders can also be sent by email when SMTP is configured.

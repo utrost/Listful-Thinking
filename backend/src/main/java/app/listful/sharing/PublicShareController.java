@@ -4,6 +4,7 @@ import app.listful.domain.User;
 import app.listful.lists.CurrentUser;
 import app.listful.security.SecurityAuditService;
 import app.listful.sharing.dto.GuestClaimRequest;
+import app.listful.sharing.dto.GuestClaimControlRequest;
 import app.listful.sharing.dto.PublicItemResponse;
 import app.listful.sharing.dto.PublicListResponse;
 import app.listful.sharing.dto.PublicShareRequest;
@@ -74,6 +75,19 @@ public class PublicShareController {
     @PostMapping("/share/{token}/items/{itemId}/claim")
     public PublicItemResponse claim(@PathVariable String token, @PathVariable String itemId, @Valid @RequestBody GuestClaimRequest request) {
         return publicShareService.claim(token, itemId, request);
+    }
+
+    @PostMapping("/share/{token}/items/{itemId}/release")
+    public ResponseEntity<Void> releaseClaim(@PathVariable String token, @PathVariable String itemId,
+            @Valid @RequestBody GuestClaimControlRequest request) {
+        publicShareService.releaseClaim(token, itemId, request.claimToken());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/share/{token}/items/{itemId}/rename")
+    public PublicItemResponse renameClaim(@PathVariable String token, @PathVariable String itemId,
+            @Valid @RequestBody GuestClaimControlRequest request) {
+        return publicShareService.renameClaim(token, itemId, request);
     }
 
     private User currentUser(Authentication authentication) {

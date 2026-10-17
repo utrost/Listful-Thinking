@@ -2,6 +2,7 @@ package app.listful.scraping;
 
 import app.listful.scraping.dto.ScrapeRequest;
 import app.listful.scraping.dto.ScrapeResponse;
+import app.listful.scraping.dto.PageDraftResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,5 +21,10 @@ public class ScraperController {
     @PostMapping("/scrape")
     public ScrapeResponse scrape(@Valid @RequestBody ScrapeRequest request) {
         return scraperService.scrape(request.url());
+    }
+
+    @PostMapping("/extract")
+    public PageDraftResponse extract(@Valid @RequestBody ScrapeRequest request) {
+        return scraperService.extractPage(request.url());
     }
 }

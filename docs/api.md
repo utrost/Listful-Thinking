@@ -143,7 +143,7 @@ Returns active lists owned by the authenticated user plus active lists explicitl
 Request:
 
 ```json
-{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null}
+{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"sourceUrl":null,"eventLocation":null}
 ```
 
 Response: `201 Created` with list.
@@ -151,6 +151,7 @@ Response: `201 Created` with list.
 Type validation:
 
 - `EVENT` lists require `targetDate`.
+- `eventLocation` is accepted only for `EVENT` lists. `sourceUrl`, when set, must be HTTP(S).
 - `WISH`, `TODO`, `GROCERY`, and `CHORE` lists reject `targetDate`; due dates live on supported item types.
 - Type validation failures return `400 Bad Request` with `validation_failed`.
 
@@ -187,7 +188,7 @@ Requires ownership. Body: `{"username":"martha"}`. The target must be a differen
 List response:
 
 ```json
-{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"publicShareMode":"WISH_CLAIM","publicShareExpiresAt":null,"targetDate":null,"access":"OWNER","createdAt":"2026-08-31T17:00:00Z"}
+{"id":"uuid","title":"Birthday","description":"Gift ideas","type":"WISH","publicList":false,"shareToken":null,"publicShareMode":"WISH_CLAIM","publicShareExpiresAt":null,"targetDate":null,"sourceUrl":null,"eventLocation":null,"access":"OWNER","createdAt":"2026-08-31T17:00:00Z"}
 ```
 
 ## Items
@@ -205,7 +206,7 @@ Creates an item on an owned list or a list shared with `CONTRIBUTE` permission.
 Request:
 
 ```json
-{"name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","imageUrl":null,"price":29.90,"status":"OPEN","dueDate":null,"recurrenceRule":null,"quantity":null,"category":null,"ownerLabel":"Responsible role","assistantLabels":"Local assistant"}
+{"name":"Camera strap","description":"Leather strap","url":"https://example.test/strap","sourceUrl":"https://example.test/strap","imageUrl":null,"price":29.90,"priceCurrency":"EUR","variantNote":"Black, 35 mm","seller":"Example Shop","availability":"InStock","status":"OPEN"}
 ```
 
 Response: `201 Created` with item.
@@ -227,6 +228,7 @@ Type validation:
 - Supported chore recurrence rules are `FREQ=DAILY`, `FREQ=WEEKLY`, `FREQ=BIWEEKLY`, `FREQ=MONTHLY`, `FREQ=QUARTERLY`, and `FREQ=ANNUALLY`.
 - `EVENT` items reject shopping fields and `recurrenceRule`, and allow `dueDate`.
 - `ownerLabel` and `assistantLabels` are optional coordination metadata for work-style `TODO`, `CHORE`, and `EVENT` items. They may name people, roles, bots, or local automations; they do not grant access or notification rights. `WISH` and `GROCERY` items reject non-blank responsibility labels. See [Item Responsibility Metadata](domain/item-responsibility.md) for the full semantics.
+- `sourceUrl` can preserve an HTTP(S) page that inspired any item. Wishlist items can additionally record `variantNote`, `seller`, and `availability`. `priceCheckedAt` is server-maintained when a price is set or refreshed.
 
 ### `PUT /api/v1/items/{id}`
 
@@ -314,6 +316,16 @@ Extraction priority:
 
 The wishlist UI applies this response directly to the existing editable item form. A scrape failure is shown to the user and does not prevent manual item creation.
 
+### `POST /api/v1/utils/extract`
+
+Requires authentication and uses the same guarded HTTP(S) fetch path as `/utils/scrape`. Request: `{"url":"https://example.test/page"}`. Response is a draft for user review:
+
+```json
+{"kind":"RECIPE","sourceUrl":"https://example.test/recipe","extractedAt":"2026-10-17T08:00:00Z","title":"Pancakes","description":null,"imageUrl":null,"price":null,"priceCurrency":null,"seller":null,"availability":null,"ingredients":["2 eggs","200 g flour"],"steps":["Mix ingredients"],"eventStart":null,"eventLocation":null}
+```
+
+`kind` is `PRODUCT`, `RECIPE`, `EVENT`, `HOWTO`, or `PAGE`. Clients should allow correction before persisting. A failed read need not prevent manual entry with the original source URL.
+
 Non-HTTP(S) URLs return `400 validation_failed`.
 
 ## Public access
@@ -354,7 +366,7 @@ Returns a safe public representation of a public list and its items. It excludes
 Response:
 
 ```json
-{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"mode":"WISH_CLAIM","items":[{"id":"uuid","name":"Book","url":"https://example.test/book","imageUrl":null,"price":19.99,"status":"OPEN","dueDate":null,"quantity":null,"category":null,"reservedByGuest":null}]}
+{"title":"Birthday","description":"Gift ideas","type":"WISH","targetDate":null,"sourceUrl":null,"eventLocation":null,"mode":"WISH_CLAIM","items":[{"id":"uuid","name":"Book","url":"https://example.test/book","imageUrl":null,"price":19.99,"status":"OPEN","dueDate":null,"quantity":null,"category":null,"reservedByGuest":null}]}
 ```
 
 ### `POST /api/v1/share/{token}/items/{itemId}/claim`
@@ -369,9 +381,17 @@ Request:
 
 Responses:
 
-- `200 OK` with updated public item.
+- `200 OK` with updated public item and a one-time `claimToken` returned only to the claimant. Store it privately for later correction or release. Subsequent public wishlist reads hide guest names from the owner and other guests.
 - `404 Not Found` when token/item do not match or token was revoked.
 - `409 Conflict` with `item_already_claimed` when the item is no longer open.
+
+### Guest claim controls
+
+- `POST /api/v1/share/{token}/items/{itemId}/rename` with `{"claimToken":"...","guestName":"Corrected name"}` changes the claimant name.
+- `POST /api/v1/share/{token}/items/{itemId}/release` with `{"claimToken":"..."}` releases the guest reservation.
+- `POST /api/v1/items/{itemId}/release-claim` lets the list owner release a mistaken reservation while authenticated.
+
+Guest control tokens are random, stored only as hashes, and remain valid only for the matching active public share and claimed item. A released item can be claimed again.
 
 ## Notifications
 

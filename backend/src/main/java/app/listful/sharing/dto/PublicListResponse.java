@@ -8,6 +8,8 @@ public record PublicListResponse(
     String type,
     String targetDate,
     String mode,
-    List<PublicItemResponse> items
+    List<PublicItemResponse> items,
+    String sourceUrl,
+    String eventLocation
 ) {
 }

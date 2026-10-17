@@ -45,7 +45,7 @@ Use one consistent timestamp representation across migrations/entities/API. Reco
 - `auth_tokens`
 - `security_events`
 
-Flyway has reached V17. V14 adds item revisions, notification delivery keys, and audit-path redaction; V15 adds archive/template/Trash state; V16 adds session/token versions; V17 adds public-link expiry. New account setup and ownership handoff features reuse these tables and require no later migration.
+Flyway has reached V18 in the repository. V14 adds item revisions, notification delivery keys, and audit-path redaction; V15 adds archive/template/Trash state; V16 adds session/token versions; V17 adds public-link expiry. V18 adds item source/product metadata and hashed guest-claim control tokens, plus list source URL/event location. New account setup and ownership handoff features reuse these tables.
 
 ## Indexing principles
 
