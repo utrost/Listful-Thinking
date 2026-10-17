@@ -4,7 +4,7 @@
 A calm place to keep wishes, plans, and everyday lists. The interface should help a person answer: Where am I? What needs my attention? What can I do next?
 
 ## Information architecture
-- A compact brand header with the signed-in name, language, and account actions.
+- A compact brand header with language and account actions; the signed-in name appears when space allows.
 - Your lists: persistent list navigation, searchable when needed, with a clear New list action. On phones this becomes a compact list selector.
 - Selected list: title, type, description, open/total count, and access information. Items is the default view. Sharing and List settings are separate destinations for owners.
 - Administration: a separate account destination, with a return-to-lists action. No account-management forms above someone's wishes or shopping list.
@@ -14,13 +14,13 @@ A calm place to keep wishes, plans, and everyday lists. The interface should hel
 ## Core journeys
 1. Returning user: sign in → current list → read, add, or complete an item. Avoid a large marketing header after login.
 2. First list: friendly empty state → New list → choose a purpose → name it → Create list. Explain the five purposes and any required event date.
-3. Add an item: name (or product URL for wishes), then Add item. Product metadata can populate asynchronously. Description, image and price belong in optional details. Groceries keep quantity visible; chores and events keep their relevant dates/responsibility available with persistent labels.
-4. Review: item content owns the row; primary completion action stays visible. Editing and destructive actions remain secondary. Search is visible; filter/sort options can be expanded. Explain zero search results and offer a reset.
+3. Add an item: enter a name, then Add item. A wishlist product URL opens the reviewed website draft before saving. Manual description, image, and price fields remain in optional details. Groceries keep quantity visible; chores and events keep their relevant dates/responsibility available with persistent labels.
+4. Review: item content owns the row; primary completion action stays visible. Editing and destructive actions remain secondary. Search is visible on wider screens and expandable on phones; filter/sort options can be expanded. Explain zero search results and offer a reset.
 5. Share: open Sharing → choose a public-link mode or invite an existing user. Explain read-only versus contribution and public access. Show copy/open actions when the link is created. Retain replacement warnings and confirmation flows.
 6. Manage a list: open List settings → edit title/details, duplicate, or explicitly confirm deletion. Explain why a populated list's type cannot change.
 7. Use a phone: select a list without a long grid of list cards; primary controls and items fit the viewport. Touch targets are at least 44px. Long titles, URLs and translations wrap.
 8. Hand off access: admin creates an account with a one-time setup link → user chooses a password → owner shares a list → recipient sees an inbox notice → owner transfers the list if responsibility changes. For a departed owner, admin deactivates the account and transfers its lists by count to a new active owner.
-9. Capture a page: paste a URL → inspect the suggested product, recipe, event, or how-to details → correct names, variants, price, date, or lines → choose a list → save. Show a manual draft when extraction fails and a warning when a wishlist may already contain the same product URL.
+9. Capture a page: use the workspace action or paste a product URL in a wishlist → inspect the same reviewed draft → correct the title, variant, price, date, or lines → choose a list when needed → save. A wishlist entry preselects its list. Show a manual draft when extraction fails and a warning when a wishlist may already contain the same product URL.
 
 ## Visual language
 Warm off-white background, white work surfaces, deep evergreen primary actions, restrained gold accents. A compact, legible system font, clear heading levels, consistent spacing and rounded rectangular controls. Avoid nested cards around every section and red delete buttons dominating each row. Use visible text instead of unexplained icons. No decorative stock imagery is needed.
@@ -37,6 +37,10 @@ The September workspace revision changed interface and guidance while retaining 
 ## October website capture release — 2026-10-17
 
 The V18 release adds a reviewed URL import flow and guest reservation correction/release. The UI saves a source-linked snapshot; it does not monitor a site for later changes. A live Playwright run on a disposable database passed four product/recipe/event journeys. MUJI redirected an English product URL to a German localized page under the scraper's German-first language header, so the suggested title and stored final source URL were localized. The user can edit the title before saving. Alice now runs this flow; the live browser check loaded the login page without modifying user data. Mobile Web Share Target integration remains a later task for an installable HTTPS deployment.
+
+## Follow-up interface refinement
+
+The workspace and wishlist product-link entry now use one review dialog. The current list is preselected, entered wishlist fields survive the handoff, essential suggestions appear first, and optional product or event fields can be expanded. Wishlist rows separate product details, price, and reservation state. On phones the workspace navigation stays on one row, notifications start in a count-bearing inbox, and search/filter controls expand on demand. The admin create-user form has visible field labels and role explanations. These changes are on `feature/ui-workflow-polish`; Alice still runs the earlier V18 interface until a separate release.
 
 ## October account and sharing iteration — 2026-10-16
 

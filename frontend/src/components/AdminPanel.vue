@@ -34,14 +34,16 @@ function cannotDeactivateAdminUser(user: AdminUserEntry) {
             />
             <span>{{ t('admin.registrationEnabled') }}</span>
           </label>
-          <form class="inline-form" @submit.prevent="$emit('createUser')">
-            <input v-model="adminUserForm.username" :aria-label="t('auth.username')" :placeholder="t('auth.username')" required minlength="3" />
-            <input v-model="adminUserForm.email" :aria-label="t('auth.email')" :placeholder="t('auth.email')" type="email" />
-            <input v-model="adminUserForm.password" :aria-label="t('auth.password')" :placeholder="t('admin.optionalPassword')" type="password" minlength="8" />
-            <select v-model="adminUserForm.role" :aria-label="t('admin.role')">
-              <option value="USER">USER</option>
-              <option value="ADMIN">ADMIN</option>
-            </select>
+          <h4>{{ t('admin.addUser') }}</h4>
+          <form class="inline-form admin-create-form" @submit.prevent="$emit('createUser')">
+            <label>{{ t('auth.username') }}<input v-model="adminUserForm.username" :aria-label="t('auth.username')" required minlength="3" autocomplete="off" /></label>
+            <label>{{ t('auth.email') }} <span class="field-optional">{{ t('admin.optional') }}</span><input v-model="adminUserForm.email" :aria-label="t('auth.email')" type="email" autocomplete="off" /></label>
+            <label>{{ t('admin.optionalPassword') }}<input v-model="adminUserForm.password" :aria-label="t('auth.password')" type="password" minlength="8" autocomplete="new-password" /></label>
+            <label>{{ t('admin.role') }}<select v-model="adminUserForm.role">
+              <option value="USER">{{ t('admin.roleUser') }}</option>
+              <option value="ADMIN">{{ t('admin.roleAdmin') }}</option>
+            </select></label>
+            <p class="form-help admin-role-help">{{ t(adminUserForm.role === 'ADMIN' ? 'admin.roleHelpAdmin' : 'admin.roleHelpUser') }}</p>
             <button type="submit">{{ t('admin.createUser') }}</button>
           </form>
           <p class="muted">{{ t('admin.setupHelp') }}</p>
@@ -50,6 +52,7 @@ function cannotDeactivateAdminUser(user: AdminUserEntry) {
             <p>{{ t(setupLink.emailed ? 'admin.setupEmailed' : 'admin.setupNotEmailed') }} {{ t('admin.setupExpires', { date: localDate(setupLink.expiresAt) }) }}</p>
             <input v-if="setupLink.setupUrl" readonly :aria-label="t('admin.setupLink')" :value="setupLink.setupUrl" />
           </div>
+          <h4>{{ t('admin.users') }}</h4>
           <ul class="admin-user-list">
             <li v-for="user in adminUsers" :key="user.id">
               <span><strong>{{ user.username }}</strong> · {{ user.role }} · {{ user.active ? t('admin.active') : t('admin.inactive') }}</span>

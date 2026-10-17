@@ -95,6 +95,7 @@ describe('reviewed web capture', () => {
     await wrapper.get('.capture-form').trigger('submit');
     await flushPromises();
     expect(wrapper.text()).toContain('enter and save details manually');
+    await wrapper.get('.capture-source-actions button').trigger('click');
     vi.mocked(extractPage).mockRejectedValueOnce(new ApiClientError(401, 'unauthorized', 'Sign in again'));
     await wrapper.get('.capture-form').trigger('submit');
     await flushPromises();

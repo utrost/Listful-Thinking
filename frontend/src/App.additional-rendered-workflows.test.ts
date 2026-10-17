@@ -6,6 +6,7 @@ import { i18n } from './i18n';
 import {
   clearCompletedItems,
   deleteList,
+  extractPage,
   getAuthSettings,
   getCurrentUser,
   getItems,
@@ -13,7 +14,6 @@ import {
   getLists,
   getNotifications,
   postponeChoreItem,
-  scrapeUrl,
   skipChoreItem,
   updateList,
   type ItemEntry,
@@ -26,6 +26,7 @@ vi.mock('./api/client', async (importOriginal) => {
     ...actual,
     clearCompletedItems: vi.fn(),
     deleteList: vi.fn(),
+    extractPage: vi.fn(),
     getAuthSettings: vi.fn(),
     getCurrentUser: vi.fn(),
     getItems: vi.fn(),
@@ -33,7 +34,6 @@ vi.mock('./api/client', async (importOriginal) => {
     getLists: vi.fn(),
     getNotifications: vi.fn(),
     postponeChoreItem: vi.fn(),
-    scrapeUrl: vi.fn(),
     skipChoreItem: vi.fn(),
     updateList: vi.fn()
   };
@@ -144,36 +144,36 @@ describe('additional rendered application workflows', () => {
     expect(wrapper.get('.items-workspace').isVisible()).toBe(true);
   });
 
-  it('previews wishlist URLs and keeps scraped metadata editable before creation', async () => {
-    vi.mocked(scrapeUrl).mockResolvedValue({ title: 'Pocket notebook', description: 'A6 dotted', imageUrl: 'https://shop.test/notebook.jpg', price: 12.5, priceCurrency: 'EUR' });
+  it('routes a wishlist URL through the shared review with its list preselected', async () => {
+    vi.mocked(extractPage).mockResolvedValue({ kind: 'PRODUCT', sourceUrl: 'https://shop.test/notebook', extractedAt: '2026-10-17T08:00:00Z',
+      title: 'Pocket notebook', description: 'A6 dotted', imageUrl: 'https://shop.test/notebook.jpg', price: 12.5,
+      priceCurrency: 'EUR', seller: 'Shop', availability: 'InStock', ingredients: [], steps: [], eventStart: null, eventLocation: null });
     const wrapper = await mountSignedIn({ ...baseList, type: 'WISH', title: 'Wishlist' }, []);
 
     const form = formWithButton(wrapper, 'Add item');
     await form.get('input[aria-label="URL"]').setValue('https://shop.test/notebook');
-    await form.get('input[aria-label="URL"]').trigger('change');
+    await form.trigger('submit');
     await flushPromises();
 
-    expect(scrapeUrl).toHaveBeenCalledWith({ url: 'https://shop.test/notebook' });
-    expect((form.get('input[aria-label="New item name"]').element as HTMLInputElement).value).toBe('Pocket notebook');
-    expect((form.get('textarea[aria-label="Description"]').element as HTMLTextAreaElement).value).toBe('A6 dotted');
-    expect((form.get('input[aria-label="Image URL"]').element as HTMLInputElement).value).toBe('https://shop.test/notebook.jpg');
-    expect((form.get('input[aria-label="Price"]').element as HTMLInputElement).value).toBe('12.5');
-    expect(wrapper.find('img.preview').exists()).toBe(false);
-    await form.get('button[aria-label^="Load external image from"]').trigger('click');
-    expect(wrapper.get('img.preview').attributes('src')).toBe('https://shop.test/notebook.jpg');
+    expect(extractPage).toHaveBeenCalledWith({ url: 'https://shop.test/notebook' });
+    expect((wrapper.get('.capture-review input[maxlength="255"]').element as HTMLInputElement).value).toBe('Pocket notebook');
+    expect((wrapper.get('.capture-review select').element as HTMLSelectElement).value).toBe('WISH');
+    expect((wrapper.findAll('.capture-review select')[1].element as HTMLSelectElement).value).toBe('list-1');
   });
 
-  it('keeps manually entered wishlist image and price when the page preview returns', async () => {
-    vi.mocked(scrapeUrl).mockResolvedValue({ title: 'Shop title', description: null, imageUrl: 'https://shop.test/wrong.jpg', price: 49, priceCurrency: 'USD' });
+  it('keeps manually entered wishlist details when the shared review opens', async () => {
+    vi.mocked(extractPage).mockResolvedValue({ kind: 'PRODUCT', sourceUrl: 'https://shop.test/product', extractedAt: '2026-10-17T08:00:00Z',
+      title: 'Shop title', description: null, imageUrl: 'https://shop.test/wrong.jpg', price: 49,
+      priceCurrency: 'USD', seller: null, availability: null, ingredients: [], steps: [], eventStart: null, eventLocation: null });
     const wrapper = await mountSignedIn({ ...baseList, type: 'WISH', title: 'Wishlist' }, []);
     const form = formWithButton(wrapper, 'Add item');
     await form.get('input[aria-label="Image URL"]').setValue('https://owner.test/my-photo.jpg');
     await form.get('input[aria-label="Price"]').setValue('19');
     await form.get('input[aria-label="URL"]').setValue('https://shop.test/product');
-    await form.get('input[aria-label="URL"]').trigger('change');
+    await form.trigger('submit');
     await flushPromises();
-    expect((form.get('input[aria-label="Image URL"]').element as HTMLInputElement).value).toBe('https://owner.test/my-photo.jpg');
-    expect((form.get('input[aria-label="Price"]').element as HTMLInputElement).value).toBe('19');
+    expect((wrapper.get('.capture-more input[maxlength="2000"]').element as HTMLInputElement).value).toBe('https://owner.test/my-photo.jpg');
+    expect((wrapper.get('.capture-review input[type="number"]').element as HTMLInputElement).value).toBe('19');
   });
 
   it('filters review controls against rendered items and resets them when switching lists', async () => {

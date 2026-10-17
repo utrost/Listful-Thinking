@@ -11,7 +11,13 @@ test.describe('Mobile owner workflow @gui @mobile', () => {
     await bootstrapOrLoginAdmin(page);
 
     await expect(page.getByRole('button', { name: 'Log out' })).toBeVisible();
+    const title = page.getByRole('heading', { name: 'Listful Thinking' });
+    const titleHeight = await title.evaluate(element => element.getBoundingClientRect().height);
+    const titleLineHeight = await title.evaluate(element => Number.parseFloat(getComputedStyle(element).lineHeight));
+    expect(titleHeight).toBeLessThan(titleLineHeight * 1.5);
     await expect(page.locator('.new-list-disclosure > summary')).toBeVisible();
+    const navigationRows = await page.locator('.workspace-navigation button').evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().top)));
+    expect(new Set(navigationRows).size).toBe(1);
 
     const listTitle = `Mobile groceries ${Date.now()}`;
     await createList(page, listTitle, 'GROCERY');
@@ -30,6 +36,7 @@ test.describe('Mobile owner workflow @gui @mobile', () => {
     await expect(page.getByText('Bananas')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Fruit' })).toBeVisible();
     await expect(page.getByText('6 · Fruit')).toBeVisible();
+    await page.screenshot({ path: '/tmp/listful-v18-mobile-list.png', fullPage: true });
 
     await diagnostics.expectClean();
   });
