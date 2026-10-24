@@ -226,6 +226,9 @@ export interface PublicItemEntry {
   priceCheckedAt?: string | null;
   sourceUrl?: string | null;
   claimToken?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface PublicListEntry {

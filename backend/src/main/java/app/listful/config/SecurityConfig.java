@@ -23,6 +23,7 @@ public class SecurityConfig {
                     "/api/v1/health/ready",
                     "/api/v1/auth/**",
                     "/api/v1/share/**",
+                    "/api/v1/maps/config",
                     "/",
                     "/index.html",
                     "/assets/**",

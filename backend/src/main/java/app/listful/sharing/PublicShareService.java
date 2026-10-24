@@ -219,7 +219,10 @@ public class PublicShareService {
             item.getAvailability(),
             item.getPriceCheckedAt() == null ? null : item.getPriceCheckedAt().toString(),
             item.getSourceUrl(),
-            null
+            null,
+            item.getList().getType() == ListType.TRIP || item.getList().getType() == ListType.LOCATION ? item.getAddress() : null,
+            item.getList().getType() == ListType.TRIP || item.getList().getType() == ListType.LOCATION ? item.getLatitude() : null,
+            item.getList().getType() == ListType.TRIP || item.getList().getType() == ListType.LOCATION ? item.getLongitude() : null
         );
     }
 }

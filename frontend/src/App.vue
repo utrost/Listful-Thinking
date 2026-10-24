@@ -37,12 +37,19 @@
         <a v-if="publicList?.sourceUrl && safeProductUrl(publicList.sourceUrl)" :href="safeProductUrl(publicList.sourceUrl)!" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
         <p v-if="publicList" class="muted">{{ t(`sharing.modes.${publicList.mode}`) }}</p>
         <p class="muted">{{ t(publicList?.mode === 'VIEW' ? 'ux.publicViewHelp' : 'ux.publicClaimHelp') }}</p>
-        <ul class="item-list">
+        <p v-if="publicList?.type === 'TRIP' || publicList?.type === 'LOCATION'" class="muted">{{ t('locations.publicMapHelp') }}</p>
+        <div v-if="publicList?.type === 'TRIP' || publicList?.type === 'LOCATION'" class="button-row location-view-toggle" role="group" :aria-label="t('locations.view')">
+          <button type="button" :class="showPublicLocationMap ? 'secondary subtle' : ''" :aria-pressed="!showPublicLocationMap" @click="showPublicLocationMap = false">{{ t('locations.list') }}</button>
+          <button type="button" :class="showPublicLocationMap ? '' : 'secondary subtle'" :aria-pressed="showPublicLocationMap" @click="showPublicLocationMap = true">{{ t('locations.map') }}</button>
+        </div>
+        <LocationMap v-if="showPublicLocationMap && publicList && (publicList.type === 'TRIP' || publicList.type === 'LOCATION')" :items="publicList.items" />
+        <ul v-show="!showPublicLocationMap" class="item-list">
           <li v-for="item in publicList?.items ?? []" :key="item.id">
             <PrivateImage v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" />
             <span :class="{ 'wish-content': publicList?.type === 'WISH' }">
               <strong>{{ item.name }}</strong>
               <small v-if="item.description">{{ item.description }}</small>
+              <small v-if="item.address">{{ item.address }}</small>
               <small v-if="item.variantNote" class="wish-variant">{{ item.variantNote }}</small>
               <div v-if="publicList?.type === 'WISH'" class="wish-facts">
                 <span v-if="item.price != null" class="wish-price">{{ formatPrice(item.price, item.priceCurrency) }}</span>
@@ -267,6 +274,7 @@
               <h4>{{ t('sharing.title') }}</h4>
               <p class="muted">{{ t('ux.sharingHelp') }}</p>
               <h5>{{ t('ux.publicLink') }}</h5>
+              <p v-if="selectedList.type === 'TRIP' || selectedList.type === 'LOCATION'" class="muted">{{ t('locations.publicLinkWarning') }}</p>
               <div class="button-row">
                 <select v-model="publicShareMode" :aria-label="t('sharing.mode')">
                   <option value="VIEW">{{ t('sharing.modes.VIEW') }}</option>
@@ -606,6 +614,7 @@ const templateTitle = ref('');
 const undoAction = ref<{ label: string; restore: () => Promise<void> } | null>(null);
 const listView = ref<'items' | 'sharing' | 'settings'>('items');
 const showLocationMap = ref(false);
+const showPublicLocationMap = ref(false);
 
 function switchListView(view: 'items' | 'sharing' | 'settings') {
   listView.value = view;

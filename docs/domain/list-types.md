@@ -203,7 +203,7 @@ UI behavior:
 - Pasting a place URL into a trip list opens website review with that list selected. The contributor checks the suggested title, note, address, coordinates, and image before saving one place.
 - A matching normalized source URL produces an advisory duplicate warning.
 - Items show who suggested them and link back to the place page. Map view plots places with coordinates; places without them remain in List view. The owner can invite registered contributors; read-only members can browse but cannot add places.
-- Public links are view-only; guest signup and account-free contributions are unavailable for trip lists.
+- Public links are view-only; anyone holding the link can see addresses and exact map pins. Guest signup and account-free contributions are unavailable for trip lists.
 
 MVP rules:
 
@@ -222,7 +222,7 @@ Rules:
 
 - `address` is at most 500 characters. Latitude and longitude must be supplied together, be finite, and fall within ±90 and ±180 degrees.
 - Product prices and seller fields, due dates, recurrence, quantity, and responsibility fields are rejected. Category is allowed.
-- Public links are view-only; registered contributors can add and edit places when granted `CONTRIBUTE` access.
+- Public links are view-only and expose addresses and exact map pins to anyone holding the link; registered contributors can add and edit places when granted `CONTRIBUTE` access.
 - Map tiles load only after a member opens Map. Address-only places are not geocoded or pinned automatically.
 
 ## Shared validation principles

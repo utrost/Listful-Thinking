@@ -160,7 +160,9 @@
     "noPins": "No places have coordinates yet. Add them in a place’s details to show it on the map.",
     "unplotted": "{count} place(s) have no coordinates and are not shown on the map.",
     "mapDescription": "Map showing {count} places",
-    "mapUnavailable": "The map could not load. Your places are still available in List view."
+    "mapUnavailable": "The map could not load. Your places are still available in List view.",
+    "publicLinkWarning": "Anyone with the public link can see each place’s address and exact map pin. Share it only with people you trust.",
+    "publicMapHelp": "Open Map to see places with pins. Address-only places remain in List view."
   },
   "items": {
     "newName": "New item name",

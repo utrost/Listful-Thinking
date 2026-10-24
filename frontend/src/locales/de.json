@@ -160,7 +160,9 @@
     "noPins": "Noch kein Ort hat Koordinaten. Ergänze sie in den Ortsdetails, um ihn auf der Karte zu sehen.",
     "unplotted": "{count} Ort(e) ohne Koordinaten werden auf der Karte nicht angezeigt.",
     "mapDescription": "Karte mit {count} Orten",
-    "mapUnavailable": "Die Karte konnte nicht geladen werden. Deine Orte sind weiterhin in der Listenansicht verfügbar."
+    "mapUnavailable": "Die Karte konnte nicht geladen werden. Deine Orte sind weiterhin in der Listenansicht verfügbar.",
+    "publicLinkWarning": "Jede Person mit dem öffentlichen Link kann die Adresse und den genauen Kartenpunkt jedes Ortes sehen. Teile ihn nur mit Personen, denen du vertraust.",
+    "publicMapHelp": "Öffne Karte, um Orte mit Kartenpunkten zu sehen. Orte ohne Koordinaten bleiben in der Listenansicht."
   },
   "items": {
     "newName": "Neuer Eintrag",

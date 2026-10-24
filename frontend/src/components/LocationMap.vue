@@ -3,9 +3,10 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getMapConfig, type ItemEntry } from '../api/client';
+import { getMapConfig } from '../api/client';
 
-const props = defineProps<{ items: ItemEntry[] }>();
+type MapPlace = { id: string; name: string; address?: string | null; latitude?: number | null; longitude?: number | null };
+const props = defineProps<{ items: MapPlace[] }>();
 const { t } = useI18n();
 const mapElement = ref<HTMLElement | null>(null);
 const error = ref('');
@@ -17,7 +18,7 @@ let markers: L.LayerGroup | null = null;
 let mounted = true;
 let starting = false;
 
-function osmUrl(item: ItemEntry) {
+function osmUrl(item: MapPlace) {
   if (item.latitude == null || item.longitude == null) return '';
   const lat = item.latitude.toFixed(6);
   const lon = item.longitude.toFixed(6);
