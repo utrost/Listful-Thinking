@@ -142,7 +142,7 @@ public class ListEntity {
     public Instant getCreatedAt() { return createdAt; }
 
     private void reconcilePublicShareMode() {
-        if ((type == ListType.WISH || type == ListType.TRIP) && publicShareMode == PublicShareMode.SIGNUP) {
+        if ((type == ListType.WISH || type == ListType.TRIP || type == ListType.LOCATION) && publicShareMode == PublicShareMode.SIGNUP) {
             publicShareMode = defaultModeForType(type);
         }
         if (type != ListType.WISH && publicShareMode == PublicShareMode.WISH_CLAIM) {

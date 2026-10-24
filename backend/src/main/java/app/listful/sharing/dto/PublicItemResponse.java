@@ -20,11 +20,14 @@ public record PublicItemResponse(
     String availability,
     String priceCheckedAt,
     String sourceUrl,
-    String claimToken
+    String claimToken,
+    String address,
+    Double latitude,
+    Double longitude
 ) {
     public PublicItemResponse withClaimToken(String token) {
         return new PublicItemResponse(id, name, description, url, imageUrl, price, status, dueDate,
             quantity, category, reservedByGuest, priceCurrency, variantNote, seller, availability,
-            priceCheckedAt, sourceUrl, token);
+            priceCheckedAt, sourceUrl, token, address, latitude, longitude);
     }
 }

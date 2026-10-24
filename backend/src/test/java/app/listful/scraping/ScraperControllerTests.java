@@ -133,6 +133,18 @@ class ScraperControllerTests {
     }
 
     @Test
+    void extractsPlaceAddressAndCoordinatesForReview() throws Exception {
+        mvc.perform(post("/api/v1/utils/extract").session(session).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"url\":\"" + baseUrl() + "/place\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.kind").value("PLACE"))
+            .andExpect(jsonPath("$.title").value("Museum Island"))
+            .andExpect(jsonPath("$.address").value("Bodestraße 1, 10178, Berlin, Germany"))
+            .andExpect(jsonPath("$.latitude").value(52.5201))
+            .andExpect(jsonPath("$.longitude").value(13.3976));
+    }
+
+    @Test
     void prefersJsonLdProductMetadataAcrossScriptsAndGraphNodes() throws Exception {
         mvc.perform(post("/api/v1/utils/scrape")
                 .session(session)
@@ -248,6 +260,11 @@ class ScraperControllerTests {
 
     private void startFixtureServer() throws IOException {
         server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        server.createContext("/place", exchange -> respond(exchange, """
+            <!doctype html><html><head>
+              <script type="application/ld+json">{"@context":"https://schema.org","@type":"TouristAttraction","name":"Museum Island","address":{"@type":"PostalAddress","streetAddress":"Bodestraße 1","postalCode":"10178","addressLocality":"Berlin","addressCountry":"Germany"},"geo":{"@type":"GeoCoordinates","latitude":52.5201,"longitude":13.3976}}</script>
+            </head><body></body></html>
+            """));
         server.createContext("/recipe", exchange -> respond(exchange, """
             <html><head><script type="application/ld+json">{"@context":"https://schema.org","@type":"Recipe","name":"Pancakes","recipeIngredient":["2 eggs","200 g flour"]}</script></head></html>
             """));

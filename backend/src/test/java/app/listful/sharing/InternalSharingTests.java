@@ -70,14 +70,17 @@ class InternalSharingTests {
 
         mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(contributor)
                 .contentType("application/json")
-                .content("{\"name\":\"Museum Island\",\"description\":\"Let's see the galleries\",\"url\":\"https://example.test/museum\",\"imageUrl\":\"https://example.test/museum.jpg\",\"category\":\"Museum\"}"))
+                .content("{\"name\":\"Museum Island\",\"description\":\"Let's see the galleries\",\"url\":\"https://example.test/museum\",\"imageUrl\":\"https://example.test/museum.jpg\",\"category\":\"Museum\",\"address\":\"Bodestraße 1, Berlin\",\"latitude\":52.5201,\"longitude\":13.3976}"))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.suggestedBy").value("contributor"))
-            .andExpect(jsonPath("$.category").value("Museum"));
+            .andExpect(jsonPath("$.category").value("Museum"))
+            .andExpect(jsonPath("$.address").value("Bodestraße 1, Berlin"))
+            .andExpect(jsonPath("$.latitude").value(52.5201));
 
         mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(owner))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].suggestedBy").value("contributor"));
+            .andExpect(jsonPath("$[0].suggestedBy").value("contributor"))
+            .andExpect(jsonPath("$[0].longitude").value(13.3976));
         mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(reader)
                 .contentType("application/json")
                 .content("{\"name\":\"Unauthorized\"}"))
@@ -85,6 +88,30 @@ class InternalSharingTests {
         mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(contributor)
                 .contentType("application/json")
                 .content("{\"name\":\"Paid place\",\"price\":12}"))
+            .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Invalid pin\",\"latitude\":91,\"longitude\":13}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void locationsListAcceptsPlacesButRegularListsRejectCoordinates() throws Exception {
+        MockHttpSession owner = register("owner");
+        MvcResult createdList = mockMvc.perform(post("/api/v1/lists").session(owner)
+                .contentType("application/json")
+                .content("{\"title\":\"Favorite cafés\",\"type\":\"LOCATION\"}"))
+            .andExpect(status().isCreated()).andReturn();
+        String locationsId = JsonPath.read(createdList.getResponse().getContentAsString(), "$.id");
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", locationsId).session(owner)
+                .contentType("application/json")
+                .content("{\"name\":\"Café\",\"address\":\"Berlin\",\"latitude\":52.52,\"longitude\":13.4}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.latitude").value(52.52));
+        String wishId = createWishList(owner, "Birthday");
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", wishId).session(owner)
+                .contentType("application/json")
+                .content("{\"name\":\"Wrong kind\",\"latitude\":52.52,\"longitude\":13.4}"))
             .andExpect(status().isBadRequest());
     }
 

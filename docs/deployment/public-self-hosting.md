@@ -36,6 +36,8 @@ Open `https://YOUR_DOMAIN`, choose Register, and enter the setup code from `secr
 
 The database lives in the named Compose volume mounted at `/app/data`. The app runs as UID 1000 with a read-only root filesystem, a bounded temporary filesystem, dropped capabilities, and memory and process limits. Caddy stores certificates in its own volume. Back up the database and the Caddy data volume if certificate continuity matters. Scraping allows two concurrent outbound page fetches; a busy server returns HTTP 429 so the caller can retry. Block outbound access to your host's private services at the host or network boundary as another defense against URL scraping abuse.
 
+In source builds after RC3, `LOCATION` and `TRIP` lists can show map pins. Map tiles are requested only when a signed-in member opens Map. The default is the public OpenStreetMap tile service; keep its attribution visible and follow the [tile usage policy](https://operations.osmfoundation.org/policies/tiles/). For a busy public instance, set `LISTFUL_MAP_TILE_URL` to an HTTPS `{z}/{x}/{y}` template from a provider whose terms and capacity fit your traffic, and set `LISTFUL_MAP_ATTRIBUTION` to its required attribution. These are runtime settings in Compose. The app does not call the public Nominatim geocoder; address-only places need coordinates entered manually.
+
 ## Backups and upgrades
 
 `scripts/backup-public.sh` takes a live SQLite online snapshot from the mounted volume, checks database integrity and foreign keys, and writes a SHA-256 checksum. Run it once immediately and copy the result to encrypted storage off this host.

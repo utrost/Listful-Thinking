@@ -89,7 +89,7 @@ export interface AdminListEntry {
   listCount: number;
 }
 
-export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT' | 'TRIP';
+export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT' | 'TRIP' | 'LOCATION';
 export type PublicShareMode = 'VIEW' | 'WISH_CLAIM' | 'SIGNUP';
 
 export interface ListEntry {
@@ -152,6 +152,9 @@ export interface ItemEntry {
   priceCheckedAt?: string | null;
   sourceUrl?: string | null;
   suggestedBy?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface ItemRequest {
@@ -173,6 +176,9 @@ export interface ItemRequest {
   seller?: string;
   availability?: string;
   sourceUrl?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface PostponeRequest {
@@ -220,6 +226,9 @@ export interface PublicItemEntry {
   priceCheckedAt?: string | null;
   sourceUrl?: string | null;
   claimToken?: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface PublicListEntry {
@@ -250,7 +259,7 @@ export interface ScrapeResponse {
 }
 
 export interface PageDraft {
-  kind: 'PRODUCT' | 'RECIPE' | 'EVENT' | 'HOWTO' | 'PAGE';
+  kind: 'PRODUCT' | 'RECIPE' | 'EVENT' | 'HOWTO' | 'PLACE' | 'PAGE';
   sourceUrl: string;
   extractedAt: string;
   title: string | null;
@@ -264,6 +273,15 @@ export interface PageDraft {
   steps: string[];
   eventStart: string | null;
   eventLocation: string | null;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+export interface MapConfig { tileUrl: string; attribution: string }
+
+export async function getMapConfig(): Promise<MapConfig> {
+  return requestJson<MapConfig>('/api/v1/maps/config');
 }
 
 export interface NotificationEntry {

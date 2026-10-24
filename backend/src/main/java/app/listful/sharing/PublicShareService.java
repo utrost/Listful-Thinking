@@ -160,7 +160,7 @@ public class PublicShareService {
         if (mode == PublicShareMode.WISH_CLAIM && list.getType() != ListType.WISH) {
             throw new ValidationFailedException("Wish claiming mode is only available for wish lists.");
         }
-        if (mode == PublicShareMode.SIGNUP && (list.getType() == ListType.WISH || list.getType() == ListType.TRIP)) {
+        if (mode == PublicShareMode.SIGNUP && (list.getType() == ListType.WISH || list.getType() == ListType.TRIP || list.getType() == ListType.LOCATION)) {
             throw new ValidationFailedException("Signup mode is only available for task-like lists.");
         }
     }
@@ -219,7 +219,10 @@ public class PublicShareService {
             item.getAvailability(),
             item.getPriceCheckedAt() == null ? null : item.getPriceCheckedAt().toString(),
             item.getSourceUrl(),
-            null
+            null,
+            item.getList().getType() == ListType.TRIP || item.getList().getType() == ListType.LOCATION ? item.getAddress() : null,
+            item.getList().getType() == ListType.TRIP || item.getList().getType() == ListType.LOCATION ? item.getLatitude() : null,
+            item.getList().getType() == ListType.TRIP || item.getList().getType() == ListType.LOCATION ? item.getLongitude() : null
         );
     }
 }

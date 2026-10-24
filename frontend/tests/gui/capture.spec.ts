@@ -63,7 +63,7 @@ test.describe('Reviewed website capture @capture @smoke', () => {
     await page.getByRole('button', { name: 'Save from a website' }).click();
     await capture.getByLabel('Page URL').fill('https://events.example.test/dinner');
     await capture.getByRole('button', { name: 'Read page' }).click();
-    await expect(capture.getByLabel('Location')).toHaveValue('Town hall');
+    await expect(capture.getByRole('textbox', { name: 'Location', exact: true })).toHaveValue('Town hall');
     await capture.locator('.capture-more > summary').click();
     await capture.getByLabel('Preparation tasks (optional)').fill('Invite guests\nBook tables');
     await capture.getByRole('button', { name: 'Save reviewed draft' }).click();

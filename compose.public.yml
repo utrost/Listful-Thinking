@@ -24,6 +24,8 @@ services:
       MAX_REQUEST_BODY_BYTES: ${MAX_REQUEST_BODY_BYTES:-5100000}
       SCRAPER_ALLOW_PRIVATE_ADDRESSES: "false"
       CSRF_ENABLED: "true"
+      LISTFUL_MAP_TILE_URL: ${LISTFUL_MAP_TILE_URL:-https://tile.openstreetmap.org/{z}/{x}/{y}.png}
+      LISTFUL_MAP_ATTRIBUTION: ${LISTFUL_MAP_ATTRIBUTION:-© <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap contributors</a>}
     secrets:
       - bootstrap_token
     volumes:

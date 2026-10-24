@@ -133,7 +133,8 @@
       "GROCERY": "Einkauf",
       "CHORE": "Hausarbeit",
       "EVENT": "Veranstaltung",
-      "TRIP": "Städtetrip"
+      "TRIP": "Städtetrip",
+      "LOCATION": "Orte"
     }
   },
   "trip": {
@@ -146,6 +147,22 @@
     "suggestedBy": "Vorgeschlagen von {name}",
     "duplicate": "Dieser Link könnte bereits in der Liste sein: {names}",
     "inviteHelp": "Lade Freunde über ihren Kontonamen ein und wähle Schreibzugriff, damit sie Orte hinzufügen können."
+  },
+  "locations": {
+    "view": "Ortsansicht",
+    "list": "Liste",
+    "map": "Karte",
+    "address": "Adresse",
+    "latitude": "Breitengrad",
+    "longitude": "Längengrad",
+    "coordinatePair": "Gib Breiten- und Längengrad gemeinsam ein oder lasse beide leer.",
+    "reviewHint": "Prüfe Adresse und Koordinaten vor dem Speichern. Nur Orte mit Koordinaten erscheinen auf der Karte.",
+    "noPins": "Noch kein Ort hat Koordinaten. Ergänze sie in den Ortsdetails, um ihn auf der Karte zu sehen.",
+    "unplotted": "{count} Ort(e) ohne Koordinaten werden auf der Karte nicht angezeigt.",
+    "mapDescription": "Karte mit {count} Orten",
+    "mapUnavailable": "Die Karte konnte nicht geladen werden. Deine Orte sind weiterhin in der Listenansicht verfügbar.",
+    "publicLinkWarning": "Jede Person mit dem öffentlichen Link kann die Adresse und den genauen Kartenpunkt jedes Ortes sehen. Teile ihn nur mit Personen, denen du vertraust.",
+    "publicMapHelp": "Öffne Karte, um Orte mit Kartenpunkten zu sehen. Orte ohne Koordinaten bleiben in der Listenansicht."
   },
   "items": {
     "newName": "Neuer Eintrag",
@@ -341,7 +358,8 @@
       "GROCERY": "Plane deinen nächsten Einkauf. Ergänze Artikel und Mengen; Kategorien helfen beim Sortieren.",
       "CHORE": "Verteile alltägliche Aufgaben. Termine und Wiederholungen findest du unter Weitere Angaben.",
       "EVENT": "Plane gemeinsam. Lege einen Termin fest und ergänze Aufgaben und zuständige Personen.",
-      "TRIP": "Sammelt gemeinsam Orte für euren Ausflug. Füge einen Link hinzu, prüfe die Angaben und lade Freunde mit Schreibzugriff ein."
+      "TRIP": "Sammelt gemeinsam Orte für euren Ausflug. Füge einen Link hinzu, prüfe die Angaben und lade Freunde mit Schreibzugriff ein.",
+      "LOCATION": "Sammle Orte, die du besuchen möchtest. Prüfe Adressen und Kartenpunkte beim Hinzufügen von Links."
     },
     "views": {
       "items": "Einträge",

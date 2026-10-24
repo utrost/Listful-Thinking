@@ -48,6 +48,8 @@ Fields:
 - `archived`, `is_template`, and `deleted_at`
 - `created_at`
 
+`TRIP` and `LOCATION` items can store a reviewed address plus latitude and longitude. Coordinates are paired and range-checked. Signed-in list members can view pins. When an owner creates a public link for one of these lists, anonymous viewers with the token can also see addresses and exact coordinates in the response and Map view. Revoking or expiring the public link removes that access.
+
 Rules:
 
 - Lists are private by default.

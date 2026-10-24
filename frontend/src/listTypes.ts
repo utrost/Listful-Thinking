@@ -25,13 +25,13 @@ export function listFormRulesForType(type: ListType): ListFormRules {
 
 export function itemFormFieldsForListType(type: ListType): ItemFormFields {
   return {
-    showUrl: type === 'WISH' || type === 'TRIP',
-    showImageUrl: type === 'WISH' || type === 'TRIP',
+    showUrl: type === 'WISH' || type === 'TRIP' || type === 'LOCATION',
+    showImageUrl: type === 'WISH' || type === 'TRIP' || type === 'LOCATION',
     showPrice: type === 'WISH',
     showDueDate: type === 'TODO' || type === 'CHORE' || type === 'EVENT',
     showRecurrenceRule: type === 'CHORE',
     ...(type === 'TODO' || type === 'CHORE' || type === 'EVENT' ? { showResponsibility: true } : {}),
     ...(type === 'GROCERY' ? { showQuantity: true, showCategory: true } : {}),
-    ...(type === 'TRIP' ? { showCategory: true } : {})
+    ...(type === 'TRIP' || type === 'LOCATION' ? { showCategory: true } : {})
   };
 }

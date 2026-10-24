@@ -47,6 +47,15 @@ public class Item {
     @Column(name = "price_checked_at") private Instant priceCheckedAt;
     @Column(name = "source_url") private String sourceUrl;
     @Column(name = "suggested_by_name") private String suggestedByName;
+    private String address;
+    private Double latitude;
+    private Double longitude;
+    public String getAddress() { return address; }
+    public void setAddress(String value) { address = value; }
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double value) { latitude = value; }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double value) { longitude = value; }
     public String getSuggestedByName() { return suggestedByName; }
     public void setSuggestedByName(String value) { suggestedByName = value; }
     @Column(name = "claim_token_hash") private String claimTokenHash;
@@ -129,6 +138,9 @@ public class Item {
         this.priceCheckedAt = source.priceCheckedAt;
         this.sourceUrl = source.sourceUrl;
         this.suggestedByName = source.suggestedByName;
+        this.address = source.address;
+        this.latitude = source.latitude;
+        this.longitude = source.longitude;
     }
 
     public void setName(String name) {

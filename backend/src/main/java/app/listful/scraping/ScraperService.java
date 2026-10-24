@@ -71,21 +71,27 @@ public class ScraperService {
             JsonNode event = jsonLdOfType(document, "Event");
             JsonNode howTo = jsonLdOfType(document, "HowTo");
             JsonNode product = jsonLdOfType(document, "Product");
-            String kind = recipe != null ? "RECIPE" : event != null ? "EVENT" : howTo != null ? "HOWTO" : product != null ? "PRODUCT" : "PAGE";
+            JsonNode place = event == null ? jsonLdPlace(document) : placeNode(event.get("location"));
+            Double latitude = place == null ? null : coordinate(place.get("geo"), "latitude", -90, 90);
+            Double longitude = place == null ? null : coordinate(place.get("geo"), "longitude", -180, 180);
+            String kind = recipe != null ? "RECIPE" : event != null ? "EVENT" : howTo != null ? "HOWTO" : product != null ? "PRODUCT" : place != null ? "PLACE" : "PAGE";
             JsonNode offer = product == null ? null : firstPricedOffer(product.get("offers"));
             return new PageDraftResponse(
                 kind,
                 document.getUrl().toString(),
                 Instant.now().toString(),
-                firstNonBlank(recipe == null ? null : textValue(recipe.get("name")), event == null ? null : textValue(event.get("name")), howTo == null ? null : textValue(howTo.get("name")), base.title()),
-                firstNonBlank(recipe == null ? null : textValue(recipe.get("description")), event == null ? null : textValue(event.get("description")), howTo == null ? null : textValue(howTo.get("description")), base.description()),
+                firstNonBlank(recipe == null ? null : textValue(recipe.get("name")), event == null ? null : textValue(event.get("name")), howTo == null ? null : textValue(howTo.get("name")), place == null ? null : textValue(place.get("name")), base.title()),
+                firstNonBlank(recipe == null ? null : textValue(recipe.get("description")), event == null ? null : textValue(event.get("description")), howTo == null ? null : textValue(howTo.get("description")), place == null ? null : textValue(place.get("description")), base.description()),
                 base.imageUrl(), base.price(), base.priceCurrency(),
                 offer == null ? null : nodeName(offer.get("seller")),
                 offer == null ? null : shortSchemaName(textValue(offer.get("availability"))),
                 recipe == null ? List.of() : textEntries(recipe.get("recipeIngredient"), 40),
                 howTo == null ? List.of() : textEntries(howTo.get("step"), 30),
                 event == null ? null : textValue(event.get("startDate")),
-                event == null ? null : nodeName(event.get("location"))
+                event == null ? null : nodeName(event.get("location")),
+                place == null ? null : postalAddress(place.get("address")),
+                longitude == null ? null : latitude,
+                latitude == null ? null : longitude
             );
         } catch (IOException ex) {
             throw new ValidationFailedException("Could not fetch URL metadata.");
@@ -102,6 +108,68 @@ public class ScraperService {
             }
         }
         return null;
+    }
+
+    private JsonNode jsonLdPlace(HtmlPage document) {
+        for (DomNode script : document.querySelectorAll("script[type=\"application/ld+json\"]")) {
+            try {
+                JsonNode match = placeNode(objectMapper.readTree(script.getTextContent()));
+                if (match != null) return match;
+            } catch (JacksonException ignored) {
+                // A malformed block does not hide useful metadata in other blocks.
+            }
+        }
+        return null;
+    }
+
+    private JsonNode placeNode(JsonNode node) {
+        if (node == null || node.isNull()) return null;
+        if (node.isObject() && (isPlaceType(node.get("@type"))
+                || (node.get("address") != null && node.get("@type") != null
+                    && !isSchemaType(node.get("@type"), "Organization")
+                    && !isSchemaType(node.get("@type"), "Product")
+                    && !isSchemaType(node.get("@type"), "Offer")))) return node;
+        for (JsonNode child : node) {
+            JsonNode match = placeNode(child);
+            if (match != null) return match;
+        }
+        return null;
+    }
+
+    private boolean isPlaceType(JsonNode type) {
+        for (String name : List.of("Place", "LocalBusiness", "TouristAttraction", "Museum", "Restaurant",
+                "CafeOrCoffeeShop", "Hotel", "LodgingBusiness", "Park", "Store", "FoodEstablishment",
+                "Accommodation", "PlaceOfWorship", "LandmarksOrHistoricalBuildings")) {
+            if (isSchemaType(type, name)) return true;
+        }
+        return false;
+    }
+
+    private String postalAddress(JsonNode node) {
+        if (node == null || node.isNull()) return null;
+        if (!node.isObject()) {
+            String value = textValue(node);
+            return value == null ? null : value.substring(0, Math.min(value.length(), 500));
+        }
+        List<String> parts = new ArrayList<>();
+        for (String key : List.of("streetAddress", "postalCode", "addressLocality", "addressRegion", "addressCountry")) {
+            String value = nodeName(node.get(key));
+            if (value != null && !value.isBlank()) parts.add(value.trim());
+        }
+        String value = String.join(", ", parts);
+        return value.isBlank() ? null : value.substring(0, Math.min(value.length(), 500));
+    }
+
+    private Double coordinate(JsonNode geo, String field, double min, double max) {
+        if (geo == null || geo.isNull()) return null;
+        String value = textValue(geo.get(field));
+        if (value == null) return null;
+        try {
+            double parsed = Double.parseDouble(value);
+            return Double.isFinite(parsed) && parsed >= min && parsed <= max ? parsed : null;
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private JsonNode findType(JsonNode node, String type) {

@@ -18,6 +18,9 @@ public record PageDraftResponse(
     List<String> ingredients,
     List<String> steps,
     String eventStart,
-    String eventLocation
+    String eventLocation,
+    String address,
+    Double latitude,
+    Double longitude
 ) {
 }

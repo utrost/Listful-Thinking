@@ -19,6 +19,9 @@ const newListTitle = ref('');
 const title = ref('');
 const description = ref('');
 const imageUrl = ref('');
+const address = ref('');
+const latitude = ref('');
+const longitude = ref('');
 const price = ref<number | null>(null);
 const priceCurrency = ref('');
 const variantNote = ref('');
@@ -58,7 +61,7 @@ function sameSource(left: string, right: string) {
 async function checkDuplicates() {
   duplicates.value = [];
   const listId = targetListId.value;
-  if ((targetType.value !== 'WISH' && targetType.value !== 'TRIP') || !listId || !draft.value) return;
+  if ((targetType.value !== 'WISH' && targetType.value !== 'TRIP' && targetType.value !== 'LOCATION') || !listId || !draft.value) return;
   const sourceUrl = draft.value.sourceUrl;
   try {
     const existing = await getItems(listId);
@@ -93,11 +96,17 @@ async function preview() {
     draft.value = found;
     editingUrl.value = false;
     const preferred = props.lists.find(list => list.id === preferredListId && list.access !== 'READ' && !list.archived && !list.template);
-    targetType.value = preferred?.type === 'TRIP' ? 'TRIP' : found.kind === 'RECIPE' ? 'GROCERY' : found.kind === 'EVENT' ? 'EVENT' : found.kind === 'HOWTO' ? 'TODO' : 'WISH';
+    const linkPin = coordinatesFromMapLink(requestedUrl) ?? coordinatesFromMapLink(found.sourceUrl);
+    targetType.value = preferred?.type === 'TRIP' || preferred?.type === 'LOCATION' ? preferred.type : found.kind === 'RECIPE' ? 'GROCERY' : found.kind === 'EVENT' ? 'EVENT' : found.kind === 'HOWTO' ? 'TODO' : found.kind === 'PLACE' || linkPin ? 'LOCATION' : 'WISH';
     await nextTick();
     title.value = enteredFields.title || found.title || '';
     description.value = enteredFields.description || found.description || '';
     imageUrl.value = enteredFields.imageUrl || found.imageUrl || '';
+    address.value = found.address || '';
+    const draftPin = found.latitude != null && found.longitude != null
+      ? { latitude: found.latitude, longitude: found.longitude } : linkPin;
+    latitude.value = draftPin ? String(draftPin.latitude) : '';
+    longitude.value = draftPin ? String(draftPin.longitude) : '';
     price.value = enteredFields.price ?? found.price;
     priceCurrency.value = enteredFields.priceCurrency || found.priceCurrency || '';
     variantNote.value = enteredFields.variantNote || '';
@@ -138,6 +147,25 @@ function localDateTime(date: Date) {
 
 function sourceHost(value: string) {
   try { return new URL(value).hostname; } catch { return value; }
+}
+
+function coordinatesFromMapLink(value: string): { latitude: number; longitude: number } | null {
+  try {
+    const parsed = new URL(value);
+    let pair: string[] | null = null;
+    if (parsed.hostname === 'www.openstreetmap.org' || parsed.hostname === 'openstreetmap.org') {
+      const lat = parsed.searchParams.get('mlat');
+      const lon = parsed.searchParams.get('mlon');
+      pair = lat && lon ? [lat, lon] : parsed.hash.match(/^#map=\d+\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)/)?.slice(1) ?? null;
+    } else if (parsed.hostname === 'www.google.com' || parsed.hostname === 'maps.google.com') {
+      pair = parsed.pathname.match(/\/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/)?.slice(1) ?? null;
+    }
+    if (!pair) return null;
+    const latitude = Number(pair[0]);
+    const longitude = Number(pair[1]);
+    return Number.isFinite(latitude) && Number.isFinite(longitude) && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
+      ? { latitude, longitude } : null;
+  } catch { return null; }
 }
 
 function blocksManualFallback(cause: unknown) {
@@ -183,11 +211,17 @@ async function save() {
         remaining.shift(); saved++;
         lines.value = remaining.join('\n');
       }
-    } else if (targetType.value === 'WISH' || targetType.value === 'TRIP') {
+    } else if (targetType.value === 'WISH' || targetType.value === 'TRIP' || targetType.value === 'LOCATION') {
       if (!title.value.trim()) throw new Error(t('capture.titleRequired'));
+      if ((latitude.value.trim() === '') !== (longitude.value.trim() === '')) throw new Error(t('locations.coordinatePair'));
       listId = await targetList();
       await createItem(listId, { name: title.value.trim(), description: description.value.trim() || undefined,
         url: draft.value.sourceUrl, sourceUrl: draft.value.sourceUrl, imageUrl: imageUrl.value.trim() || undefined,
+        ...((targetType.value === 'TRIP' || targetType.value === 'LOCATION') ? {
+          address: address.value.trim() || undefined,
+          latitude: latitude.value.trim() ? Number(latitude.value) : undefined,
+          longitude: longitude.value.trim() ? Number(longitude.value) : undefined
+        } : {}),
         ...(targetType.value === 'WISH' ? { price: price.value ?? undefined, priceCurrency: price.value == null ? undefined : priceCurrency.value.trim().toUpperCase() || undefined,
           variantNote: variantNote.value.trim() || undefined, seller: seller.value.trim() || undefined,
           availability: availability.value.trim() || undefined } : {}) });
@@ -231,20 +265,26 @@ async function save() {
         <div class="capture-source-actions"><a :href="draft.sourceUrl" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
           <button type="button" class="secondary subtle" @click="editingUrl = true">{{ t('capture.changeUrl') }}</button></div>
       </div>
-      <label v-if="targetType === 'WISH' || targetType === 'EVENT' || targetType === 'TRIP'">{{ t('capture.title') }}<input v-model="title" required maxlength="255" /></label>
+      <label v-if="targetType === 'WISH' || targetType === 'EVENT' || targetType === 'TRIP' || targetType === 'LOCATION'">{{ t('capture.title') }}<input v-model="title" required maxlength="255" /></label>
       <label>{{ t('capture.destination') }}<select v-model="targetType">
         <option value="WISH">{{ t('lists.types.WISH') }}</option><option value="GROCERY">{{ t('lists.types.GROCERY') }}</option>
         <option value="EVENT">{{ t('lists.types.EVENT') }}</option><option value="TODO">{{ t('lists.types.TODO') }}</option>
-        <option value="CHORE">{{ t('lists.types.CHORE') }}</option><option value="TRIP">{{ t('lists.types.TRIP') }}</option>
+        <option value="CHORE">{{ t('lists.types.CHORE') }}</option><option value="TRIP">{{ t('lists.types.TRIP') }}</option><option value="LOCATION">{{ t('lists.types.LOCATION') }}</option>
       </select></label>
       <template v-if="targetType !== 'EVENT'">
         <label>{{ t('capture.list') }}<select v-model="targetListId"><option value="">{{ t('capture.newList') }}</option><option v-for="list in matchingLists" :key="list.id" :value="list.id">{{ list.title }}</option></select></label>
         <label v-if="!targetListId">{{ t('capture.newListTitle') }}<input v-model="newListTitle" required maxlength="255" /></label>
       </template>
-      <template v-if="targetType === 'TRIP'">
+      <template v-if="targetType === 'TRIP' || targetType === 'LOCATION'">
         <p v-if="duplicates.length" role="status" class="capture-warning">{{ t('trip.duplicate', { names: duplicates.join(', ') }) }}</p>
         <label>{{ t('trip.note') }}<textarea v-model="description" maxlength="2000" /></label>
         <label>{{ t('items.imageUrl') }}<input v-model="imageUrl" maxlength="2000" /></label>
+        <label>{{ t('locations.address') }}<input v-model="address" maxlength="500" autocomplete="street-address" /></label>
+        <div class="capture-pair">
+          <label>{{ t('locations.latitude') }}<input v-model="latitude" type="number" min="-90" max="90" step="any" /></label>
+          <label>{{ t('locations.longitude') }}<input v-model="longitude" type="number" min="-180" max="180" step="any" /></label>
+        </div>
+        <small class="muted">{{ t('locations.reviewHint') }}</small>
         <PrivateImage v-if="imageUrl" class="preview" :src="imageUrl" :alt="title" />
       </template>
       <template v-else-if="targetType === 'WISH'">

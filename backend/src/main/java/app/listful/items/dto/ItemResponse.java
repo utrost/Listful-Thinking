@@ -27,6 +27,9 @@ public record ItemResponse(
     String availability,
     String priceCheckedAt,
     String sourceUrl,
-    String suggestedBy
+    String suggestedBy,
+    String address,
+    Double latitude,
+    Double longitude
 ) {
 }

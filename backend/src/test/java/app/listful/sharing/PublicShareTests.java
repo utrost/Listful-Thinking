@@ -329,6 +329,32 @@ class PublicShareTests {
     }
 
     @Test
+    void anonymousViewerCanReadPlaceCoordinatesAndMapSettingsOnlyThroughPublicLink() throws Exception {
+        MockHttpSession owner = register("owner");
+        MvcResult createdList = mockMvc.perform(post("/api/v1/lists").session(owner)
+                .contentType("application/json")
+                .content("{\"title\":\"Berlin places\",\"type\":\"LOCATION\"}"))
+            .andExpect(status().isCreated()).andReturn();
+        String listId = JsonPath.read(createdList.getResponse().getContentAsString(), "$.id");
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"name\":\"Museum Island\",\"address\":\"Bodestraße 1, Berlin\",\"latitude\":52.5201,\"longitude\":13.3976}"))
+            .andExpect(status().isCreated());
+        String token = createPublicShare(owner, listId, "VIEW");
+
+        mockMvc.perform(get("/api/v1/share/{token}", token))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].address").value("Bodestraße 1, Berlin"))
+            .andExpect(jsonPath("$.items[0].latitude").value(52.5201))
+            .andExpect(jsonPath("$.items[0].longitude").value(13.3976));
+        mockMvc.perform(get("/api/v1/maps/config"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.tileUrl").value("https://tile.openstreetmap.org/{z}/{x}/{y}.png"));
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", listId))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
     void signupModeAllowsGuestsToClaimOpenEventTasks() throws Exception {
         MockHttpSession owner = register("owner");
         String listId = createEventList(owner, "Birthday", "2026-10-01T12:00:00Z");

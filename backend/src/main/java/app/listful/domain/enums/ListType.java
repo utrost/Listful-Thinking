@@ -6,5 +6,6 @@ public enum ListType {
     GROCERY,
     CHORE,
     EVENT,
-    TRIP
+    TRIP,
+    LOCATION
 }

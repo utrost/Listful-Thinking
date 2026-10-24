@@ -133,7 +133,8 @@
       "GROCERY": "Groceries",
       "CHORE": "Chores",
       "EVENT": "Event",
-      "TRIP": "City trip"
+      "TRIP": "City trip",
+      "LOCATION": "Locations"
     }
   },
   "trip": {
@@ -146,6 +147,22 @@
     "suggestedBy": "Suggested by {name}",
     "duplicate": "This place link may already be on the list: {names}",
     "inviteHelp": "Invite each friend by account name and choose Can contribute so they can add places."
+  },
+  "locations": {
+    "view": "Place view",
+    "list": "List",
+    "map": "Map",
+    "address": "Address",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "coordinatePair": "Add both latitude and longitude, or leave both blank.",
+    "reviewHint": "Check the address and coordinates before saving. Only places with coordinates appear on the map.",
+    "noPins": "No places have coordinates yet. Add them in a place’s details to show it on the map.",
+    "unplotted": "{count} place(s) have no coordinates and are not shown on the map.",
+    "mapDescription": "Map showing {count} places",
+    "mapUnavailable": "The map could not load. Your places are still available in List view.",
+    "publicLinkWarning": "Anyone with the public link can see each place’s address and exact map pin. Share it only with people you trust.",
+    "publicMapHelp": "Open Map to see places with pins. Address-only places remain in List view."
   },
   "items": {
     "newName": "New item name",
@@ -341,7 +358,8 @@
       "GROCERY": "Plan your next shop. Add items and quantities; use categories to group your aisles.",
       "CHORE": "Share the everyday jobs. Add due dates and repeating schedules in More details.",
       "EVENT": "Bring a plan together. Set the event date, then add tasks and people responsible.",
-      "TRIP": "Collect places to visit together. Paste a place link, review its details, and invite friends with Can contribute access."
+      "TRIP": "Collect places to visit together. Paste a place link, review its details, and invite friends with Can contribute access.",
+      "LOCATION": "Save places you want to visit. Review addresses and map pins when adding links."
     },
     "views": {
       "items": "Items",
