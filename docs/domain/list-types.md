@@ -150,7 +150,7 @@ Current recurrence behavior:
 
 Purpose:
 
-- Planning around a deadline such as birthdays, trips, parties, or school events.
+- Planning around a deadline such as birthdays, parties, or school events. A shared pool of places for a city trip uses `TRIP`.
 
 Relevant list fields:
 
@@ -182,6 +182,33 @@ MVP rules:
 - Public guest claiming is not the primary EVENT behavior, but a `SIGNUP` public link can turn event preparation items into guest-visible signup slots.
 - Event items use `OPEN` and `DONE`; wishlist statuses are rejected.
 - `DONE` event items are excluded from item due-date reminder scans.
+
+## TRIP
+
+Purpose:
+
+- A shared shortlist of places a group may visit on a city trip.
+- Each contributor uses a registered account; the owner grants `CONTRIBUTE` access by username.
+
+Relevant item fields:
+
+- `name` for the place, `description` for a personal note, optional `category`
+- `url`, `source_url`, and `image_url` from a reviewed website or manual entry
+- `suggested_by_name`, set by the server from the account that created the item
+- `status` (`OPEN` or `DONE`; `DONE` can mean visited)
+
+UI behavior:
+
+- Pasting a place URL into a trip list opens website review with that list selected. The contributor checks the suggested title, note, and image before saving one place.
+- A matching normalized source URL produces an advisory duplicate warning.
+- Items show who suggested them and link back to the place page. The owner can invite registered contributors; read-only members can browse but cannot add places.
+- Public links are view-only; guest signup and account-free contributions are unavailable for trip lists.
+
+MVP rules:
+
+- Trip lists have no required date. Use an `EVENT` list for dated plans and preparation tasks.
+- Product price, seller, availability, quantity, due date, recurrence, and responsibility fields are rejected for trip items.
+- There is no map, route optimization, voting, schedule, or automatic page synchronization in this first flow.
 
 ## Shared validation principles
 

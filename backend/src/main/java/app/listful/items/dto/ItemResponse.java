@@ -26,6 +26,7 @@ public record ItemResponse(
     String seller,
     String availability,
     String priceCheckedAt,
-    String sourceUrl
+    String sourceUrl,
+    String suggestedBy
 ) {
 }

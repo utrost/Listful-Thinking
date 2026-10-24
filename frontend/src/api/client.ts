@@ -89,7 +89,7 @@ export interface AdminListEntry {
   listCount: number;
 }
 
-export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT';
+export type ListType = 'WISH' | 'TODO' | 'GROCERY' | 'CHORE' | 'EVENT' | 'TRIP';
 export type PublicShareMode = 'VIEW' | 'WISH_CLAIM' | 'SIGNUP';
 
 export interface ListEntry {
@@ -151,6 +151,7 @@ export interface ItemEntry {
   availability?: string | null;
   priceCheckedAt?: string | null;
   sourceUrl?: string | null;
+  suggestedBy?: string | null;
 }
 
 export interface ItemRequest {

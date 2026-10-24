@@ -7,7 +7,7 @@ import { ApiClientError, createItem, createList, extractPage, getItems, type Lis
 const props = defineProps<{ lists: ListEntry[] }>();
 const emit = defineEmits<{ saved: [listId: string]; progress: [listId: string] }>();
 const { t, locale } = useI18n();
-type CaptureType = 'WISH' | 'GROCERY' | 'EVENT' | 'TODO' | 'CHORE';
+type CaptureType = ListType;
 type CaptureStart = { url?: string; listId?: string; title?: string; description?: string; imageUrl?: string;
   price?: number | null; priceCurrency?: string; variantNote?: string; seller?: string; availability?: string };
 const url = ref('');
@@ -40,7 +40,7 @@ watch(url, () => { draft.value = null; duplicates.value = []; createdEventListId
 watch(targetType, () => { targetListId.value = ''; duplicates.value = []; createdEventListId.value = ''; });
 watch(targetListId, () => { void checkDuplicates(); });
 
-function sameProduct(left: string, right: string) {
+function sameSource(left: string, right: string) {
   try {
     const clean = (value: string) => {
       const parsed = new URL(value);
@@ -58,13 +58,13 @@ function sameProduct(left: string, right: string) {
 async function checkDuplicates() {
   duplicates.value = [];
   const listId = targetListId.value;
-  if (targetType.value !== 'WISH' || !listId || !draft.value) return;
+  if ((targetType.value !== 'WISH' && targetType.value !== 'TRIP') || !listId || !draft.value) return;
   const sourceUrl = draft.value.sourceUrl;
   try {
     const existing = await getItems(listId);
     if (targetListId.value === listId && draft.value?.sourceUrl === sourceUrl) {
-      duplicates.value = existing.filter(item => (item.url && sameProduct(item.url, sourceUrl)) ||
-        (item.sourceUrl && sameProduct(item.sourceUrl, sourceUrl))).map(item => item.name);
+      duplicates.value = existing.filter(item => (item.url && sameSource(item.url, sourceUrl)) ||
+        (item.sourceUrl && sameSource(item.sourceUrl, sourceUrl))).map(item => item.name);
     }
   } catch { /* Duplicate detection is advisory; saving still works. */ }
 }
@@ -83,7 +83,7 @@ async function preview() {
     try {
       found = await extractPage({ url: requestedUrl });
     } catch (cause) {
-      if (cause instanceof ApiClientError && [401, 403, 429].includes(cause.status)) throw cause;
+      if (blocksManualFallback(cause)) throw cause;
       found = { kind: 'PAGE', sourceUrl: requestedUrl, extractedAt: new Date().toISOString(), title: null,
         description: null, imageUrl: null, price: null, priceCurrency: null, seller: null,
         availability: null, ingredients: [], steps: [], eventStart: null, eventLocation: null };
@@ -92,7 +92,8 @@ async function preview() {
     if (url.value.trim() !== requestedUrl) return;
     draft.value = found;
     editingUrl.value = false;
-    targetType.value = found.kind === 'RECIPE' ? 'GROCERY' : found.kind === 'EVENT' ? 'EVENT' : found.kind === 'HOWTO' ? 'TODO' : 'WISH';
+    const preferred = props.lists.find(list => list.id === preferredListId && list.access !== 'READ' && !list.archived && !list.template);
+    targetType.value = preferred?.type === 'TRIP' ? 'TRIP' : found.kind === 'RECIPE' ? 'GROCERY' : found.kind === 'EVENT' ? 'EVENT' : found.kind === 'HOWTO' ? 'TODO' : 'WISH';
     await nextTick();
     title.value = enteredFields.title || found.title || '';
     description.value = enteredFields.description || found.description || '';
@@ -139,6 +140,19 @@ function sourceHost(value: string) {
   try { return new URL(value).hostname; } catch { return value; }
 }
 
+function blocksManualFallback(cause: unknown) {
+  if (!(cause instanceof ApiClientError)) return false;
+  if ([401, 403, 429].includes(cause.status)) return true;
+  return cause.status === 400 && [
+    'Scraping private or local network addresses is not allowed.',
+    'Only standard web ports can be scraped.',
+    'URL credentials are not allowed.',
+    'Only HTTP and HTTPS URLs can be scraped.',
+    'URL must include a host.',
+    'URL is invalid.'
+  ].includes(cause.backendMessage);
+}
+
 async function targetList(): Promise<string> {
   if (targetListId.value) return targetListId.value;
   const name = newListTitle.value.trim();
@@ -169,14 +183,14 @@ async function save() {
         remaining.shift(); saved++;
         lines.value = remaining.join('\n');
       }
-    } else if (targetType.value === 'WISH') {
+    } else if (targetType.value === 'WISH' || targetType.value === 'TRIP') {
       if (!title.value.trim()) throw new Error(t('capture.titleRequired'));
       listId = await targetList();
       await createItem(listId, { name: title.value.trim(), description: description.value.trim() || undefined,
         url: draft.value.sourceUrl, sourceUrl: draft.value.sourceUrl, imageUrl: imageUrl.value.trim() || undefined,
-        price: price.value ?? undefined, priceCurrency: price.value == null ? undefined : priceCurrency.value.trim().toUpperCase() || undefined,
-        variantNote: variantNote.value.trim() || undefined, seller: seller.value.trim() || undefined,
-        availability: availability.value.trim() || undefined });
+        ...(targetType.value === 'WISH' ? { price: price.value ?? undefined, priceCurrency: price.value == null ? undefined : priceCurrency.value.trim().toUpperCase() || undefined,
+          variantNote: variantNote.value.trim() || undefined, seller: seller.value.trim() || undefined,
+          availability: availability.value.trim() || undefined } : {}) });
       saved = 1;
     } else {
       const remaining = lines.value.split('\n').map(line => line.trim()).filter(Boolean);
@@ -217,17 +231,23 @@ async function save() {
         <div class="capture-source-actions"><a :href="draft.sourceUrl" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
           <button type="button" class="secondary subtle" @click="editingUrl = true">{{ t('capture.changeUrl') }}</button></div>
       </div>
-      <label v-if="targetType === 'WISH' || targetType === 'EVENT'">{{ t('capture.title') }}<input v-model="title" required maxlength="255" /></label>
+      <label v-if="targetType === 'WISH' || targetType === 'EVENT' || targetType === 'TRIP'">{{ t('capture.title') }}<input v-model="title" required maxlength="255" /></label>
       <label>{{ t('capture.destination') }}<select v-model="targetType">
         <option value="WISH">{{ t('lists.types.WISH') }}</option><option value="GROCERY">{{ t('lists.types.GROCERY') }}</option>
         <option value="EVENT">{{ t('lists.types.EVENT') }}</option><option value="TODO">{{ t('lists.types.TODO') }}</option>
-        <option value="CHORE">{{ t('lists.types.CHORE') }}</option>
+        <option value="CHORE">{{ t('lists.types.CHORE') }}</option><option value="TRIP">{{ t('lists.types.TRIP') }}</option>
       </select></label>
       <template v-if="targetType !== 'EVENT'">
         <label>{{ t('capture.list') }}<select v-model="targetListId"><option value="">{{ t('capture.newList') }}</option><option v-for="list in matchingLists" :key="list.id" :value="list.id">{{ list.title }}</option></select></label>
         <label v-if="!targetListId">{{ t('capture.newListTitle') }}<input v-model="newListTitle" required maxlength="255" /></label>
       </template>
-      <template v-if="targetType === 'WISH'">
+      <template v-if="targetType === 'TRIP'">
+        <p v-if="duplicates.length" role="status" class="capture-warning">{{ t('trip.duplicate', { names: duplicates.join(', ') }) }}</p>
+        <label>{{ t('trip.note') }}<textarea v-model="description" maxlength="2000" /></label>
+        <label>{{ t('items.imageUrl') }}<input v-model="imageUrl" maxlength="2000" /></label>
+        <PrivateImage v-if="imageUrl" class="preview" :src="imageUrl" :alt="title" />
+      </template>
+      <template v-else-if="targetType === 'WISH'">
         <p v-if="duplicates.length" role="status" class="capture-warning">{{ t('capture.duplicate', { names: duplicates.join(', ') }) }}</p>
         <label>{{ t('capture.variant') }}<input v-model="variantNote" maxlength="255" /></label>
         <div class="capture-pair"><label>{{ t('items.price') }}<input v-model.number="price" type="number" min="0" step="0.01" /></label>

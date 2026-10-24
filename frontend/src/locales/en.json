@@ -132,8 +132,20 @@
       "TODO": "To-do",
       "GROCERY": "Groceries",
       "CHORE": "Chores",
-      "EVENT": "Event"
+      "EVENT": "Event",
+      "TRIP": "City trip"
     }
+  },
+  "trip": {
+    "placeUrl": "Place link (opens review)",
+    "openPlace": "Open place",
+    "visited": "Visited",
+    "markVisited": "Mark visited",
+    "reopenPlace": "Mark as not visited",
+    "note": "Why visit / note",
+    "suggestedBy": "Suggested by {name}",
+    "duplicate": "This place link may already be on the list: {names}",
+    "inviteHelp": "Invite each friend by account name and choose Can contribute so they can add places."
   },
   "items": {
     "newName": "New item name",
@@ -328,7 +340,8 @@
       "TODO": "Get it out of your head. Add a task, then mark it done when you’re finished.",
       "GROCERY": "Plan your next shop. Add items and quantities; use categories to group your aisles.",
       "CHORE": "Share the everyday jobs. Add due dates and repeating schedules in More details.",
-      "EVENT": "Bring a plan together. Set the event date, then add tasks and people responsible."
+      "EVENT": "Bring a plan together. Set the event date, then add tasks and people responsible.",
+      "TRIP": "Collect places to visit together. Paste a place link, review its details, and invite friends with Can contribute access."
     },
     "views": {
       "items": "Items",

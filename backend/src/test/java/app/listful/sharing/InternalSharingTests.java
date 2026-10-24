@@ -49,6 +49,46 @@ class InternalSharingTests {
     }
 
     @Test
+    void tripContributorsCanSuggestPlacesAndReadersCannot() throws Exception {
+        MockHttpSession owner = register("owner");
+        MockHttpSession contributor = register("contributor");
+        MockHttpSession reader = register("reader");
+        MvcResult createdList = mockMvc.perform(post("/api/v1/lists").session(owner)
+                .contentType("application/json")
+                .content("{\"title\":\"Berlin weekend\",\"type\":\"TRIP\"}"))
+            .andExpect(status().isCreated()).andReturn();
+        String listId = JsonPath.read(createdList.getResponse().getContentAsString(), "$.id");
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/shares", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"username\":\"contributor\",\"permission\":\"CONTRIBUTE\"}"))
+            .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/lists/{listId}/shares", listId).session(owner)
+                .contentType("application/json")
+                .content("{\"username\":\"reader\",\"permission\":\"READ\"}"))
+            .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Museum Island\",\"description\":\"Let's see the galleries\",\"url\":\"https://example.test/museum\",\"imageUrl\":\"https://example.test/museum.jpg\",\"category\":\"Museum\"}"))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.suggestedBy").value("contributor"))
+            .andExpect(jsonPath("$.category").value("Museum"));
+
+        mockMvc.perform(get("/api/v1/lists/{listId}/items", listId).session(owner))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].suggestedBy").value("contributor"));
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(reader)
+                .contentType("application/json")
+                .content("{\"name\":\"Unauthorized\"}"))
+            .andExpect(status().isNotFound());
+        mockMvc.perform(post("/api/v1/lists/{listId}/items", listId).session(contributor)
+                .contentType("application/json")
+                .content("{\"name\":\"Paid place\",\"price\":12}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void ownerCanShareListWithRegisteredUserAndRevokeAccess() throws Exception {
         MockHttpSession owner = register("owner");
         MockHttpSession shared = register("shared");

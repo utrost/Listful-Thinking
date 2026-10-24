@@ -132,8 +132,20 @@
       "TODO": "Aufgaben",
       "GROCERY": "Einkauf",
       "CHORE": "Hausarbeit",
-      "EVENT": "Veranstaltung"
+      "EVENT": "Veranstaltung",
+      "TRIP": "Städtetrip"
     }
+  },
+  "trip": {
+    "placeUrl": "Link zum Ort (öffnet Vorschau)",
+    "openPlace": "Ort öffnen",
+    "visited": "Besucht",
+    "markVisited": "Als besucht markieren",
+    "reopenPlace": "Als nicht besucht markieren",
+    "note": "Warum besuchen / Notiz",
+    "suggestedBy": "Vorgeschlagen von {name}",
+    "duplicate": "Dieser Link könnte bereits in der Liste sein: {names}",
+    "inviteHelp": "Lade Freunde über ihren Kontonamen ein und wähle Schreibzugriff, damit sie Orte hinzufügen können."
   },
   "items": {
     "newName": "Neuer Eintrag",
@@ -328,7 +340,8 @@
       "TODO": "Raus aus dem Kopf. Füge eine Aufgabe hinzu und hake sie ab, wenn sie erledigt ist.",
       "GROCERY": "Plane deinen nächsten Einkauf. Ergänze Artikel und Mengen; Kategorien helfen beim Sortieren.",
       "CHORE": "Verteile alltägliche Aufgaben. Termine und Wiederholungen findest du unter Weitere Angaben.",
-      "EVENT": "Plane gemeinsam. Lege einen Termin fest und ergänze Aufgaben und zuständige Personen."
+      "EVENT": "Plane gemeinsam. Lege einen Termin fest und ergänze Aufgaben und zuständige Personen.",
+      "TRIP": "Sammelt gemeinsam Orte für euren Ausflug. Füge einen Link hinzu, prüfe die Angaben und lade Freunde mit Schreibzugriff ein."
     },
     "views": {
       "items": "Einträge",

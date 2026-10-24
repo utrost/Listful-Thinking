@@ -56,6 +56,7 @@ public class ItemService {
         validateForListType(list, request);
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
+        if (list.getType() == ListType.TRIP) item.setSuggestedByName(actor.getUsername());
         item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         item.setPriceCurrency(request.priceCurrency());
         applyCaptureFields(item, request);
@@ -207,7 +208,8 @@ public class ItemService {
         if (!hasText(request.name()) && !isWishUrlOnlyCandidate(list, request)) {
             throw new ValidationFailedException("Item name is required.");
         }
-        if (listType != ListType.WISH && hasShoppingFields(request)) {
+        if ((listType == ListType.TRIP && hasPriceOrProductFields(request))
+                || (listType != ListType.WISH && listType != ListType.TRIP && hasShoppingFields(request))) {
             throw new ValidationFailedException("Shopping fields are only allowed on wish lists.");
         }
         if (listType != ListType.CHORE && hasText(request.recurrenceRule())) {
@@ -216,13 +218,13 @@ public class ItemService {
         if (listType == ListType.CHORE && hasText(request.recurrenceRule()) && !isSupportedRecurrence(request.recurrenceRule())) {
             throw unsupportedRecurrenceRule();
         }
-        if (listType != ListType.GROCERY && hasGroceryFields(request)) {
-            throw new ValidationFailedException("Quantity and category are only allowed on grocery items.");
+        if ((listType != ListType.GROCERY && hasText(request.quantity())) || (listType != ListType.GROCERY && listType != ListType.TRIP && hasText(request.category()))) {
+            throw new ValidationFailedException("Quantity is only allowed on grocery items; category is allowed on grocery and trip items.");
         }
         if (!supportsResponsibilityFields(listType) && hasResponsibilityFields(request)) {
             throw new ValidationFailedException("Responsibility labels are only allowed on to-do, chore, and event items.");
         }
-        if (listType == ListType.GROCERY && request.dueDate() != null) {
+        if ((listType == ListType.GROCERY || listType == ListType.TRIP) && request.dueDate() != null) {
             throw new ValidationFailedException("Due dates are only allowed on to-do, chore, and event items.");
         }
         if (listType == ListType.WISH && request.status() == ItemStatus.DONE) {
@@ -274,15 +276,16 @@ public class ItemService {
             || hasText(request.variantNote()) || hasText(request.seller()) || hasText(request.availability());
     }
 
+    private boolean hasPriceOrProductFields(ItemRequest request) {
+        return request.price() != null || hasText(request.priceCurrency()) || hasText(request.variantNote())
+            || hasText(request.seller()) || hasText(request.availability());
+    }
+
     private void applyCaptureFields(Item item, ItemRequest request) {
         item.setVariantNote(trimmedOrNull(request.variantNote()));
         item.setSeller(trimmedOrNull(request.seller()));
         item.setAvailability(trimmedOrNull(request.availability()));
         item.setSourceUrl(trimmedOrNull(request.sourceUrl()));
-    }
-
-    private boolean hasGroceryFields(ItemRequest request) {
-        return hasText(request.quantity()) || hasText(request.category());
     }
 
     private boolean hasResponsibilityFields(ItemRequest request) {
@@ -372,7 +375,8 @@ public class ItemService {
             item.getSeller(),
             item.getAvailability(),
             item.getPriceCheckedAt() == null ? null : item.getPriceCheckedAt().toString(),
-            item.getSourceUrl()
+            item.getSourceUrl(),
+            item.getList().getType() == ListType.TRIP ? item.getSuggestedByName() : null
         );
     }
 }

@@ -169,6 +169,7 @@
             <option value="GROCERY">{{ t('lists.types.GROCERY') }}</option>
             <option value="CHORE">{{ t('lists.types.CHORE') }}</option>
             <option value="EVENT">{{ t('lists.types.EVENT') }}</option>
+            <option value="TRIP">{{ t('lists.types.TRIP') }}</option>
           </select></label>
           <label v-if="newListRules.showTargetDate">{{ t('lists.targetDate') }}<input
             v-model="listForm.targetDate"
@@ -211,7 +212,7 @@
             <p v-if="selectedList.archived" class="access-note">{{ t('planning.archivedPreview') }}</p>
             <p v-if="selectedList.template" class="access-note">{{ t('planning.templatePreview') }}</p>
             <nav v-if="selectedList.access === 'OWNER'" class="list-tabs" :aria-label="t('ux.listSections')">
-              <button v-for="view in (selectedList.archived || selectedList.template ? ['items', 'settings'] as const : ['items', 'sharing', 'settings'] as const)" :key="view" type="button" :aria-current="listView === view ? 'page' : undefined" @click="listView = view">{{ t(`ux.views.${view}`) }}</button>
+              <button v-for="view in (selectedList.archived || selectedList.template ? ['items', 'settings'] as const : ['items', 'sharing', 'settings'] as const)" :key="view" type="button" :aria-current="listView === view ? 'page' : undefined" @click="switchListView(view)">{{ t(`ux.views.${view}`) }}</button>
             </nav>
             <section v-show="listView === 'settings'" class="list-settings">
               <h4>{{ t('ux.views.settings') }}</h4>
@@ -243,6 +244,7 @@
                 <option value="GROCERY">{{ t('lists.types.GROCERY') }}</option>
                 <option value="CHORE">{{ t('lists.types.CHORE') }}</option>
                 <option value="EVENT">{{ t('lists.types.EVENT') }}</option>
+                <option value="TRIP">{{ t('lists.types.TRIP') }}</option>
               </select></label>
               <label v-if="editListRules.showTargetDate && !selectedList.template">{{ t('lists.targetDate') }}<input
                 v-model="editListForm.targetDate"
@@ -267,7 +269,7 @@
                 <select v-model="publicShareMode" :aria-label="t('sharing.mode')">
                   <option value="VIEW">{{ t('sharing.modes.VIEW') }}</option>
                   <option v-if="selectedList.type === 'WISH'" value="WISH_CLAIM">{{ t('sharing.modes.WISH_CLAIM') }}</option>
-                  <option v-if="selectedList.type !== 'WISH'" value="SIGNUP">{{ t('sharing.modes.SIGNUP') }}</option>
+                  <option v-if="selectedList.type !== 'WISH' && selectedList.type !== 'TRIP'" value="SIGNUP">{{ t('sharing.modes.SIGNUP') }}</option>
                 </select>
                 <button type="button" class="secondary" @click="handleCreatePublicShare">{{ selectedList.publicList ? t('sharing.replacePublic') : t('sharing.createPublic') }}</button>
                 <button v-if="selectedList.publicList" type="button" class="danger subtle" @click="handleRevokePublicShare">{{ t('sharing.revokePublic') }}</button>
@@ -280,6 +282,7 @@
                 <a :href="publicShareUrl(selectedList.shareToken)" target="_blank" rel="noopener noreferrer">{{ t('sharing.openLink') }}</a>
               </div>
               <h5>{{ t('ux.invitePeople') }}</h5>
+              <p v-if="selectedList.type === 'TRIP'" class="muted">{{ t('trip.inviteHelp') }}</p>
               <p class="muted">{{ t('ux.inviteHelp') }}</p>
               <form class="inline-form" @submit.prevent="handleShareList">
                 <input v-model="shareForm.username" :aria-label="t('sharing.username')" :placeholder="t('sharing.username')" required />
@@ -312,7 +315,7 @@
             <form class="inline-form item-composer" @paste="currentItemFields.showImageUrl && handleImagePaste($event, itemForm)" @submit.prevent="handleCreateItem">
               <div class="quick-add">
               <label>{{ t('items.newName') }}<input v-model="itemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" /></label>
-              <label v-if="currentItemFields.showUrl">{{ t('ux.productUrl') }}<input v-model="itemForm.url" type="url" aria-label="URL" placeholder="https://…" /></label>
+              <label v-if="currentItemFields.showUrl">{{ selectedList.type === 'TRIP' ? t('trip.placeUrl') : t('ux.productUrl') }}<input v-model="itemForm.url" type="url" aria-label="URL" placeholder="https://…" /></label>
               <label v-if="currentItemFields.showQuantity">{{ t('items.quantity') }}<input v-model="itemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" /></label>
               <button type="submit">{{ t('items.create') }}</button>
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="openCaptureFromItem">{{ t('capture.reviewLink') }}</button>
@@ -327,9 +330,9 @@
               <button v-if="currentItemFields.showImageUrl && itemForm.imageUrl" type="button" class="secondary subtle" @click="itemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
               <label v-if="currentItemFields.showPrice">{{ t('items.price') }}<input v-model.number="itemForm.price" type="number" min="0" step="0.01" :aria-label="t('items.price')" :placeholder="t('items.price')" /></label>
               <label v-if="currentItemFields.showPrice">{{ t('items.currency') }}<input v-model="itemForm.priceCurrency" :aria-label="t('items.currency')" :placeholder="t('items.currency')" maxlength="3" pattern="[A-Z]{3}" /></label>
-              <label v-if="currentItemFields.showUrl">{{ t('capture.variant') }}<input v-model="itemForm.variantNote" maxlength="255" /></label>
-              <label v-if="currentItemFields.showUrl">{{ t('capture.seller') }}<input v-model="itemForm.seller" maxlength="255" /></label>
-              <label v-if="currentItemFields.showUrl">{{ t('capture.availability') }}<input v-model="itemForm.availability" maxlength="40" /></label>
+              <label v-if="selectedList.type === 'WISH'">{{ t('capture.variant') }}<input v-model="itemForm.variantNote" maxlength="255" /></label>
+              <label v-if="selectedList.type === 'WISH'">{{ t('capture.seller') }}<input v-model="itemForm.seller" maxlength="255" /></label>
+              <label v-if="selectedList.type === 'WISH'">{{ t('capture.availability') }}<input v-model="itemForm.availability" maxlength="40" /></label>
               <label>{{ t('capture.sourceUrl') }}<input v-model="itemForm.sourceUrl" type="url" maxlength="2000" /></label>
               <label v-if="currentItemFields.showCategory">{{ t('items.category') }}<input v-model="itemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" /></label>
               <label v-if="currentItemFields.showDueDate">{{ t('items.dueDate') }}<input v-model="itemForm.dueDate" type="datetime-local" :aria-label="t('items.dueDate')" :placeholder="t('items.dueDate')" /></label>
@@ -422,9 +425,9 @@
                   <label>{{ t('items.description') }}<textarea v-model="editItemForm.description" :aria-label="t('items.description')" :placeholder="t('items.description')"></textarea></label>
                   <input v-if="currentItemFields.showUrl" v-model="editItemForm.url" aria-label="URL" placeholder="URL" />
                   <label v-if="currentItemFields.showImageUrl">{{ t('items.imageUrl') }}<input v-model="editItemForm.imageUrl" :aria-label="t('items.imageUrl')" :placeholder="t('items.imageUrl')" /></label>
-                  <label v-if="currentItemFields.showUrl">{{ t('capture.variant') }}<input v-model="editItemForm.variantNote" maxlength="255" /></label>
-                  <label v-if="currentItemFields.showUrl">{{ t('capture.seller') }}<input v-model="editItemForm.seller" maxlength="255" /></label>
-                  <label v-if="currentItemFields.showUrl">{{ t('capture.availability') }}<input v-model="editItemForm.availability" maxlength="40" /></label>
+                  <label v-if="selectedList.type === 'WISH'">{{ t('capture.variant') }}<input v-model="editItemForm.variantNote" maxlength="255" /></label>
+                  <label v-if="selectedList.type === 'WISH'">{{ t('capture.seller') }}<input v-model="editItemForm.seller" maxlength="255" /></label>
+                  <label v-if="selectedList.type === 'WISH'">{{ t('capture.availability') }}<input v-model="editItemForm.availability" maxlength="40" /></label>
                   <label>{{ t('capture.sourceUrl') }}<input v-model="editItemForm.sourceUrl" type="url" maxlength="2000" /></label>
                   <label v-if="currentItemFields.showImageUrl">{{ t('items.uploadImage') }}<input type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, editItemForm)" /></label>
                   <PrivateImage class="preview" v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" :src="editItemForm.imageUrl" :alt="editItemForm.name || t('items.newName')" />
@@ -444,6 +447,7 @@
                 </form>
                 <span v-else class="item-content" :class="{ 'wish-content': selectedList.type === 'WISH' }">
                   <strong>{{ item.name }}</strong>
+                  <small v-if="selectedList.type === 'TRIP' && item.suggestedBy">{{ t('trip.suggestedBy', { name: item.suggestedBy }) }}</small>
                   <small v-if="item.description">{{ item.description }}</small>
                   <small v-if="selectedList.type === 'WISH' && item.variantNote" class="wish-variant">{{ item.variantNote }}</small>
                   <div v-if="selectedList.type === 'WISH'" class="wish-facts">
@@ -452,7 +456,7 @@
                     <small v-if="item.availability">{{ t('capture.availability') }}: {{ item.availability }}</small>
                     <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
                   </div>
-                  <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ t('items.viewProduct') }}</a>
+                  <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ selectedList.type === 'TRIP' ? t('trip.openPlace') : t('items.viewProduct') }}</a>
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                   <small v-if="item.dueDate">{{ formatDate(item.dueDate) }}</small>
@@ -462,10 +466,10 @@
                   <small v-if="selectedList.type !== 'WISH' && item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
                   <a v-if="item.sourceUrl && !item.url && safeProductUrl(item.sourceUrl)" :href="safeProductUrl(item.sourceUrl)!" target="_blank" rel="noopener noreferrer">{{ t('capture.openSource') }}</a>
                   <span v-if="selectedList.type === 'WISH'" class="wish-state">{{ t(`items.statuses.${item.status}`) }}</span>
-                  <small v-else>{{ t(`items.statuses.${item.status}`) }}<template v-if="item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ formatDate(item.lastCompletedAt) }}</template></small>
+                  <small v-else>{{ selectedList.type === 'TRIP' && item.status === 'DONE' ? t('trip.visited') : t(`items.statuses.${item.status}`) }}<template v-if="item.price != null"> · {{ formatPrice(item.price, item.priceCurrency) }}</template><template v-if="item.lastCompletedAt"> · {{ t('items.lastCompleted') }} {{ formatDate(item.lastCompletedAt) }}</template></small>
                 </span>
-                <button v-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" :aria-label="`${t('items.done')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.done') }}</button>
-                <button v-else-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" :aria-label="`${t('items.reopen')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ t('items.reopen') }}</button>
+                <button v-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'OPEN' && selectedList.type !== 'WISH'" type="button" class="secondary subtle" :aria-label="`${selectedList.type === 'TRIP' ? t('trip.markVisited') : t('items.done')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ selectedList.type === 'TRIP' ? t('trip.markVisited') : t('items.done') }}</button>
+                <button v-else-if="!selectedList.archived && !selectedList.template && (selectedList.access === 'OWNER' || selectedList.access === 'CONTRIBUTE') && item.status === 'DONE'" type="button" class="secondary subtle" :aria-label="`${selectedList.type === 'TRIP' ? t('trip.reopenPlace') : t('items.reopen')}: ${item.name}`" @click="handleToggleItemDone(item)">{{ selectedList.type === 'TRIP' ? t('trip.reopenPlace') : t('items.reopen') }}</button>
                 <button v-if="!selectedList.archived && !selectedList.template && selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status !== 'PURCHASED'" type="button" class="secondary subtle" :aria-label="`${t('items.markPurchased')}: ${item.name}`" @click="handleSetWishStatus(item, 'PURCHASED')">{{ t('items.markPurchased') }}</button>
                 <button v-if="!selectedList.archived && !selectedList.template && selectedList.access === 'OWNER' && item.status === 'CLAIMED'" type="button" class="secondary subtle" @click="handleReleaseOwnedClaim(item)">{{ t('capture.releaseClaim') }}</button>
                 <button v-else-if="!selectedList.archived && !selectedList.template && selectedList.access === 'OWNER' && selectedList.type === 'WISH' && item.status === 'PURCHASED'" type="button" class="secondary subtle" :aria-label="`${t('items.reopenWish')}: ${item.name}`" @click="handleSetWishStatus(item, 'OPEN')">{{ t('items.reopenWish') }}</button>
@@ -581,6 +585,11 @@ const savingTemplate = ref(false);
 const templateTitle = ref('');
 const undoAction = ref<{ label: string; restore: () => Promise<void> } | null>(null);
 const listView = ref<'items' | 'sharing' | 'settings'>('items');
+
+function switchListView(view: 'items' | 'sharing' | 'settings') {
+  listView.value = view;
+  if (view === 'items' && selectedList.value) void run(() => loadItems(selectedList.value!.id), false);
+}
 const listQuery = ref('');
 const newListDisclosure = ref<HTMLDetailsElement | null>(null);
 const itemDetailsDisclosure = ref<HTMLDetailsElement | null>(null);
@@ -881,6 +890,7 @@ async function selectList(list: ListEntry) {
   window.clearTimeout(importPoll);
   importPollDeadline = Date.now() + 120_000;
   selectedList.value = list;
+  shareForm.permission = list.type === 'TRIP' ? 'CONTRIBUTE' : 'READ';
   try { if (!list.template && !list.archived) localStorage.setItem(`listful:last-list:${currentUser.value?.id}`, list.id); } catch { /* Navigation also works without browser storage. */ }
   publicShareMode.value = list.publicShareMode ?? (list.type === 'WISH' ? 'WISH_CLAIM' : 'VIEW');
   editingList.value = false;
@@ -1157,7 +1167,7 @@ async function handleShareList() {
   await run(async () => {
     const share = await shareListWithUser(selectedList.value!.id, { username: shareForm.username, permission: shareForm.permission });
     shareForm.username = '';
-    shareForm.permission = 'READ';
+    shareForm.permission = selectedList.value!.type === 'TRIP' ? 'CONTRIBUTE' : 'READ';
     shares.value = [share, ...shares.value.filter((existing) => existing.userId !== share.userId)];
     message.value = t('sharing.accessGranted', { username: share.username });
   });
@@ -1288,7 +1298,7 @@ function handleImageFileInput(event: Event, form: ImageForm) {
 
 async function handleCreateItem() {
   if (!selectedList.value) return;
-  if (selectedList.value.type === 'WISH' && itemForm.url.trim()) {
+  if ((selectedList.value.type === 'WISH' || selectedList.value.type === 'TRIP') && itemForm.url.trim()) {
     openCaptureFromItem();
     return;
   }
@@ -1301,9 +1311,9 @@ async function handleCreateItem() {
       imageUrl: fields.showImageUrl ? itemForm.imageUrl || undefined : undefined,
       price: fields.showPrice ? itemForm.price : undefined,
       priceCurrency: fields.showPrice ? itemForm.priceCurrency || undefined : undefined,
-      variantNote: fields.showUrl ? itemForm.variantNote || undefined : undefined,
-      seller: fields.showUrl ? itemForm.seller || undefined : undefined,
-      availability: fields.showUrl ? itemForm.availability || undefined : undefined,
+      variantNote: selectedList.value!.type === 'WISH' ? itemForm.variantNote || undefined : undefined,
+      seller: selectedList.value!.type === 'WISH' ? itemForm.seller || undefined : undefined,
+      availability: selectedList.value!.type === 'WISH' ? itemForm.availability || undefined : undefined,
       sourceUrl: itemForm.sourceUrl || (fields.showUrl ? itemForm.url || undefined : undefined),
       dueDate: fields.showDueDate ? toIsoInstant(itemForm.dueDate) : undefined,
       recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined,
@@ -1418,9 +1428,9 @@ function itemPayloadFromEditForm(status: ItemEntry['status']) {
     imageUrl: fields.showImageUrl ? editItemForm.imageUrl || undefined : undefined,
     price: fields.showPrice ? editItemForm.price : undefined,
     priceCurrency: fields.showPrice ? editItemForm.priceCurrency || undefined : undefined,
-    variantNote: fields.showUrl ? editItemForm.variantNote || undefined : undefined,
-    seller: fields.showUrl ? editItemForm.seller || undefined : undefined,
-    availability: fields.showUrl ? editItemForm.availability || undefined : undefined,
+    variantNote: selectedList.value?.type === 'WISH' ? editItemForm.variantNote || undefined : undefined,
+    seller: selectedList.value?.type === 'WISH' ? editItemForm.seller || undefined : undefined,
+    availability: selectedList.value?.type === 'WISH' ? editItemForm.availability || undefined : undefined,
     sourceUrl: editItemForm.sourceUrl || undefined,
     status,
     dueDate: fields.showDueDate ? toIsoInstant(editItemForm.dueDate) : undefined,
