@@ -36,19 +36,20 @@ Regenerate the static images with `cd frontend && npm run docs:screenshots`, and
 
 ## Release and branch status
 
-The private Alice Tailnet instance runs merged commit `ea97030` at schema **V18**. It includes 14-day recoverable Trash, 56-day public links, account and ownership handoffs, reviewed website capture, richer wishlist details, and guest reservation controls. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified image, migration, and database backup. Rolling back to a V17 image requires its matching pre-V18 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
+The private Alice Tailnet instance runs merged commit `150f4ea` at schema **V20**. It includes 14-day recoverable Trash, 56-day public links, account and ownership handoffs, reviewed website capture, richer wishlist details, guest reservation controls, and city-trip/location maps. The [Alice deployment record](docs/deployment/alice-tailnet.md) documents the verified image, migration, and database backup. Rolling back to its V18 image requires the matching pre-V20 database backup. See the [current state and risk register](docs/current-state-and-risk-register.md).
 
 The [RC3 GitHub prerelease](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) is public. Its [tag workflow](https://github.com/utrost/Listful-Thinking/actions/runs/39059482487) passed all gates and published a signed amd64/arm64 image at `sha256:c16ef4edd27a6ff367e84ef8451d6d7a00ce10d644259939887b2a786ecbe743`. The [RC3 notes](docs/releases/0.2.0-rc.3.md) cover changes and limits. Features merged after this tag, including the desktop bookmarklet, are available from source until the next image release.
 
 ## What it does
 
-- **Typed lists:** create `WISH`, `TODO`, `GROCERY`, `CHORE`, and `EVENT` lists with type-specific fields and validation.
+- **Typed lists:** create `WISH`, `TODO`, `GROCERY`, `CHORE`, `EVENT`, `TRIP`, and `LOCATION` lists with type-specific fields and validation.
 - **Private by default:** users see their own lists unless another user shares a list with them.
 - **Registered-user collaboration:** list owners can share read-only or contributor access with another local account. Contributors can add and update items; owners keep destructive/list-management control.
 - **Account and ownership handoffs:** admins can issue one-time setup/recovery links, users can change passwords, owners can transfer lists to active users, and admins can transfer lists from inactive accounts without browsing private content.
 - **Public guest sharing:** owners can create public links with modes for read-only viewing, wishlist claiming, or signup-style participation.
 - **Website capture:** paste an HTTP(S) page, review product/recipe/event/how-to suggestions, then save wishes, grocery lines, dated event plans, or tasks. Wishlist entries keep exact variants, seller, availability, source, and price-check time. A possible duplicate is flagged before saving.
 - **Shared city trips (current source):** create a City trip list, invite friends by account name with Can contribute access, and collect places from reviewed website links. Each place keeps its source link, optional image and note, and the contributor's account name. Matching links receive a duplicate warning. Trip contributions require accounts; public trip links only allow viewing.
+- **Location maps (current source):** city-trip and locations lists accept reviewed addresses and coordinates from supported websites, plus manual edits. List and map views use OpenStreetMap tiles on demand. Public share links expose the exact addresses and pins to anyone with the link.
 - **Guest reservation control:** claimants can correct their name or release a reservation from the same browser; an owner can release a mistaken claim. Wishlist owners and other guests do not see the claimant's name.
 - **Grocery/shop mode:** use quantity/category fields, group by category, hide completed items, and clear completed grocery items after shopping.
 - **Chores and events:** use due dates, simple recurrence for chores, skip/postpone actions, target dates for events, and owner/helper labels for coordination.

@@ -4,7 +4,15 @@ This document records the current private deployment contract for the Listful Th
 
 The Alice instance is a private Tailnet MVP deployment, not a public-internet production profile.
 
-## Latest deployment — reviewed website capture, 2026-10-17
+## Latest deployment — locations and maps, 2026-10-24
+
+Merged `main` commit `150f4ea` (PR [#70](https://github.com/utrost/Listful-Thinking/pull/70)) is deployed as `listful-thinking:alice`, also tagged `listful-thinking:locations-20261024-150f4ea`. Image ID: `sha256:04290cf68b553a57a7494ce560400b8ffa33e4ac5d0f199421a8cd100e7b0cbe`. This adds `LOCATION` lists, addresses and coordinates for city-trip places, reviewed address extraction from websites, and OpenStreetMap list/map views. An anonymous public link to a city-trip or locations list exposes its exact addresses and map pins; the Sharing screen warns owners before they enable that access.
+
+All seven [PR CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/40098428157) passed, including the strict dependency and container scans, backend and frontend suites, container smoke, contract checks, and desktop/mobile Playwright GUI smoke. The deployed image passed a second isolated migration preflight after merge. A stopped-container backup was taken at cutover. The live database migrated from V18 to V20; a consistent post-deployment snapshot passed SQLite integrity and foreign-key checks and retained the original 1 user, 1 list, 3 items, and 0 shares by identity. Readiness, image ID, UID 1000, restart policy, persistent volume, Tailnet-only port binding, frontend assets, anonymous map configuration, and read-only desktop/mobile Chromium login pages passed. The browser checks did not create live data.
+
+Private preflight, cutover, and post-deployment records are in `data/deployments/20261024T132550Z-locations-v20/`. The cutover backup is `alice-cutover-pre-v20.sqlite`; the V20 verification snapshot is `alice-post-v20.sqlite`. The previous container is retained stopped as `listful-thinking-alice-pre-v20-20261024T133640Z`, with restart disabled. To roll back to V18, preserve any data created since cutover, stop and remove the V20 container, restore the cutover V18 database snapshot to the volume, and start the previous container. Do not run the V18 image against the V20 database.
+
+## Previous deployment — reviewed website capture, 2026-10-17
 
 Merged `main` commit `ea97030` (PR #53) is deployed from `listful-thinking:web-capture-3737973`; the same image is tagged `listful-thinking:web-capture-20261017-ea97030` and `listful-thinking:alice`. Its ID is `sha256:224ce4e3ec395f78ba8947e67810300f0fa469090fce30d43f09de3fca7d0106`. It adds reviewed product/recipe/event/how-to capture, wishlist product details, and guest claim controls. All six PR and [merged-main CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014873586) passed, including strict dependency scanning and desktop/mobile Playwright smoke.
 

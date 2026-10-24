@@ -1,10 +1,10 @@
 # Current State and Risk Register
 
-Last updated: 2026-10-17. Alice runs merged `main` code commit `ea97030` (PR #53) at schema V18. See the [verified deployment record](deployment/alice-tailnet.md).
+Last updated: 2026-10-24. Alice runs merged `main` code commit `150f4ea` (PR #70) at schema V20. See the [verified deployment record](deployment/alice-tailnet.md).
 
 ## RC3 public self-hosting candidate
 
-RC3 adds a first-admin setup code, public-hosting startup checks, a Caddy HTTPS Compose profile with trusted forwarding headers, resource limits, a bounded scraper, a verified live backup and upgrade path, AGPL-3.0 licensing with a source-code offer, and a strict container scan plus signed multiarch image release workflow. Alice remains a separate private Tailnet deployment. The public profile has a [dedicated operator runbook](deployment/public-self-hosting.md). The [tag workflow](https://github.com/utrost/Listful-Thinking/actions/runs/39059482487) passed every gate, the public image digest is recorded in the runbook, and the [GitHub prerelease](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) includes a checksummed source archive. The current source branch adds a desktop capture bookmarklet after RC3; it will need another image release before RC3 users see it.
+RC3 adds a first-admin setup code, public-hosting startup checks, a Caddy HTTPS Compose profile with trusted forwarding headers, resource limits, a bounded scraper, a verified live backup and upgrade path, AGPL-3.0 licensing with a source-code offer, and a strict container scan plus signed multiarch image release workflow. Alice remains a separate private Tailnet deployment. The public profile has a [dedicated operator runbook](deployment/public-self-hosting.md). The [tag workflow](https://github.com/utrost/Listful-Thinking/actions/runs/39059482487) passed every gate, the public image digest is recorded in the runbook, and the [GitHub prerelease](https://github.com/utrost/Listful-Thinking/releases/tag/v0.2.0-rc.3) includes a checksummed source archive. Newer features on `main`, including the desktop capture bookmarklet and location maps, need another image release before RC3 users see them.
 
 V18 adds reviewed website capture, structured event source/location, wishlist product details and guest claim controls. All six PR CI jobs passed, an isolated copy of Alice's database migrated cleanly, and the live V18 deployment passed data and browser checks. The mobile Web Share Target remains a later HTTPS/installability task.
 
@@ -16,7 +16,7 @@ Website capture remains best-effort. MUJI redirected the tested English URL to a
 
 ## Current release since RC2
 
-Migration V17 gives links active at upgrade 56 days from that upgrade because their original creation dates were not recorded. New links expire 56 days after creation; every guest read and claim checks expiry. Deleted lists, templates and items remain recoverable for 14 days, then a daily cleanup permanently removes them. Backups can retain older copies and require a separate operator retention policy. V17's retention behavior remains in the V18 deployment.
+Migration V17 gives links active at upgrade 56 days from that upgrade because their original creation dates were not recorded. New links expire 56 days after creation; every guest read and claim checks expiry. Deleted lists, templates and items remain recoverable for 14 days, then a daily cleanup permanently removes them. Backups can retain older copies and require a separate operator retention policy. This retention behavior remains in the V20 deployment.
 
 Account and sharing work adds 24-hour one-time admin setup/recovery links, signed-in password change, in-app notifications for share changes, owner transfer to an active account, and audited admin transfer from an inactive owner to a different active account. Admin transfer includes archives, templates and Trash but does not expose private titles or content to the admin. The current user/admin and handoff journeys have desktop/mobile Playwright coverage.
 
@@ -48,12 +48,12 @@ Alice remains a family/private Tailnet deployment. The RC3 public-internet profi
 
 ## Implemented product surface
 
-The Alice V18 deployment includes:
+The Alice V20 deployment includes:
 
 - Session authentication with first-user admin bootstrap.
 - Admin registration toggle, user listing, user creation, and user activation/deactivation.
 - Admin-created accounts with one-time setup links, link reissue for account recovery without email, and signed-in password change.
-- Typed lists: `WISH`, `TODO`, `GROCERY`, `CHORE`, `EVENT`.
+- Typed lists: `WISH`, `TODO`, `GROCERY`, `CHORE`, `EVENT`, `TRIP`, `LOCATION`.
 - Owner list/item CRUD with type-specific validation.
 - Internal sharing with `READ` and `CONTRIBUTE` permissions.
 - In-app share/update/revocation notifications, list-owner transfer, and inactive-owner admin handoff with audit records.
@@ -66,6 +66,7 @@ The Alice V18 deployment includes:
 - Item search/filter/sort/review helpers in the frontend.
 - URL metadata preview and async wishlist URL enrichment.
 - Reviewed product, recipe, event, and how-to website capture with source-linked snapshots and editable drafts.
+- Reviewed place capture with address and coordinates when a supported page provides them; city-trip and locations list/map views use OpenStreetMap tiles on demand. Public links to these lists expose exact addresses and pins.
 - Wishlist variant, seller, availability, and price-check details; guest claim correction/release controls.
 - Due-date reminders with SMTP-or-in-app fallback and owner-scoped notifications.
 - Grocery quantity/category fields and clear-completed workflow.
@@ -109,11 +110,11 @@ These are known and intentionally documented:
 
 Latest verified gates:
 
-- [All six PR CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014653891) and [all six merged-main CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014873586) passed, including backend, frontend, contracts, container smoke, strict dependency scan, and desktop/mobile Playwright smoke with capture journeys.
-- Alice runs image `sha256:224ce4e3ec395f78ba8947e67810300f0fa469090fce30d43f09de3fca7d0106`. Live readiness, Tailnet-only binding, UID 1000, preserved application settings, V18 frontend asset, and desktop/mobile Chromium login pages passed. Pre/post deployment SQLite copies passed integrity and foreign-key checks; isolated and live migrations preserved 1 user, 1 list, and 3 items and verified V18 columns.
+- Alice runs image `sha256:04290cf68b553a57a7494ce560400b8ffa33e4ac5d0f199421a8cd100e7b0cbe`. Live readiness, Tailnet-only binding, UID 1000, preserved application settings, V20 frontend assets, and desktop/mobile Chromium login pages passed. Pre/post deployment SQLite copies passed integrity and foreign-key checks; isolated and live migrations preserved the original 1 user, 1 list, 3 items, and 0 shares. [All seven PR CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/40098428157) passed.
 
 Earlier implementation evidence (historical):
 
+- [All six V18 PR CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014653891) and [all six V18 merged-main CI jobs](https://github.com/utrost/Listful-Thinking/actions/runs/39014873586) passed, including backend, frontend, contracts, container smoke, strict dependency scan, and desktop/mobile Playwright smoke with capture journeys.
 - GitHub Actions run `35335975768` passed on merged `main` commit `28349f7` for the responsibility-label list-type contract fix.
 - GitHub Actions run `35258643915` passed on merged `main` commit `f8920ab`, and GitHub Actions Node 20/runtime deprecation warnings were removed by upgrading official action majors.
 - Focused backend audit tests passed locally with `mvn -q -Dtest=AdminUsersControllerTests,AdminSettingsControllerTests,PublicShareTests test`.
