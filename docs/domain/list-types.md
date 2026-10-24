@@ -195,20 +195,35 @@ Relevant item fields:
 - `name` for the place, `description` for a personal note, optional `category`
 - `url`, `source_url`, and `image_url` from a reviewed website or manual entry
 - `suggested_by_name`, set by the server from the account that created the item
+- optional `address`, `latitude`, and `longitude` for a reviewed map pin
 - `status` (`OPEN` or `DONE`; `DONE` can mean visited)
 
 UI behavior:
 
-- Pasting a place URL into a trip list opens website review with that list selected. The contributor checks the suggested title, note, and image before saving one place.
+- Pasting a place URL into a trip list opens website review with that list selected. The contributor checks the suggested title, note, address, coordinates, and image before saving one place.
 - A matching normalized source URL produces an advisory duplicate warning.
-- Items show who suggested them and link back to the place page. The owner can invite registered contributors; read-only members can browse but cannot add places.
+- Items show who suggested them and link back to the place page. Map view plots places with coordinates; places without them remain in List view. The owner can invite registered contributors; read-only members can browse but cannot add places.
 - Public links are view-only; guest signup and account-free contributions are unavailable for trip lists.
 
 MVP rules:
 
 - Trip lists have no required date. Use an `EVENT` list for dated plans and preparation tasks.
 - Product price, seller, availability, quantity, due date, recurrence, and responsibility fields are rejected for trip items.
-- There is no map, route optimization, voting, schedule, or automatic page synchronization in this first flow.
+- There is no route optimization, voting, schedule, address geocoding, or automatic page synchronization.
+
+## LOCATION
+
+Purpose:
+
+- A personal or shared collection of places that does not need a trip itinerary.
+- Uses the same reviewed website capture, address, coordinates, map, duplicate warning, and contributor attribution as `TRIP`.
+
+Rules:
+
+- `address` is at most 500 characters. Latitude and longitude must be supplied together, be finite, and fall within ±90 and ±180 degrees.
+- Product prices and seller fields, due dates, recurrence, quantity, and responsibility fields are rejected. Category is allowed.
+- Public links are view-only; registered contributors can add and edit places when granted `CONTRIBUTE` access.
+- Map tiles load only after a member opens Map. Address-only places are not geocoded or pinned automatically.
 
 ## Shared validation principles
 

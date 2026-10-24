@@ -26,15 +26,24 @@ public record ItemRequest(
     @Size(max = 255) String variantNote,
     @Size(max = 255) String seller,
     @Size(max = 40) String availability,
-    @Size(max = 2000) String sourceUrl
+    @Size(max = 2000) String sourceUrl,
+    @Size(max = 500) String address,
+    Double latitude,
+    Double longitude
 ) {
     public ItemRequest(String name, String description, String url, String imageUrl, BigDecimal price,
             ItemStatus status, Instant dueDate, String recurrenceRule, String quantity, String category,
             String ownerLabel, String assistantLabels, String priceCurrency) {
         this(name, description, url, imageUrl, price, status, dueDate, recurrenceRule, quantity, category,
-            ownerLabel, assistantLabels, priceCurrency, null, null, null, null);
+            ownerLabel, assistantLabels, priceCurrency, null, null, null, null, null, null, null);
     }
     public static final int MAX_IMAGE_URL_LENGTH = 2_000;
+    @AssertTrue(message = "latitude and longitude must be supplied together and be valid coordinates")
+    public boolean isLocationValid() {
+        if (latitude == null || longitude == null) return latitude == null && longitude == null;
+        return Double.isFinite(latitude) && Double.isFinite(longitude)
+            && latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+    }
     public static final int MAX_IMAGE_DATA_URL_LENGTH = 5_000_000;
     private static final Set<String> ALLOWED_IMAGE_DATA_MIME_TYPES = Set.of(
         "image/png", "image/jpeg", "image/webp", "image/gif"

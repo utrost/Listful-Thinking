@@ -45,9 +45,11 @@ Use one consistent timestamp representation across migrations/entities/API. Reco
 - `auth_tokens`
 - `security_events`
 
-Flyway has reached V18 in the repository. V14 adds item revisions, notification delivery keys, and audit-path redaction; V15 adds archive/template/Trash state; V16 adds session/token versions; V17 adds public-link expiry. V18 adds item source/product metadata and hashed guest-claim control tokens, plus list source URL/event location. New account setup and ownership handoff features reuse these tables.
+Flyway has reached V20 in the source repository. V14 adds item revisions, notification delivery keys, and audit-path redaction; V15 adds archive/template/Trash state; V16 adds session/token versions; V17 adds public-link expiry. V18 adds item source/product metadata and hashed guest-claim control tokens, plus list source URL/event location. V19 adds `TRIP` lists and contributor attribution. V20 adds `LOCATION` lists and item address/coordinate columns. New account setup and ownership handoff features reuse these tables.
 
 V18 adds nullable `variant_note`, `seller`, `availability`, `price_checked_at`, `source_url`, and `claim_token_hash` to `items`, plus `source_url` and `event_location` to `lists`. The migration does not backfill these values for existing records. The raw guest claim-control token is never stored in SQLite. Alice runs V18 after a verified backup and isolated migration preflight.
+
+V20 adds nullable `address`, `latitude`, and `longitude` to `items` and extends the `lists.type` check to `LOCATION`. It does not geocode or backfill existing trip places. Coordinates are stored only after a contributor reviews or enters them. Back up a V19 database before upgrading a running instance to a V20 build; an older image cannot open the V20 schema safely without a tested rollback restore.
 
 ## Indexing principles
 

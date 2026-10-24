@@ -56,7 +56,7 @@ public class ItemService {
         validateForListType(list, request);
         String itemName = itemNameFor(request);
         Item item = new Item(list, itemName, Instant.now());
-        if (list.getType() == ListType.TRIP) item.setSuggestedByName(actor.getUsername());
+        if (isPlacesList(list.getType())) item.setSuggestedByName(actor.getUsername());
         item.update(itemName, request.description(), request.url(), request.imageUrl(), request.price(), request.status(), request.dueDate(), request.recurrenceRule(), request.quantity(), request.category(), trimmedOrNull(request.ownerLabel()), trimmedOrNull(request.assistantLabels()));
         item.setPriceCurrency(request.priceCurrency());
         applyCaptureFields(item, request);
@@ -208,8 +208,8 @@ public class ItemService {
         if (!hasText(request.name()) && !isWishUrlOnlyCandidate(list, request)) {
             throw new ValidationFailedException("Item name is required.");
         }
-        if ((listType == ListType.TRIP && hasPriceOrProductFields(request))
-                || (listType != ListType.WISH && listType != ListType.TRIP && hasShoppingFields(request))) {
+        if ((isPlacesList(listType) && hasPriceOrProductFields(request))
+                || (listType != ListType.WISH && !isPlacesList(listType) && hasShoppingFields(request))) {
             throw new ValidationFailedException("Shopping fields are only allowed on wish lists.");
         }
         if (listType != ListType.CHORE && hasText(request.recurrenceRule())) {
@@ -218,14 +218,17 @@ public class ItemService {
         if (listType == ListType.CHORE && hasText(request.recurrenceRule()) && !isSupportedRecurrence(request.recurrenceRule())) {
             throw unsupportedRecurrenceRule();
         }
-        if ((listType != ListType.GROCERY && hasText(request.quantity())) || (listType != ListType.GROCERY && listType != ListType.TRIP && hasText(request.category()))) {
+        if ((listType != ListType.GROCERY && hasText(request.quantity())) || (listType != ListType.GROCERY && !isPlacesList(listType) && hasText(request.category()))) {
             throw new ValidationFailedException("Quantity is only allowed on grocery items; category is allowed on grocery and trip items.");
         }
         if (!supportsResponsibilityFields(listType) && hasResponsibilityFields(request)) {
             throw new ValidationFailedException("Responsibility labels are only allowed on to-do, chore, and event items.");
         }
-        if ((listType == ListType.GROCERY || listType == ListType.TRIP) && request.dueDate() != null) {
+        if ((listType == ListType.GROCERY || isPlacesList(listType)) && request.dueDate() != null) {
             throw new ValidationFailedException("Due dates are only allowed on to-do, chore, and event items.");
+        }
+        if (!isPlacesList(listType) && (hasText(request.address()) || request.latitude() != null || request.longitude() != null)) {
+            throw new ValidationFailedException("Locations are only allowed on city trip and locations lists.");
         }
         if (listType == ListType.WISH && request.status() == ItemStatus.DONE) {
             throw new ValidationFailedException("Done status is only allowed on to-do, grocery, chore, and event items.");
@@ -286,6 +289,13 @@ public class ItemService {
         item.setSeller(trimmedOrNull(request.seller()));
         item.setAvailability(trimmedOrNull(request.availability()));
         item.setSourceUrl(trimmedOrNull(request.sourceUrl()));
+        item.setAddress(trimmedOrNull(request.address()));
+        item.setLatitude(request.latitude());
+        item.setLongitude(request.longitude());
+    }
+
+    private boolean isPlacesList(ListType type) {
+        return type == ListType.TRIP || type == ListType.LOCATION;
     }
 
     private boolean hasResponsibilityFields(ItemRequest request) {
@@ -376,7 +386,8 @@ public class ItemService {
             item.getAvailability(),
             item.getPriceCheckedAt() == null ? null : item.getPriceCheckedAt().toString(),
             item.getSourceUrl(),
-            item.getList().getType() == ListType.TRIP ? item.getSuggestedByName() : null
+            isPlacesList(item.getList().getType()) ? item.getSuggestedByName() : null,
+            item.getAddress(), item.getLatitude(), item.getLongitude()
         );
     }
 }

@@ -55,7 +55,7 @@ export async function bootstrapOrLoginAdmin(page: Page) {
   await expect(page.locator('.admin-panel')).toBeHidden();
 }
 
-export async function createList(page: Page, title: string, type: 'WISH' | 'GROCERY' | 'TODO' | 'CHORE' | 'EVENT' | 'TRIP') {
+export async function createList(page: Page, title: string, type: 'WISH' | 'GROCERY' | 'TODO' | 'CHORE' | 'EVENT' | 'TRIP' | 'LOCATION') {
   await page.locator('.new-list-disclosure > summary').click();
   await page.getByPlaceholder('New list title').fill(title);
   await page.locator('form.inline-form').filter({ has: page.getByPlaceholder('New list title') }).getByRole('combobox').selectOption(type);

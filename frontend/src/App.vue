@@ -170,6 +170,7 @@
             <option value="CHORE">{{ t('lists.types.CHORE') }}</option>
             <option value="EVENT">{{ t('lists.types.EVENT') }}</option>
             <option value="TRIP">{{ t('lists.types.TRIP') }}</option>
+            <option value="LOCATION">{{ t('lists.types.LOCATION') }}</option>
           </select></label>
           <label v-if="newListRules.showTargetDate">{{ t('lists.targetDate') }}<input
             v-model="listForm.targetDate"
@@ -245,6 +246,7 @@
                 <option value="CHORE">{{ t('lists.types.CHORE') }}</option>
                 <option value="EVENT">{{ t('lists.types.EVENT') }}</option>
                 <option value="TRIP">{{ t('lists.types.TRIP') }}</option>
+                <option value="LOCATION">{{ t('lists.types.LOCATION') }}</option>
               </select></label>
               <label v-if="editListRules.showTargetDate && !selectedList.template">{{ t('lists.targetDate') }}<input
                 v-model="editListForm.targetDate"
@@ -269,7 +271,7 @@
                 <select v-model="publicShareMode" :aria-label="t('sharing.mode')">
                   <option value="VIEW">{{ t('sharing.modes.VIEW') }}</option>
                   <option v-if="selectedList.type === 'WISH'" value="WISH_CLAIM">{{ t('sharing.modes.WISH_CLAIM') }}</option>
-                  <option v-if="selectedList.type !== 'WISH' && selectedList.type !== 'TRIP'" value="SIGNUP">{{ t('sharing.modes.SIGNUP') }}</option>
+                  <option v-if="selectedList.type !== 'WISH' && selectedList.type !== 'TRIP' && selectedList.type !== 'LOCATION'" value="SIGNUP">{{ t('sharing.modes.SIGNUP') }}</option>
                 </select>
                 <button type="button" class="secondary" @click="handleCreatePublicShare">{{ selectedList.publicList ? t('sharing.replacePublic') : t('sharing.createPublic') }}</button>
                 <button v-if="selectedList.publicList" type="button" class="danger subtle" @click="handleRevokePublicShare">{{ t('sharing.revokePublic') }}</button>
@@ -315,7 +317,7 @@
             <form class="inline-form item-composer" @paste="currentItemFields.showImageUrl && handleImagePaste($event, itemForm)" @submit.prevent="handleCreateItem">
               <div class="quick-add">
               <label>{{ t('items.newName') }}<input v-model="itemForm.name" :aria-label="t('items.newName')" :placeholder="t('items.newName')" :required="!currentItemFields.showUrl || !itemForm.url" /></label>
-              <label v-if="currentItemFields.showUrl">{{ selectedList.type === 'TRIP' ? t('trip.placeUrl') : t('ux.productUrl') }}<input v-model="itemForm.url" type="url" aria-label="URL" placeholder="https://…" /></label>
+              <label v-if="currentItemFields.showUrl">{{ selectedList.type === 'TRIP' || selectedList.type === 'LOCATION' ? t('trip.placeUrl') : t('ux.productUrl') }}<input v-model="itemForm.url" type="url" aria-label="URL" placeholder="https://…" /></label>
               <label v-if="currentItemFields.showQuantity">{{ t('items.quantity') }}<input v-model="itemForm.quantity" :aria-label="t('items.quantity')" :placeholder="t('items.quantity')" /></label>
               <button type="submit">{{ t('items.create') }}</button>
               <button v-if="currentItemFields.showUrl" type="button" class="secondary" @click="openCaptureFromItem">{{ t('capture.reviewLink') }}</button>
@@ -334,6 +336,11 @@
               <label v-if="selectedList.type === 'WISH'">{{ t('capture.seller') }}<input v-model="itemForm.seller" maxlength="255" /></label>
               <label v-if="selectedList.type === 'WISH'">{{ t('capture.availability') }}<input v-model="itemForm.availability" maxlength="40" /></label>
               <label>{{ t('capture.sourceUrl') }}<input v-model="itemForm.sourceUrl" type="url" maxlength="2000" /></label>
+              <template v-if="selectedList.type === 'TRIP' || selectedList.type === 'LOCATION'">
+                <label>{{ t('locations.address') }}<input v-model="itemForm.address" maxlength="500" /></label>
+                <label>{{ t('locations.latitude') }}<input v-model="itemForm.latitude" type="number" min="-90" max="90" step="any" /></label>
+                <label>{{ t('locations.longitude') }}<input v-model="itemForm.longitude" type="number" min="-180" max="180" step="any" /></label>
+              </template>
               <label v-if="currentItemFields.showCategory">{{ t('items.category') }}<input v-model="itemForm.category" :aria-label="t('items.category')" :placeholder="t('items.category')" /></label>
               <label v-if="currentItemFields.showDueDate">{{ t('items.dueDate') }}<input v-model="itemForm.dueDate" type="datetime-local" :aria-label="t('items.dueDate')" :placeholder="t('items.dueDate')" /></label>
               <label v-if="currentItemFields.showResponsibility">{{ t('items.ownerLabel') }}<input v-model="itemForm.ownerLabel" :aria-label="t('items.ownerLabel')" :placeholder="t('items.ownerLabel')" /></label>
@@ -346,6 +353,12 @@
             </form>
             </details>
 
+            <div v-if="selectedList.type === 'TRIP' || selectedList.type === 'LOCATION'" class="button-row location-view-toggle" role="group" :aria-label="t('locations.view')">
+              <button type="button" :class="showLocationMap ? 'secondary subtle' : ''" :aria-pressed="!showLocationMap" @click="showLocationMap = false">{{ t('locations.list') }}</button>
+              <button type="button" :class="showLocationMap ? '' : 'secondary subtle'" :aria-pressed="showLocationMap" @click="showLocationMap = true">{{ t('locations.map') }}</button>
+            </div>
+            <LocationMap v-if="showLocationMap && (selectedList.type === 'TRIP' || selectedList.type === 'LOCATION')" :items="items" />
+
             <div v-if="selectedList.type === 'GROCERY' && !selectedList.archived && !selectedList.template && items.some(item => item.status === 'DONE' || item.status === 'PURCHASED')" class="button-row shop-controls">
               <label class="toggle-row">
                 <input v-model="hideCompletedGroceries" type="checkbox" />
@@ -354,7 +367,7 @@
               <button v-if="selectedList.access === 'OWNER'" type="button" class="danger subtle" @click="handleClearCompletedGroceries">{{ t('items.clearCompleted') }}</button>
             </div>
 
-            <section class="item-review-controls" :class="{ 'mobile-review-open': mobileReviewOpen }" :aria-label="t('items.reviewControlsLabel')">
+            <section v-show="!showLocationMap" class="item-review-controls" :class="{ 'mobile-review-open': mobileReviewOpen }" :aria-label="t('items.reviewControlsLabel')">
               <button type="button" class="secondary subtle mobile-review-toggle" :aria-expanded="mobileReviewOpen" @click="mobileReviewOpen = !mobileReviewOpen">{{ t('ux.searchFilter') }}</button>
               <label>{{ t('items.search') }}<input v-model="itemReviewForm.query" type="search" :placeholder="t('items.searchPlaceholder')" /></label>
               <details class="filter-options"><summary>{{ t('ux.filterSort') }}</summary><div class="filter-fields">
@@ -379,8 +392,8 @@
               </label>
               </div></details>
             </section>
-            <section v-if="!items.length" class="empty-state"><h4>{{ t('ux.emptyItems') }}</h4><p>{{ t(selectedList.access === 'READ' ? 'ux.emptyReadOnly' : 'ux.emptyItemsHelp') }}</p></section>
-            <section v-else-if="!displayedItems.length" class="empty-state"><h4>{{ t('ux.noResults') }}</h4><p>{{ t('ux.noResultsHelp') }}</p><button type="button" class="secondary" @click="resetItemReviewForm(); hideCompletedGroceries = false">{{ t('ux.resetFilters') }}</button></section>
+            <section v-if="!showLocationMap && !items.length" class="empty-state"><h4>{{ t('ux.emptyItems') }}</h4><p>{{ t(selectedList.access === 'READ' ? 'ux.emptyReadOnly' : 'ux.emptyItemsHelp') }}</p></section>
+            <section v-else-if="!showLocationMap && !displayedItems.length" class="empty-state"><h4>{{ t('ux.noResults') }}</h4><p>{{ t('ux.noResultsHelp') }}</p><button type="button" class="secondary" @click="resetItemReviewForm(); hideCompletedGroceries = false">{{ t('ux.resetFilters') }}</button></section>
 
             <template v-if="selectedList.type === 'GROCERY'">
               <section v-for="[category, groupItems] in groceryGroups" :key="category" class="grocery-group">
@@ -417,7 +430,7 @@
               </section>
             </template>
 
-            <ul v-else class="item-list">
+            <ul v-else v-show="!showLocationMap" class="item-list">
               <li v-for="item in displayedItems" :key="item.id" :class="{ completed: item.status === 'DONE' || item.status === 'PURCHASED' }">
                 <PrivateImage v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" />
                 <form v-if="editingItemId === item.id" class="inline-form edit-item-form" @paste="currentItemFields.showImageUrl && handleImagePaste($event, editItemForm)" @submit.prevent="handleSaveEditedItem(item)">
@@ -429,6 +442,11 @@
                   <label v-if="selectedList.type === 'WISH'">{{ t('capture.seller') }}<input v-model="editItemForm.seller" maxlength="255" /></label>
                   <label v-if="selectedList.type === 'WISH'">{{ t('capture.availability') }}<input v-model="editItemForm.availability" maxlength="40" /></label>
                   <label>{{ t('capture.sourceUrl') }}<input v-model="editItemForm.sourceUrl" type="url" maxlength="2000" /></label>
+                  <template v-if="selectedList.type === 'TRIP' || selectedList.type === 'LOCATION'">
+                    <label>{{ t('locations.address') }}<input v-model="editItemForm.address" maxlength="500" /></label>
+                    <label>{{ t('locations.latitude') }}<input v-model="editItemForm.latitude" type="number" min="-90" max="90" step="any" /></label>
+                    <label>{{ t('locations.longitude') }}<input v-model="editItemForm.longitude" type="number" min="-180" max="180" step="any" /></label>
+                  </template>
                   <label v-if="currentItemFields.showImageUrl">{{ t('items.uploadImage') }}<input type="file" :aria-label="t('items.uploadImage')" :accept="acceptedImageTypes" @change="handleImageFileInput($event, editItemForm)" /></label>
                   <PrivateImage class="preview" v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" :src="editItemForm.imageUrl" :alt="editItemForm.name || t('items.newName')" />
                   <button v-if="currentItemFields.showImageUrl && editItemForm.imageUrl" type="button" class="secondary subtle" @click="editItemForm.imageUrl = ''">{{ t('items.removeImage') }}</button>
@@ -447,8 +465,9 @@
                 </form>
                 <span v-else class="item-content" :class="{ 'wish-content': selectedList.type === 'WISH' }">
                   <strong>{{ item.name }}</strong>
-                  <small v-if="selectedList.type === 'TRIP' && item.suggestedBy">{{ t('trip.suggestedBy', { name: item.suggestedBy }) }}</small>
+                  <small v-if="(selectedList.type === 'TRIP' || selectedList.type === 'LOCATION') && item.suggestedBy">{{ t('trip.suggestedBy', { name: item.suggestedBy }) }}</small>
                   <small v-if="item.description">{{ item.description }}</small>
+                  <small v-if="item.address">{{ item.address }}</small>
                   <small v-if="selectedList.type === 'WISH' && item.variantNote" class="wish-variant">{{ item.variantNote }}</small>
                   <div v-if="selectedList.type === 'WISH'" class="wish-facts">
                     <span v-if="item.price != null" class="wish-price">{{ formatPrice(item.price, item.priceCurrency) }}</span>
@@ -456,7 +475,7 @@
                     <small v-if="item.availability">{{ t('capture.availability') }}: {{ item.availability }}</small>
                     <small v-if="item.priceCheckedAt">{{ t('capture.priceChecked') }}: {{ formatDate(item.priceCheckedAt) }}</small>
                   </div>
-                  <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ selectedList.type === 'TRIP' ? t('trip.openPlace') : t('items.viewProduct') }}</a>
+                  <a v-if="safeProductUrl(item.url)" :href="safeProductUrl(item.url)!" target="_blank" rel="noopener noreferrer">{{ selectedList.type === 'TRIP' || selectedList.type === 'LOCATION' ? t('trip.openPlace') : t('items.viewProduct') }}</a>
                   <small v-if="item.quantity || item.category"><template v-if="item.quantity">{{ item.quantity }}</template><template v-if="item.quantity && item.category"> · </template><template v-if="item.category">{{ item.category }}</template></small>
                   <small v-if="item.ownerLabel || item.assistantLabels"><template v-if="item.ownerLabel">{{ t('items.ownerLabel') }}: {{ item.ownerLabel }}</template><template v-if="item.ownerLabel && item.assistantLabels"> · </template><template v-if="item.assistantLabels">{{ t('items.assistantLabels') }}: {{ item.assistantLabels }}</template></small>
                   <small v-if="item.dueDate">{{ formatDate(item.dueDate) }}</small>
@@ -502,7 +521,7 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
+import { defineAsyncComponent, nextTick, computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AdminPanel from './components/AdminPanel.vue';
 import PlanningHub from './components/PlanningHub.vue';
@@ -571,6 +590,7 @@ import {
   type PublicShareMode
 } from './api/client';
 import { itemFormFieldsForListType, listFormRulesForType } from './listTypes';
+const LocationMap = defineAsyncComponent(() => import('./components/LocationMap.vue'));
 import { defaultItemReviewState, reviewDisplayedItems, type ItemReviewState } from './itemReview';
 
 const { locale, t } = useI18n();
@@ -585,6 +605,7 @@ const savingTemplate = ref(false);
 const templateTitle = ref('');
 const undoAction = ref<{ label: string; restore: () => Promise<void> } | null>(null);
 const listView = ref<'items' | 'sharing' | 'settings'>('items');
+const showLocationMap = ref(false);
 
 function switchListView(view: 'items' | 'sharing' | 'settings') {
   listView.value = view;
@@ -662,9 +683,9 @@ const listForm = reactive<{ title: string; description: string; type: ListType; 
 const editingList = ref(false);
 const pendingDeleteListId = ref<string | null>(null);
 const editListForm = reactive<{ title: string; description: string; type: ListType; targetDate: string; sourceUrl: string; eventLocation: string }>({ title: '', description: '', type: 'WISH', targetDate: '', sourceUrl: '', eventLocation: '' });
-const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', variantNote: '', seller: '', availability: '', sourceUrl: '', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
+const itemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', variantNote: '', seller: '', availability: '', sourceUrl: '', address: '', latitude: '', longitude: '', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
 const editingItemId = ref<string | null>(null);
-const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', variantNote: '', seller: '', availability: '', sourceUrl: '', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
+const editItemForm = reactive({ name: '', description: '', url: '', imageUrl: '', price: undefined as number | undefined, priceCurrency: 'EUR', variantNote: '', seller: '', availability: '', sourceUrl: '', address: '', latitude: '', longitude: '', dueDate: '', recurrenceRule: '', quantity: '', category: '', ownerLabel: '', assistantLabels: '' });
 const acceptedImageTypes = 'image/png,image/jpeg,image/webp,image/gif';
 const acceptedImageTypeSet = new Set(acceptedImageTypes.split(','));
 const maxImageFileBytes = 3_500_000;
@@ -882,6 +903,7 @@ async function selectList(list: ListEntry) {
   savingTemplate.value = false;
   transferUsername.value = '';
   listView.value = 'items';
+  showLocationMap.value = false;
   if (itemDetailsDisclosure.value) itemDetailsDisclosure.value.open = false;
   items.value = [];
   shares.value = [];
@@ -1298,7 +1320,7 @@ function handleImageFileInput(event: Event, form: ImageForm) {
 
 async function handleCreateItem() {
   if (!selectedList.value) return;
-  if ((selectedList.value.type === 'WISH' || selectedList.value.type === 'TRIP') && itemForm.url.trim()) {
+  if ((selectedList.value.type === 'WISH' || selectedList.value.type === 'TRIP' || selectedList.value.type === 'LOCATION') && itemForm.url.trim()) {
     openCaptureFromItem();
     return;
   }
@@ -1315,6 +1337,9 @@ async function handleCreateItem() {
       seller: selectedList.value!.type === 'WISH' ? itemForm.seller || undefined : undefined,
       availability: selectedList.value!.type === 'WISH' ? itemForm.availability || undefined : undefined,
       sourceUrl: itemForm.sourceUrl || (fields.showUrl ? itemForm.url || undefined : undefined),
+      address: itemForm.address || undefined,
+      latitude: itemForm.latitude.trim() ? Number(itemForm.latitude) : undefined,
+      longitude: itemForm.longitude.trim() ? Number(itemForm.longitude) : undefined,
       dueDate: fields.showDueDate ? toIsoInstant(itemForm.dueDate) : undefined,
       recurrenceRule: fields.showRecurrenceRule ? itemForm.recurrenceRule || undefined : undefined,
       quantity: fields.showQuantity ? itemForm.quantity || undefined : undefined,
@@ -1349,6 +1374,9 @@ function handleStartEditItem(item: ItemEntry) {
   editItemForm.seller = item.seller ?? '';
   editItemForm.availability = item.availability ?? '';
   editItemForm.sourceUrl = item.sourceUrl ?? '';
+  editItemForm.address = item.address ?? '';
+  editItemForm.latitude = item.latitude == null ? '' : String(item.latitude);
+  editItemForm.longitude = item.longitude == null ? '' : String(item.longitude);
   editItemForm.dueDate = toLocalDateTime(item.dueDate);
   editItemForm.recurrenceRule = item.recurrenceRule ?? '';
   editItemForm.quantity = item.quantity ?? '';
@@ -1432,6 +1460,9 @@ function itemPayloadFromEditForm(status: ItemEntry['status']) {
     seller: selectedList.value?.type === 'WISH' ? editItemForm.seller || undefined : undefined,
     availability: selectedList.value?.type === 'WISH' ? editItemForm.availability || undefined : undefined,
     sourceUrl: editItemForm.sourceUrl || undefined,
+    address: editItemForm.address || undefined,
+    latitude: editItemForm.latitude.trim() ? Number(editItemForm.latitude) : undefined,
+    longitude: editItemForm.longitude.trim() ? Number(editItemForm.longitude) : undefined,
     status,
     dueDate: fields.showDueDate ? toIsoInstant(editItemForm.dueDate) : undefined,
     recurrenceRule: fields.showRecurrenceRule ? editItemForm.recurrenceRule || undefined : undefined,
@@ -1461,7 +1492,10 @@ function itemPayloadFromItem(item: ItemEntry, status: ItemEntry['status']) {
     variantNote: item.variantNote ?? undefined,
     seller: item.seller ?? undefined,
     availability: item.availability ?? undefined,
-    sourceUrl: item.sourceUrl ?? undefined
+    sourceUrl: item.sourceUrl ?? undefined,
+    address: item.address ?? undefined,
+    latitude: item.latitude ?? undefined,
+    longitude: item.longitude ?? undefined
   };
 }
 
@@ -1562,6 +1596,9 @@ function resetItemForm() {
   itemForm.seller = '';
   itemForm.availability = '';
   itemForm.sourceUrl = '';
+  itemForm.address = '';
+  itemForm.latitude = '';
+  itemForm.longitude = '';
   itemForm.dueDate = '';
   itemForm.recurrenceRule = '';
   itemForm.quantity = '';
