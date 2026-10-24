@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f AS frontend-build
+FROM node:26-alpine@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5 AS frontend-build
 WORKDIR /workspace/frontend
 ARG SOURCE_CODE_URL=https://github.com/utrost/Listful-Thinking
 ENV VITE_SOURCE_CODE_URL=${SOURCE_CODE_URL}
