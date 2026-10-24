@@ -46,6 +46,9 @@ public class Item {
     private String availability;
     @Column(name = "price_checked_at") private Instant priceCheckedAt;
     @Column(name = "source_url") private String sourceUrl;
+    @Column(name = "suggested_by_name") private String suggestedByName;
+    public String getSuggestedByName() { return suggestedByName; }
+    public void setSuggestedByName(String value) { suggestedByName = value; }
     @Column(name = "claim_token_hash") private String claimTokenHash;
 
     public long getVersion() { return version; }
@@ -125,6 +128,7 @@ public class Item {
         this.availability = source.availability;
         this.priceCheckedAt = source.priceCheckedAt;
         this.sourceUrl = source.sourceUrl;
+        this.suggestedByName = source.suggestedByName;
     }
 
     public void setName(String name) {

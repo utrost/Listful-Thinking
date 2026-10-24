@@ -160,7 +160,7 @@ public class PublicShareService {
         if (mode == PublicShareMode.WISH_CLAIM && list.getType() != ListType.WISH) {
             throw new ValidationFailedException("Wish claiming mode is only available for wish lists.");
         }
-        if (mode == PublicShareMode.SIGNUP && list.getType() == ListType.WISH) {
+        if (mode == PublicShareMode.SIGNUP && (list.getType() == ListType.WISH || list.getType() == ListType.TRIP)) {
             throw new ValidationFailedException("Signup mode is only available for task-like lists.");
         }
     }

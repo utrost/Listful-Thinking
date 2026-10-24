@@ -22,6 +22,7 @@ WORKDIR /app
 ARG SOURCE_CODE_URL=https://github.com/utrost/Listful-Thinking
 LABEL org.opencontainers.image.source="${SOURCE_CODE_URL}" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
+RUN apk --no-cache upgrade
 RUN mkdir -p /app/data && chmod 700 /app/data && chown -R 1000:1000 /app
 COPY --from=backend-build /workspace/backend/target/listful-thinking-*.jar /app/listful-thinking.jar
 COPY --chmod=0444 LICENSE /app/LICENSE
