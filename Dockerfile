@@ -17,7 +17,7 @@ COPY backend/ ./
 COPY --from=frontend-build /workspace/frontend/dist/ ./src/main/resources/static/
 RUN mvn -B package -DskipTests
 
-FROM amazoncorretto:17-alpine@sha256:80d268d89c10861f33792c7845bbd7c8494678a600f031988e135fe27eae3b48
+FROM amazoncorretto:27-alpine@sha256:6fba5f9f2f4730e2d3e81055ce0378a8587c12a48611ee545c5db04c3a28f889
 WORKDIR /app
 ARG SOURCE_CODE_URL=https://github.com/utrost/Listful-Thinking
 LABEL org.opencontainers.image.source="${SOURCE_CODE_URL}" \
