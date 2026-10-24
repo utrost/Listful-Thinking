@@ -20,7 +20,7 @@
     "@vitejs/plugin-vue": "6.0.8",
     "leaflet": "1.9.4",
     "vue": "3.5.42",
-    "vue-i18n": "11.4.10"
+    "vue-i18n": "11.4.16"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
